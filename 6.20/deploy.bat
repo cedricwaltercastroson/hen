@@ -1,0 +1,1 @@
+cp EBOOT.PBP F:\PSP\GAME\HEN
