@@ -12,7 +12,8 @@ Meantime, other hackers started reverse engineer of both TN HEN and VFlame patch
 
 = Details =
 
-After I tried to post my initial works on Wololo/talk, JJS and FrEdDy shared their findings which boost my progress tremendously. Actually they have gain much more than what I've found. I would hereby say thanks to both of them, and Wololo, of course, for his great HBL and Wololo/talk.
+After I tried to post my initial works on Wololo/talk, JJS and FrEdDy shared their findings which boost my progress tremendously. 
+Actually they have gain much more than what I've found. I would hereby say thanks to both of them, and Wololo, of course, for his great HBL and Wololo/talk.
 
 So far JJS has contributed his reversed C code for HEN loader, and FrEdDy has posted the rebootex. I also finished the VFlame loader and started looking rebootex.
 
