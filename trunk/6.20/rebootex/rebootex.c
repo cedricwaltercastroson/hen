@@ -216,7 +216,27 @@ sub_88FC0604(char *a0, char *a1, char *a2, unsigned int a3)
 	__memcpy(p0 + ((i + 1) << 5), p0 + (i << 5), len);
 	__memcpy(p0 + (i << 5), buf, 32);
 
-	/* XXX */
+	n[9]++;
+	n[12] += 32;
+	n[13] += 32;
+	
+	if (n[5] <= 0)
+		return -3;
+
+	for (i = 0; i < n[5]; i++) {
+		int v0, v1;
+
+		s = a0 + n[4] + (i << 5);
+		v0 = s[1];
+		v1 = s[0];
+		v0 <<= 8;
+		v0 |= v1;
+		v0++;
+		v0 &= 0xFFFF;
+		v1 = v0 >> 8;
+		s[1] = v1;
+		s[0] = v0;
+	}
 
 	return 0;
 }
