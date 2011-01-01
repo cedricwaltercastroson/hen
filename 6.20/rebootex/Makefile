@@ -1,10 +1,11 @@
 PSPSDK=$(shell psp-config --pspsdk-path)
 PSPDEV=$(shell psp-config --pspdev-path)
 
-INCLUDE =
+INCLUDE = -I. -I$(PSPSDK)/include
 
 CC = psp-gcc
-CFLAGS := -I. -W -Wall -O2 -G0 -fno-pic -mno-abicalls -w -fomit-frame-pointer
+CFLAGS = -W -Wall -O2 -G0 -fno-pic -mno-abicalls -w -fomit-frame-pointer
+CFLAGS += $(INCLUDE)
 
 clean:
 	rm -rf *.bin *.elf *.o rebootex.s
