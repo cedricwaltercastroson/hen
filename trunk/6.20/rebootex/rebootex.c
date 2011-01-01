@@ -53,7 +53,7 @@ char *rtm_addr; /* ref 0x88FC7204 */
 unsigned int rtm_len; /* ref 0x88FC720C */
 unsigned int rtm_op; /* ref 0x88FC7208 */
 
-extern unsigned char systemctrl[];
+extern unsigned char systemctl[];
 
 #define SYSTEM_CTL_SZ	26635
 #include "systemctl.inc"
@@ -71,7 +71,7 @@ unsigned int
 sub_88FC0100(unsigned int a0, unsigned int a1)
 {
 	if (has_hen_prx) {
-		__memcpy((void *) 0x88FC0000, systemctrl, SYSTEM_CTL_SZ);
+		__memcpy((void *) 0x88FC0000, systemctl, SYSTEM_CTL_SZ);
 		return SYSTEM_CTL_SZ;
 	} else if (has_rtm_prx) {
 		__memcpy((void *) 0x88FC0000, rtm_addr, rtm_len);
@@ -226,16 +226,16 @@ sub_88FC0604(char *a0, char *a1, char *a2, unsigned int a3)
 	for (i = 0; i < n[5]; i++) {
 		int v0, v1;
 
-		s = a0 + n[4] + (i << 5);
-		v0 = s[1];
-		v1 = s[0];
+		p = a0 + n[4] + (i << 5);
+		v0 = p[1];
+		v1 = p[0];
 		v0 <<= 8;
 		v0 |= v1;
 		v0++;
 		v0 &= 0xFFFF;
 		v1 = v0 >> 8;
-		s[1] = v1;
-		s[0] = v0;
+		p[1] = v1;
+		p[0] = v0;
 	}
 
 	return 0;
