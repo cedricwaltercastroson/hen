@@ -1,3 +1,5 @@
+#include "psptypes.h"
+
 /* all functions and variables are public (non-static) to avoid being
  * optimized by -O2
  */
@@ -111,14 +113,14 @@ sub_88FC021C(void)
 int
 sub_88FC025C(char *s)
 {
-	int len;
+	unsigned int len;
 	char *s2;
 
-	if (*(unsigned int *) (s + 304) == 0xB301AEBAU) {
-		len = *(int *) (s + 176);
+	if (_lw(s + 304) == 0xB301AEBAU) {
+		len = _lw(s + 176);
 		s2 = s + 336;
 		__memcpy(s, s2, len);
-		*(int *) (s + 176) = len;
+		_sw(len, s + 176);
 		return 0;
 	}
 
@@ -155,11 +157,11 @@ sub_88FC0304(unsigned int a0, int a1, int a2, unsigned int a3)
 	unsigned int f2 = MAKE_CALL(sub_88FC02C8);
 	void (*f3)(unsigned int, int, int) = (void *) a3;
 
-	*(unsigned int *) (a3 + 13792) = f1;
-	*(unsigned int *) (a3 + 23852) = f1;
-	*(unsigned int *) (a3 + 23888) = f2;
-	*(unsigned int *) (a3 + 23936) = f2;
-	*(unsigned int *) (a3 + 24088) = f2;
+	_sw(f1, a3 + 13792);
+	_sw(f1, a3 + 23852);
+	_sw(f2, a3 + 23888);
+	_sw(f2, a3 + 23936);
+	_sw(f2, a3 + 24088);
 
 	func1 = (void *) (a3 + 30640);
 	func2 = (void *) (a3 + 30616);
@@ -173,47 +175,50 @@ int
 sub_88FC0604(char *a0, char *a1, char *a2, unsigned int a3)
 {
 	char buf[32];
-	int len, cnt, i, t0, t1, t2;
-	char *s0, *s1, *s2;
+	int *n = (int *) a0;
+	int len, cnt, i, len2;
+	char *p0, *p1, *p2, *p;
 
-#define _(__p, __off) (int *) ((__p) + (__off))
+	p0 = a0 + n[8]; /* 32($fp) */
+	p1 = a0 + n[12]; /* $s5 */
+	p2 = a0 + n[13]; /* $s7 */
 
-	t0 = *_(a0, 32);
-	t1 = *_(a0, 48);
-	t2 = *_(a0, 52);
+	len2 = __strlen(a2) + 1;
+	__memcpy(p2, a2, len2);
+	n[13] += len2;
 
-	s0 = a0 + t0; /* 32 */
-	s1 = a0 + t1; /* 48 */
-	s2 = a0 + t2; /* 52 */
-
-	len = __strlen(a2) + 1;
-	__memcpy(s2, a2, len);
-	*_(a0, 52) += len;
-
-	cnt = *_(a0, 36);
-
-	if (cnt == 0)
+	if (n[9] <= 0)
 		return -2;
 
-	if (cnt > 0) {
-		len = __strlen(a1) + 1;
-		for (i = 0; i < cnt; i++) {
-			if (__strncmp(s1 + *_(s0, 0), a1, len) != 0)
-				break;
-			s0 += 32;
-		}
-		if (i == cnt)
-			return -2;
+	len = __strlen(a1) + 1;
+	p = p0;
+	for (i = 0; i < cnt; i++) {
+		if (__strncmp(p1 + _lw(p), a1, len) != 0)
+			break;
+		p += 32;
 	}
+	if (i == cnt)
+		return -2;
 
 	memset(buf, 0, 32);
-	*(int *) buf = t2 - t1;
-	*(short *) &buf[8] = (short) a3;
+
+	len = n[9];
+	len -= i;
+	len <<= 5;
+	len += len2;
+	len += p2 - p1;
+
+	_sw(p2 - p1, buf);
+	_sh((len + 14) & 7, &buf[8]);
+	_sb(-128, &buf[11]);
+	_sb(1, &buf[10]);
+
+	__memcpy(p0 + ((i + 1) << 5), p0 + (i << 5), len);
+	__memcpy(p0 + (i << 5), buf, 32);
 
 	/* XXX */
-	
+
 	return 0;
-#undef _
 }
 
 /* 0x88FC0890 */
@@ -230,22 +235,21 @@ sub_88FC0890(char *a0)
 }
 
 #define SAVE_CALL(__a, __f) do {\
-	*(unsigned int *) (__a + 0x88600000U) = MAKE_CALL(__f);\
-} while(0)
+	_sw(MAKE_CALL(__f), (__a) + 0x88600000U);\
+} while (0)
 
 #define SAVE_VALUE(__a, __v) do {\
-	*(unsigned int *) (__a + 0x88600000U) = (__v);\
-} while(0)
+	_sw((__v), (__a) + 0x88600000U);\
+} while (0)
 
 void _start(unsigned int, unsigned int, unsigned int, unsigned int) __attribute__ ((section (".text.start")));
 
 void
 _start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 {
-	int model = *(int *) 0x88FB0000;
 	unsigned int *pf;
 
-	if (model == 0)
+	if (_lw(0x88FB0000) == 0)
 		pf = model0;
 	else
 		pf = model1;
@@ -271,8 +275,8 @@ _start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 
 	str1 = *(char **) 0x88FB0010;
 	rtm_addr = *(char **) 0x88FB0014;
-	rtm_len = *(unsigned int *) 0x88FB0018;
-	rtm_op = *(unsigned int *) 0x88FB001C;
+	rtm_len = _lw(0x88FB0018);
+	rtm_op = _lw(0x88FB001C);
 
 	has_hen_prx = 0;
 	has_rtm_prx = 0;
