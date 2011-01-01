@@ -1,3 +1,7 @@
+/* all functions and variables are public (non-static) to avoid being
+ * optimized by -O2
+ */
+
 extern int __strncmp(const char *s1, const char *s2, int num);
 extern void __memset(void *s, char c, int len);
 extern void __memcpy(void *dst, void *src, int len);
@@ -166,23 +170,63 @@ sub_88FC0304(unsigned int a0, int a1, int a2, unsigned int a3)
 
 /* 0x88FC0604 */
 int
-sub_88FC0604(void *a0, char *a1, char *a2, unsigned int a3)
+sub_88FC0604(char *a0, char *a1, char *a2, unsigned int a3)
 {
-	/* TODO */
+	char buf[32];
+	int len, cnt, i, t0, t1, t2;
+	char *s0, *s1, *s2;
+
+#define _(__p, __off) (int *) ((__p) + (__off))
+
+	t0 = *_(a0, 32);
+	t1 = *_(a0, 48);
+	t2 = *_(a0, 52);
+
+	s0 = a0 + t0; /* 32 */
+	s1 = a0 + t1; /* 48 */
+	s2 = a0 + t2; /* 52 */
+
+	len = __strlen(a2) + 1;
+	__memcpy(s2, a2, len);
+	*_(a0, 52) += len;
+
+	cnt = *_(a0, 36);
+
+	if (cnt == 0)
+		return -2;
+
+	if (cnt > 0) {
+		len = __strlen(a1) + 1;
+		for (i = 0; i < cnt; i++) {
+			if (__strncmp(s1 + *_(s0, 0), a1, len) != 0)
+				break;
+			s0 += 32;
+		}
+		if (i == cnt)
+			return -2;
+	}
+
+	memset(buf, 0, 32);
+	*(int *) buf = t2 - t1;
+	*(short *) &buf[8] = (short) a3;
+
+	/* XXX */
+	
 	return 0;
+#undef _
 }
 
 /* 0x88FC0890 */
 int
-sub_88FC0890(unsigned int a0)
+sub_88FC0890(char *a0)
 {
 	int r;
 
 	reboot6();
-	r = sub_88FC0604((void *) a0, init_str, hen_str, 255);
+	r = sub_88FC0604(a0, init_str, hen_str, 255);
 	if (str1 == 0)
 		return r;
-	return sub_88FC0604((void *) a0, str1, rtm_str, rtm_op);
+	return sub_88FC0604(a0, str1, rtm_str, rtm_op);
 }
 
 #define SAVE_CALL(__a, __f) do {\
