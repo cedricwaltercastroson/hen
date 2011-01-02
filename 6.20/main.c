@@ -6,8 +6,6 @@
 #include "psputility.h"
 #include "psputilsforkernel.h"
 
-#include "rebootex_bin.inc"
-
 #ifdef DEBUG
 #include "pspdebug.h"
 #define printf pspDebugScreenPrintf
@@ -32,14 +30,17 @@ static int model;
 	__asm__ ("break");\
 } while (0)
 
+extern unsigned int size_rebootex_bin;
+extern unsigned char rebootex_bin[];
+
+#include "rebootex_bin.inc"
+
 
 /* sub_000002B4 */
 static int
 rebootex_callback(unsigned int a1, unsigned int a2, unsigned int a3, 
 		unsigned int a4, unsigned int a5)
 {
-#define REBOOT_BIN_SZ 29168
-	extern unsigned char rebootex_bin[];
 	char *s, *s2;
 
 	s = (char *) 0x88FC0000;
@@ -56,7 +57,7 @@ rebootex_callback(unsigned int a1, unsigned int a2, unsigned int a3,
 		s++;
 	}
 
-	_sw(REBOOT_BIN_SZ, 0x88FB0004);
+	_sw(size_rebootex_bin, 0x88FB0004);
 	_sw(model, 0x88FB0000);
 
 	return func_rebootex(a1, a2, a3, a4, a5);
