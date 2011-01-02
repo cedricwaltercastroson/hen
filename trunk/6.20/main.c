@@ -30,8 +30,8 @@ static int model;
 	__asm__ ("break");\
 } while (0)
 
-extern unsigned int size_rebootex_bin;
-extern unsigned char rebootex_bin[];
+static unsigned int size_rebootex_bin;
+static unsigned char rebootex_bin[];
 
 #include "rebootex_bin.inc"
 
