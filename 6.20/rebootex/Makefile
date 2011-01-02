@@ -17,4 +17,5 @@ rebootex.bin: rebootex.c linker.x
 	$(PSPDEV)/bin/psp-ld -T linker.x rebootex.o -o rebootex.elf
 	$(PSPDEV)/bin/psp-strip -s rebootex.elf
 	$(PSPDEV)/bin/psp-objcopy -O binary rebootex.elf rebootex.bin
+	$(PSPDEV)/bin/bin2c rebootex.bin rebootex_bin.inc rebootex_bin
 	prxtool -o rebootex.s -r 0x88FC0000 -b -i m -w rebootex.bin
