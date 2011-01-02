@@ -19,14 +19,10 @@ _una_sw(u32 val, void *p)
 	ptr->x = val;
 }
 
-/* most functions and variables are public (non-static) to avoid being
- * optimized by -O2
- */
-
-extern int __strncmp(const char *s1, const char *s2, int len);
-extern void __memset(void *s, char c, int len);
-extern void __memcpy(void *dst, void *src, int len);
-extern int __strlen(char *s);
+static int __strncmp(const char *s1, const char *s2, int len) __attribute__((noinline));
+static void __memset(void *s, char c, int len) __attribute__((noinline));
+static void __memcpy(void *dst, void *src, int len) __attribute__((noinline));
+static int __strlen(char *s) __attribute__((noinline));
 static inline void __memmove(void *dst, void *src, int len) __attribute__((always_inline));
 
 /* global variables */
@@ -37,12 +33,12 @@ void (*reboot1)(void) = (void *) 0x88600938; /* ref 0x88FC09CC */
 void (*reboot2)(void) = (void *) 0x886001E4; /* ref 0x88FC09D0 */
 
 unsigned int (*reboot3)(unsigned int, unsigned int); /* ref 0x88FC7210 */
-int (*reboot4)(char *); /* ref 0x88FC71F0 */
-int (*reboot5)(void); /* ref 0x88FC71F4 */
-void (*reboot6)(char *, int); /* ref 0x88FC721C */
+unsigned int (*reboot4)(char *); /* ref 0x88FC71F0 */
+unsigned int (*reboot5)(void); /* ref 0x88FC71F4 */
+void (*reboot6)(unsigned char *, unsigned int); /* ref 0x88FC721C */
 
-int (*func1)(char *, char *, char *); /* ref 0x88FC7200 */
-int (*func2)(char *, int); /* ref 0x88FC7218 */
+unsigned int (*func1)(unsigned char *, unsigned char *, unsigned char *); /* ref 0x88FC7200 */
+unsigned int (*func2)(unsigned char *, unsigned int); /* ref 0x88FC7218 */
 
 char *rtm_init; /* ref 0x88FC71FC */
 
@@ -79,7 +75,7 @@ static unsigned char sysctrl_bin[];
 #include "sysctrl_bin.inc"
 
 /* 0x88FC00D4 */
-void
+void __attribute__((noinline))
 sub_88FC00D4(void)
 {
 	reboot1();
@@ -87,7 +83,7 @@ sub_88FC00D4(void)
 }
 
 /* 0x88FC0100 */
-unsigned int
+unsigned int __attribute__((noinline))
 sub_88FC0100(unsigned int a0, unsigned int a1)
 {
 	if (has_hen_prx) {
@@ -101,7 +97,7 @@ sub_88FC0100(unsigned int a0, unsigned int a1)
 }
 
 /* 0x88FC0188 */
-int
+unsigned int __attribute__((noinline))
 sub_88FC0188(char *s)
 {
 	if (!__strncmp(s, hen_str, 9)) {
@@ -118,7 +114,7 @@ sub_88FC0188(char *s)
 }
 
 /* 0x88FC021C */
-int
+unsigned int __attribute__((noinline))
 sub_88FC021C(void)
 {
 	if (has_hen_prx) {
@@ -133,7 +129,7 @@ sub_88FC021C(void)
 }
 
 /* 0x88FC025C */
-int
+unsigned int __attribute__((noinline))
 sub_88FC025C(char *a0, char *a1, char *a2)
 {
 	unsigned int len;
@@ -149,8 +145,8 @@ sub_88FC025C(char *a0, char *a1, char *a2)
 }
 
 /* 0x88FC02C8 */
-int
-sub_88FC02C8(char *s, int a1)
+unsigned int __attribute__((noinline))
+sub_88FC02C8(unsigned char *s, unsigned int a1)
 {
 	int i;
 
@@ -166,12 +162,12 @@ sub_88FC02C8(char *s, int a1)
 	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
 
 /* 0x88FC0304 */
-void
-sub_88FC0304(unsigned int a0, int a1, int a2, unsigned int a3)
+unsigned int __attribute__((noinline))
+sub_88FC0304(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 {
 	unsigned int f1 = MAKE_CALL(sub_88FC025C);
 	unsigned int f2 = MAKE_CALL(sub_88FC02C8);
-	void (*f3)(unsigned int, int, int) = (void *) a3;
+	unsigned int (*f3)(unsigned int, unsigned int, unsigned int) = (void *) a3;
 
 	_sw(f1, a3 + 13792);
 	_sw(f1, a3 + 23852);
@@ -183,19 +179,19 @@ sub_88FC0304(unsigned int a0, int a1, int a2, unsigned int a3)
 	func2 = (void *) (a3 + 30616);
 	sub_88FC00D4();
 
-	f3(a0, a1, a2);
+	return f3(a0, a1, a2);
 }
 
 /* 0x88FC0604 */
-int
-sub_88FC0604(char *a0, char *a1, char *a2, unsigned int a3)
+int __attribute__((noinline))
+sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned int a3)
 {
-	char buf[32];
-	int *n;
-	int len, i, len2, tmp;
-	char *p0, *p1, *p2, *p;
+	unsigned char buf[32];
+	unsigned int *n;
+	unsigned int len, i, len2, tmp;
+	unsigned char *p0, *p1, *p2, *p;
 
-	n = (int *) a0;
+	n = (unsigned int *) a0;
 
 	p0 = a0 + _una_lw(&n[8]); /* 32($fp) */
 	p1 = a0 + _una_lw(&n[12]); /* $s5 */
@@ -259,7 +255,7 @@ sub_88FC0604(char *a0, char *a1, char *a2, unsigned int a3)
 		return -3;
 
 	for (i = 0; i < _una_lw(&n[5]); i++) {
-		int v0, v1;
+		unsigned int v0, v1;
 
 		p = a0 + _una_lw(&n[4]) + (i << 5);
 		v0 = p[1];
@@ -277,8 +273,8 @@ sub_88FC0604(char *a0, char *a1, char *a2, unsigned int a3)
 }
 
 /* 0x88FC0890 */
-void
-sub_88FC0890(char *a0, int a1)
+void __attribute__((noinline))
+sub_88FC0890(unsigned char *a0, unsigned int a1)
 {
 	reboot6(a0, a1);
 	sub_88FC0604(a0, init_str, hen_str, 255);
@@ -294,10 +290,10 @@ sub_88FC0890(char *a0, int a1)
 	_sw((__v), (__a) + 0x88600000U);\
 } while (0)
 
-void _start(unsigned int, unsigned int, unsigned int, unsigned int) __attribute__ ((section (".text.start")));
+void main(unsigned int, unsigned int, unsigned int, unsigned int) __attribute__ ((section (".text.start")));
 
 void
-_start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
+main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 {
 	unsigned int *pf;
 
@@ -340,7 +336,7 @@ _start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 
 /* util functions */
 
-int
+static int
 __strncmp(const char *s1, const char *s2, int len)
 {
 	int i;
@@ -355,7 +351,7 @@ __strncmp(const char *s1, const char *s2, int len)
 	return *(unsigned char *) s1 - *(unsigned char *) s2;
 }
 
-void
+static void
 __memset(void *p, char c, int len)
 {
 	int i;
@@ -370,7 +366,7 @@ __memset(void *p, char c, int len)
 	return;
 }
 
-void
+static void
 __memcpy(void *dst, void *src, int len)
 {
 	int i;
@@ -387,7 +383,7 @@ __memcpy(void *dst, void *src, int len)
 	return;
 }
 
-int
+static int
 __strlen(char *s)
 {
 	int len = 0;
