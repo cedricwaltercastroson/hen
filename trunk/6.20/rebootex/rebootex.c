@@ -21,10 +21,10 @@ int (*reboot4)(void); /* ref 0x88FC71F0 */
 int (*reboot5)(void); /* ref 0x88FC71F4 */
 void (*reboot6)(void); /* ref 0x88FC721C */
 
-int (*func1)(void); /* ref 0x88FC7200 */
-void (*func2)(char *, int, int, int); /* ref 0x88FC7218 */
+int (*func1)(char *, char *, char *); /* ref 0x88FC7200 */
+int (*func2)(char *, int); /* ref 0x88FC7218 */
 
-char *str1; /* ref 0x88FC71FC */
+char *rtm_init; /* ref 0x88FC71FC */
 
 int has_hen_prx; /* ref 0x88FC7214 */
 int has_rtm_prx; /* ref 0x88FC71F8 */
@@ -87,10 +87,13 @@ sub_88FC0188(char *s)
 	if (!__strncmp(s, hen_str, 9)) {
 		has_hen_prx = 1;
 		return 0;
-	} else if (!__strncmp(s, rtm_str, 9)) {
+	}
+	
+	if (!__strncmp(s, rtm_str, 9)) {
 		has_rtm_prx = 1;
 		return 0;
 	}
+
 	return reboot4();
 }
 
@@ -111,37 +114,30 @@ sub_88FC021C(void)
 
 /* 0x88FC025C */
 int
-sub_88FC025C(char *s)
+sub_88FC025C(char *a0, char *a1, char *a2)
 {
 	unsigned int len;
-	char *s2;
 
-	if (_lw(s + 304) == 0xB301AEBAU) {
-		len = _lw(s + 176);
-		s2 = s + 336;
-		__memcpy(s, s2, len);
-		_sw(len, s + 176);
+	if (_lw(a0 + 304) == 0xB301AEBAU) {
+		len = _lw(a0 + 176);
+		__memcpy(a0, a0 + 336, len);
+		_sw(len, a2);
 		return 0;
 	}
 
-	return func1();
+	return func1(a0, a1, a2); /* XXX at most 3 params */
 }
 
 /* 0x88FC02C8 */
 int
 sub_88FC02C8(char *s, int a1)
 {
-	int a2 = 0, a3 = 88;
-	char *v0;
-	char v1;
+	int i;
 
-	do {
-		v0 = s + a2;
-		v1 = v0[212];
-		if (v1)
-			func2(s, a1, a2, a3); /* not sure how many params here. at most 4 */
-		a2++;
-	} while (a2 != a3);
+	for (i = 0; i < 88; i++) {
+		if (s[i + 212] != 0)
+			return func2(s, a1); /* XXX at most 4 params. 2 seems reasonable */
+	}
 
 	return 0;
 }
@@ -242,16 +238,13 @@ sub_88FC0604(char *a0, char *a1, char *a2, unsigned int a3)
 }
 
 /* 0x88FC0890 */
-int
+void
 sub_88FC0890(char *a0)
 {
-	int r;
-
 	reboot6();
-	r = sub_88FC0604(a0, init_str, hen_str, 255);
-	if (str1 == 0)
-		return r;
-	return sub_88FC0604(a0, str1, rtm_str, rtm_op);
+	sub_88FC0604(a0, init_str, hen_str, 255);
+	if (rtm_init)
+		sub_88FC0604(a0, rtm_init, rtm_str, rtm_op);
 }
 
 #define SAVE_CALL(__a, __f) do {\
@@ -293,7 +286,7 @@ _start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	reboot5 = (void *) (pf[2] | 0x88600000);
 	reboot6 = (void *) (pf[3] | 0x88600000);
 
-	str1 = *(char **) 0x88FB0010;
+	rtm_init = *(char **) 0x88FB0010;
 	rtm_addr = *(char **) 0x88FB0014;
 	rtm_len = _lw(0x88FB0018);
 	rtm_op = _lw(0x88FB001C);
