@@ -1,6 +1,25 @@
 #include "psptypes.h"
 
-/* all functions and variables are public (non-static) to avoid being
+
+/* unaligned store and load */
+
+struct __una_u32 { u32 x __attribute__((packed)); };
+
+static inline u32
+_una_lw(const void *p)
+{
+	const struct __una_u32 *ptr = (const struct __una_u32 *) p;
+	return ptr->x;
+}
+
+static inline void
+_una_sw(u32 val, void *p)
+{
+	struct __una_u32 *ptr = (struct __una_u32 *) p;
+	ptr->x = val;
+}
+
+/* most functions and variables are public (non-static) to avoid being
  * optimized by -O2
  */
 
@@ -8,6 +27,7 @@ extern int __strncmp(const char *s1, const char *s2, int len);
 extern void __memset(void *s, char c, int len);
 extern void __memcpy(void *dst, void *src, int len);
 extern int __strlen(char *s);
+static inline void __memmove(void *dst, void *src, int len) __attribute__((always_inline));
 
 /* global variables */
 
@@ -53,8 +73,8 @@ char *rtm_addr; /* ref 0x88FC7204 */
 unsigned int rtm_len; /* ref 0x88FC720C */
 unsigned int rtm_op; /* ref 0x88FC7208 */
 
-extern unsigned int size_sysctrl_bin;
-extern unsigned char sysctrl_bin[];
+static unsigned int size_sysctrl_bin;
+static unsigned char sysctrl_bin[];
 
 #include "sysctrl_bin.inc"
 
@@ -171,58 +191,77 @@ int
 sub_88FC0604(char *a0, char *a1, char *a2, unsigned int a3)
 {
 	char buf[32];
-	int *n = (int *) a0;
-	int len, cnt, i, len2;
+	int *n;
+	int len, i, len2, tmp;
 	char *p0, *p1, *p2, *p;
 
-	p0 = a0 + n[8]; /* 32($fp) */
-	p1 = a0 + n[12]; /* $s5 */
-	p2 = a0 + n[13]; /* $s7 */
+	n = (int *) a0;
+
+	p0 = a0 + _una_lw(&n[8]); /* 32($fp) */
+	p1 = a0 + _una_lw(&n[12]); /* $s5 */
+	p2 = a0 + _una_lw(&n[13]); /* $s7 */
 
 	len2 = __strlen(a2) + 1;
 	__memcpy(p2, a2, len2);
-	n[13] += len2;
+	tmp = _una_lw(&n[13]);
+	tmp += len2;
+	_una_sw(tmp, &n[13]);
 
-	if (n[9] <= 0)
+	tmp = _una_lw(&n[9]);
+
+	if (tmp < 0)
 		return -2;
 
-	len = __strlen(a1) + 1;
-	p = p0;
-	for (i = 0; i < cnt; i++) {
-		if (__strncmp(p1 + _lw(p), a1, len) != 0)
-			break;
-		p += 32;
+	i = 0;
+
+	if (tmp > 0) {
+		len = __strlen(a1) + 1;
+		p = p0;
+		for (; i < _una_lw(&n[9]); i++) {
+			if (!__strncmp(p1 + _una_lw(p), a1, len))
+				break;
+			p += 32;
+		}
+		if (i == _una_lw(&n[9]))
+			return -2;
 	}
-	if (i == cnt)
-		return -2;
 
 	memset(buf, 0, 32);
 
-	len = n[9];
+	len = _una_lw(&n[9]);
 	len -= i;
 	len <<= 5;
 	len += len2;
 	len += p2 - p1;
 
-	_sw(p2 - p1, buf);
-	_sh((len + 14) & 7, &buf[8]);
+	_sw(p2 - p1, &buf[0]);
+	_sh(a3, &buf[8]);
 	_sb(-128, &buf[11]);
 	_sb(1, &buf[10]);
 
-	__memcpy(p0 + ((i + 1) << 5), p0 + (i << 5), len);
+	__memmove(p0 + ((i + 1) << 5), p0 + (i << 5), len);
+
 	__memcpy(p0 + (i << 5), buf, 32);
 
-	n[9]++;
-	n[12] += 32;
-	n[13] += 32;
+	tmp = _una_lw(&n[9]);
+	tmp++;
+	_una_sw(tmp, &n[9]);
+
+	tmp = _una_lw(&n[12]);
+	tmp += 32;
+	_una_sw(tmp, &n[12]);
+
+	tmp = _una_lw(&n[13]);
+	tmp += 32;
+	_una_sw(tmp, &n[13]);
 	
-	if (n[5] <= 0)
+	if (_una_lw(&n[5]) <= 0)
 		return -3;
 
-	for (i = 0; i < n[5]; i++) {
+	for (i = 0; i < _una_lw(&n[5]); i++) {
 		int v0, v1;
 
-		p = a0 + n[4] + (i << 5);
+		p = a0 + _una_lw(&n[4]) + (i << 5);
 		v0 = p[1];
 		v1 = p[0];
 		v0 <<= 8;
@@ -359,4 +398,18 @@ __strlen(char *s)
 	}
 
 	return len;
+}
+
+static inline void
+__memmove(void *dst, void *src, int len)
+{
+	char *d = dst, *s = src;
+
+	if (s < d) {
+		for (s += len, d += len; len; --len)
+			*--d == *--s;
+	} else if (s != d) {
+		for (; len; --len)
+			*d++ = *s++;
+	}
 }

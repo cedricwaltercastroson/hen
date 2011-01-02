@@ -19,3 +19,4 @@ rebootex.bin: rebootex.c linker.x
 	$(PSPDEV)/bin/psp-objcopy -O binary rebootex.elf rebootex.bin
 	$(PSPDEV)/bin/bin2c rebootex.bin rebootex_bin.inc rebootex_bin
 	prxtool -o rebootex.s -r 0x88FC0000 -b -i m -w rebootex.bin
+#	cp rebootex_bin.inc ..
