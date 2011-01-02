@@ -4,7 +4,7 @@
  * optimized by -O2
  */
 
-extern int __strncmp(const char *s1, const char *s2, int num);
+extern int __strncmp(const char *s1, const char *s2, int len);
 extern void __memset(void *s, char c, int len);
 extern void __memcpy(void *dst, void *src, int len);
 extern int __strlen(char *s);
@@ -17,9 +17,9 @@ void (*reboot1)(void) = (void *) 0x88600938; /* ref 0x88FC09CC */
 void (*reboot2)(void) = (void *) 0x886001E4; /* ref 0x88FC09D0 */
 
 unsigned int (*reboot3)(unsigned int, unsigned int); /* ref 0x88FC7210 */
-int (*reboot4)(void); /* ref 0x88FC71F0 */
+int (*reboot4)(char *); /* ref 0x88FC71F0 */
 int (*reboot5)(void); /* ref 0x88FC71F4 */
-void (*reboot6)(void); /* ref 0x88FC721C */
+void (*reboot6)(char *, int); /* ref 0x88FC721C */
 
 int (*func1)(char *, char *, char *); /* ref 0x88FC7200 */
 int (*func2)(char *, int); /* ref 0x88FC7218 */
@@ -53,10 +53,10 @@ char *rtm_addr; /* ref 0x88FC7204 */
 unsigned int rtm_len; /* ref 0x88FC720C */
 unsigned int rtm_op; /* ref 0x88FC7208 */
 
-extern unsigned char systemctl[];
+extern unsigned int size_sysctrl_bin;
+extern unsigned char sysctrl_bin[];
 
-#define SYSTEM_CTL_SZ	26635
-#include "systemctl.inc"
+#include "sysctrl_bin.inc"
 
 /* 0x88FC00D4 */
 void
@@ -71,8 +71,8 @@ unsigned int
 sub_88FC0100(unsigned int a0, unsigned int a1)
 {
 	if (has_hen_prx) {
-		__memcpy((void *) 0x88FC0000, systemctl, SYSTEM_CTL_SZ);
-		return SYSTEM_CTL_SZ;
+		__memcpy((void *) 0x88FC0000, sysctrl_bin, size_sysctrl_bin);
+		return size_sysctrl_bin;
 	} else if (has_rtm_prx) {
 		__memcpy((void *) 0x88FC0000, rtm_addr, rtm_len);
 		return rtm_len;
@@ -94,7 +94,7 @@ sub_88FC0188(char *s)
 		return 0;
 	}
 
-	return reboot4();
+	return reboot4(s);
 }
 
 /* 0x88FC021C */
@@ -239,9 +239,9 @@ sub_88FC0604(char *a0, char *a1, char *a2, unsigned int a3)
 
 /* 0x88FC0890 */
 void
-sub_88FC0890(char *a0)
+sub_88FC0890(char *a0, int a1)
 {
-	reboot6();
+	reboot6(a0, a1);
 	sub_88FC0604(a0, init_str, hen_str, 255);
 	if (rtm_init)
 		sub_88FC0604(a0, rtm_init, rtm_str, rtm_op);
@@ -320,12 +320,12 @@ void
 __memset(void *p, char c, int len)
 {
 	int i;
-	char *s = p;
+	char *s;
 
 	if (len <= 0)
 		return;
 
-	for (i = 0; i < len; i++, ++s)
+	for (i = 0, s = p; i < len; i++, s++)
 		*s = c;
 
 	return;
