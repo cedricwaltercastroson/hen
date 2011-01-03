@@ -41,8 +41,7 @@ static int
 rebootex_callback(unsigned int a1, unsigned int a2, unsigned int a3, 
 		unsigned int a4, unsigned int a5)
 {
-	/* XXX what is 0x77040000 ??? */
-	memcpy((void *) 0x88FC0000, rebootex_bin + 0x77040000 + 0x88FC0000, size_rebootex_bin);
+	memcpy((void *) 0x88FC0000, rebootex_bin, size_rebootex_bin);
 	memset((void *) 0x88FB0000, 0, 256);
 
 	_sw(size_rebootex_bin, 0x88FB0004);
