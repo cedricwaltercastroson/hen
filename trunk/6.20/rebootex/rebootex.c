@@ -30,7 +30,7 @@ static int __strncmp(const char *s1, const char *s2, int len) __attribute__((noi
 static void __memset(void *s, char c, int len) __attribute__((noinline));
 static void __memcpy(void *dst, void *src, int len) __attribute__((noinline));
 static int __strlen(char *s) __attribute__((noinline));
-static inline void __memmove(void *dst, void *src, int len) __attribute__((always_inline));
+static inline void __memmove(void *dst, void *src, unsigned int len) __attribute__((always_inline));
 
 /* global variables */
 
@@ -235,9 +235,9 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 	_sb(-128, &buf[11]);
 	_sb(1, &buf[10]);
 
-	__memmove(p0 + ((i + 1) << 5), p0 + (i << 5), len);
-
-	__memcpy(p0 + (i << 5), buf, 32);
+	p = p0 + (i << 5);
+	__memmove(p0 + ((i + 1) << 5), p, len);
+	__memcpy(p, buf, 32);
 
 	_una_inc(&a0[36], 1);
 	_una_inc(&a0[48], 32);
@@ -249,7 +249,7 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 	for (i = 0; i < _una_lw(&a0[20]); i++) {
 		unsigned int v0, v1;
 
-		p = a0 + _una_lw(&a0[20]) + (i << 5);
+		p = a0 + _una_lw(&a0[16]) + (i << 5);
 		v0 = p[1];
 		v1 = p[0];
 		v0 <<= 8;
@@ -391,7 +391,7 @@ __strlen(char *s)
 }
 
 static inline void
-__memmove(void *dst, void *src, int len)
+__memmove(void *dst, void *src, unsigned int len)
 {
 	char *d = dst, *s = src;
 
