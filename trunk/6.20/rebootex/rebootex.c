@@ -1,36 +1,9 @@
 #include "psptypes.h"
 
-
-/* unaligned store and load */
-
-struct __una_u32 { u32 x __attribute__((packed)); };
-
-static inline u32
-_una_lw(const void *p)
-{
-	const struct __una_u32 *ptr = (const struct __una_u32 *) p;
-	return ptr->x;
-}
-
-static inline void
-_una_sw(u32 val, void *p)
-{
-	struct __una_u32 *ptr = (struct __una_u32 *) p;
-	ptr->x = val;
-}
-
-static inline void
-_una_inc(void *p, u32 i)
-{
-	struct __una_u32 *ptr = (struct __una_u32 *) p;
-	ptr->x += i;
-}
-
 static int __strncmp(const char *s1, const char *s2, int len) __attribute__((noinline));
 static void __memset(void *s, char c, int len) __attribute__((noinline));
 static void __memcpy(void *dst, void *src, int len) __attribute__((noinline));
 static int __strlen(char *s) __attribute__((noinline));
-static inline void __memmove(void *dst, void *src, unsigned int len) __attribute__((always_inline));
 
 /* global variables */
 
@@ -116,8 +89,6 @@ sub_88FC0188(char *s)
 		has_rtm_prx = 1;
 		return 0;
 	}
-
-	return reboot4(s);
 }
 
 /* 0x88FC021C */
@@ -189,67 +160,90 @@ sub_88FC0304(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	return f3(a0, a1, a2);
 }
 
+typedef struct {
+	char pad[16];
+	unsigned int o16; /* offset 16 */
+	unsigned int o20; /* offset 20 */
+	char pad2[8];
+	unsigned int o32; /* offset 32 */
+	unsigned int o36; /* offset 36 */
+	char pad3[8];
+	unsigned int o48; /* offset 48 */
+	unsigned int o52; /* offset 52 */
+} __attribute__((packed)) uk_t;
+
+typedef struct {
+	unsigned int o0; /* offset 0 */
+	unsigned int pad;
+	unsigned short o8; /* offset 8 */
+	unsigned char o10; /* offset 10 */
+	unsigned char o11; /* offset 11 */
+	char pad2[20];
+} __attribute__((packed)) uk2_t;
+
 /* 0x88FC0604 */
 int __attribute__((noinline))
 sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned int a3)
 {
-	unsigned char buf[32];
+	uk2_t uk2;
+	uk_t *uk = (uk_t *) a0;
 	unsigned int len, i, len2;
 	unsigned char *p0, *p1, *p2, *p;
+	unsigned char *buf;
 
-	p0 = a0 + _una_lw(&a0[32]); /* 32($fp) */
-	p1 = a0 + _una_lw(&a0[48]); /* $s5 */
-	p2 = a0 + _una_lw(&a0[52]); /* $s7 */
+	p0 = a0 + uk->o32;
+	p1 = a0 + uk->o48;
+	p2 = a0 + uk->o52;
 
 	len2 = __strlen(a2) + 1;
 	__memcpy(p2, a2, len2);
-	_una_inc(&a0[52], len2);
+	uk->o52 += len2;
 
-	if ((int) _una_lw(&a0[36]) < 0)
+	if ((int) uk->o36 < 0)
 		return -2;
 
 	i = 0;
 
-	if ((int) _una_lw(&a0[36]) > 0) {
+	if ((int) uk->o36 > 0) {
+		uk2_t *tmp = (uk2_t *) p0;
+
 		len = __strlen(a1) + 1;
-		p = p0;
-		for (; i < _una_lw(&a0[36]); i++) {
-			if (!__strncmp(p1 + _una_lw(p), a1, len))
+		for (; i < uk->o36; i++) {
+			if (!__strncmp(p1 + tmp->o0, a1, len))
 				break;
-			p += 32;
+			tmp++;
 		}
-		if (i == _una_lw(&a0[36]))
+		if (i == uk->o36)
 			return -2;
 	}
 
-	memset(buf, 0, 32);
+	memset(&uk2, 0, sizeof(uk2_t));
+	uk2.o0 = p2 - p1;
+	uk2.o8 = (unsigned short) a3;
+	uk2.o11 = -128;
+	uk2.o10 = 1;
 
-	len = _una_lw(&a0[36]);
-	len -= i;
-	len <<= 5;
+	len = (uk->o36 - i) << 5;
 	len += len2;
 	len += p2 - p1;
 
-	_sw(p2 - p1, &buf[0]);
-	_sh(a3, &buf[8]);
-	_sb(-128, &buf[11]);
-	_sb(1, &buf[10]);
-
 	p = p0 + (i << 5);
-	__memmove(p0 + ((i + 1) << 5), p, len);
-	__memcpy(p, buf, 32);
+	buf = alloca(len); /* allocation on stack. gcc built-in inline function */
+	__memcpy(buf, p, len);
+	__memcpy(p0 + ((i + 1) << 5), buf, len);
+	__memcpy(p, &uk2, sizeof(uk2_t));
 
-	_una_inc(&a0[36], 1);
-	_una_inc(&a0[48], 32);
-	_una_inc(&a0[52], 32);
-	
-	if ((int) _una_lw(&a0[20]) <= 0)
+	uk->o36 += 1;
+	uk->o48 += 32;
+	uk->o52 += 32;
+
+	if ((int) uk->o20 <= 0)
 		return -3;
 
-	for (i = 0; i < _una_lw(&a0[20]); i++) {
+	for (i = 0; i < uk->o20; i++) {
 		unsigned int v0, v1;
 
-		p = a0 + _una_lw(&a0[16]) + (i << 5);
+		p = a0 + uk->o16 + (i << 5);
 		v0 = p[1];
 		v1 = p[0];
 		v0 <<= 8;
@@ -278,13 +272,14 @@ sub_88FC0890(unsigned char *a0, unsigned int a1)
 	return r;
 }
 
-#define SAVE_CALL(__a, __f) do {\
-	_sw(MAKE_CALL(__f), (__a) + 0x88600000U);\
-} while (0)
-
 #define SAVE_VALUE(__a, __v) do {\
 	_sw((__v), (__a) + 0x88600000U);\
 } while (0)
+
+#define SAVE_CALL(__a, __f) do {\
+	SAVE_VALUE((__a), MAKE_CALL(__f));\
+} while (0)
+
 
 unsigned int __attribute__ ((section (".text.start")))
 _start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
@@ -312,7 +307,7 @@ _start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 
 	/* before return from sub_88605430 of reboot, call our sub_88FC0304 */
 	SAVE_VALUE(pf[13], 0x00113821); /* addu $a3, $zr, $s1 */
-	SAVE_VALUE(pf[14], (((((unsigned int ) sub_88FC0304) & 0x0FFFFFFC) >> 2) | 0x08000000));
+	SAVE_VALUE(pf[14], (((((unsigned int) sub_88FC0304) & 0x0FFFFFFC) >> 2) | 0x08000000)); /* j sub_88FC0304 */
 	SAVE_VALUE(pf[15], 0x02A0E821); /* addu $sp, $zr, $s5 */
 	SAVE_VALUE(pf[16], 0); /* nop */
 
@@ -394,18 +389,4 @@ __strlen(char *s)
 	}
 
 	return len;
-}
-
-static inline void
-__memmove(void *dst, void *src, unsigned int len)
-{
-	char *d = dst, *s = src;
-
-	if (s < d) {
-		for (s += len, d += len; len; --len)
-			*--d == *--s;
-	} else if (s != d) {
-		for (; len; --len)
-			*d++ = *s++;
-	}
 }
