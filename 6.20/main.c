@@ -85,36 +85,75 @@ power_callback(void)
 		0x00002D2C: 0x03C03821 '!8..' - addu       $a3, $fp, $zr
 
 	   It is entrance to reboot.bin.
-	   This line replaces entry to reboot.bin with 0x88FC0000, which
+	   This line replaces entry to reboot.bin with 0x88FC0000, where
 	   rebootex locates.
 	*/
 	_sw(0x3C0188FC, addr + ((m == 0) ? 0x2F74 : 0x2D24)); /* lui $at, 0x88FC */
 
-	/* Somehow prxtool doesn't work with sysmem.prx =(
-	 * But lucky that Davee posted on his blog:
+	/* sysmem.prx code:
 
-		0x0000CCB0: 0xACC205B0 '....' - sw         $v0, 1456($a2)
-		0x0000CCB4: 0x08003322 '"3..' - j          loc_0000CC88
-		0x0000CCB8: 0x00001021 '!...' - move       $v0, $zr
- 
-		; ======================================================
-		; Subroutine sceKernelPowerLockForUser - Address 0x0000CCBC - Aliases: sceKernelPowerLock
-		; Exported in sceSuspendForKernel
-		; Exported in sceSuspendForUser
-		sceKernelPowerLockForUser:
-			0x0000CCBC: 0x3C050000 '...<' - lui        $a1, 0x0
-			0x0000CCC0: 0x8CA305B4 '....' - lw         $v1, 1460($a1)
-			0x0000CCC4: 0x27BDFFF0 '...'' - addiu      $sp, $sp, -16
-			0x0000CCC8: 0xAFBF0000 '....' - sw         $ra, 0($sp)
-			0x0000CCCC: 0x14600004 '..`.' - bnez       $v1, loc_0000CCE0
-			0x0000CCD0: 0x00001021 '!...' - move       $v0, $zr
-			0x0000CCD4: 0x8FBF0000 '....' - lw         $ra, 0($sp)
-			 
-	   So the code below is to swap code from CCB0 to CCBC.
+	    loc_0000CC88:		; Refs: 0x0000CCB4 
+	    0x0000CC88: 0x8FBF0000 '....' - lw         $ra, 0($sp)
+		0x0000CC8C: 0x03E00008 '....' - jr         $ra
+		0x0000CC90: 0x27BD0010 '...'' - addiu      $sp, $sp, 16
+
+		loc_0000CC94:		; Refs: 0x0000CC74 
+		0x0000CC94: 0x0C0047E0 '.G..' - jal        sub_00011F80 ; disable interrupt and return current interrupt
+		0x0000CC98: 0x00000000 '....' - sll        $zr, $zr, 0
+		0x0000CC9C: 0x3C060000 '...<' - lui        $a2, 0x0
+		0x0000CCA0: 0x8CC505B0 '....' - lw         $a1, 1456($a2) ; a1 = _lw(0x000005B0)
+		0x0000CCA4: 0x00402021 '! @.' - addu       $a0, $v0, $zr ; a0 = interrupt
+		0x0000CCA8: 0x24A20001 '...$' - addiu      $v0, $a1, 1 ; v0 = a1 + 1
+		0x0000CCAC: 0x0C0047EB '.G..' - jal        sub_00011FAC ; restore interrupt. no return value
+		0x0000CCB0: 0xACC205B0 '....' - sw         $v0, 1456($a2) ; _sw(v0, 0x000005B0). it means increase value of *0x000005B0 by 1.
+		0x0000CCB4: 0x08003322 '"3..' - j          loc_0000CC88 ; return 0
+		0x0000CCB8: 0x00001021 '!...' - addu       $v0, $zr, $zr
+
+	The code above in C is:
+
+		u32 *p = 0x000005B0;
+		int s = irq_save();
+
+		*p++;
+		irq_restore(s);
+
+		return 0;
+
+	After modification, it turns to be:
+
+		u32 *p = 0x000005B0;
+		int s = irq_save();
+
+		*(u32 *) 0x00004230 = *p + 1; // XXX why 0x4230?
+		irq_restore(s);
+
+		return 0;
+
 	*/
 	_sw(0xACC24230, 0x8800CCB0); /* sw v0, 0x4230(a2) */
 	_sw(0x0A003322, 0x8800CCB4); /* j 0x0800CC88 */
 	_sw(0x00001021, 0x8800CCB8); /* addu $v0, $zr, $zr */
+
+	/* And it's entrance of sceKernelPowerLockForUser
+
+		; ============== sceKernelPowerLockForUser =================
+		0x0000CCBC: 0x3C050000 '...<' - lui        $a1, 0x0
+		0x0000CCC0: 0x8CA305B4 '....' - lw         $v1, 1460($a1) ; v1 = _lw(0x000005B4)
+		0x0000CCC4: 0x27BDFFF0 '...'' - addiu      $sp, $sp, -16
+		0x0000CCC8: 0xAFBF0000 '....' - sw         $ra, 0($sp)
+		0x0000CCCC: 0x14600004 '..`.' - bne        $v1, $zr, loc_0000CCE0 ; should be -1
+		0x0000CCD0: 0x00001021 '!...' - addu       $v0, $zr, $zr
+		0x0000CCD4: 0x8FBF0000 '....' - lw         $ra, 0($sp)
+
+		loc_0000CCD8:		; Refs: 0x0000CCEC 
+		0x0000CCD8: 0x03E00008 '....' - jr         $ra
+		0x0000CCDC: 0x27BD0010 '...'' - addiu      $sp, $sp, 16
+
+		loc_0000CCE0:		; Refs: 0x0000CCCC 
+		0x0000CCE0: 0x8C620010 '..b.' - lw         $v0, 16($v1) ; v0 = _lw(v1 + 4)
+		0x0000CCE4: 0x0040F809 '..@.' - jalr       $v0, $ra ; jmp to our code
+		0x0000CCE8: 0x00000000 '....' - sll        $zr, $zr, 0
+	 */
 	_sw(0x3C058801, 0x8800CCBC); /* lui $a1, 0x8801 */
 
 	func_rebootex = (void *) addr;

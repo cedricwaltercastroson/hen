@@ -296,17 +296,23 @@ _start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	else
 		pf = model1;
 
-	SAVE_CALL(pf[4], sub_88FC0188); /* call to reboot4 */
-	SAVE_CALL(pf[5], sub_88FC0100); /* call to reboot3 */
-	SAVE_CALL(pf[6], sub_88FC021C); /* call to reboot 5 */
-	SAVE_CALL(pf[7], sub_88FC0890); /* call to reboot 6 */
+	SAVE_CALL(pf[4], sub_88FC0188); /* replace reboot4 */
+	SAVE_CALL(pf[5], sub_88FC0100); /* replace reboot3 */
+	SAVE_CALL(pf[6], sub_88FC021C); /* replace reboot5 */
+	SAVE_CALL(pf[7], sub_88FC0890); /* replace reboot6 */
+
+	/* mask sub_88603798 of reboot */
 	SAVE_VALUE(pf[8], 0x03E00008); /* jr ra */
 	SAVE_VALUE(pf[9], 0x24020001); /* addiu $v1, $zr, 1 */
+
+	/* mask some condition branch in sub_88602670 of reboot */
 	SAVE_VALUE(pf[10], 0); /* nop */
 	SAVE_VALUE(pf[11], 0); /* nop */
 	SAVE_VALUE(pf[12], 0); /* nop */
+
+	/* before return from sub_88605430 of reboot, call our sub_88FC0304 */
 	SAVE_VALUE(pf[13], 0x00113821); /* addu $a3, $zr, $s1 */
-	SAVE_CALL(pf[14], sub_88FC0304);
+	SAVE_CALL(pf[14], (((((unsigned int ) sub_88FC0304) & 0x0FFFFFFC) >> 2) | 0x08000000));
 	SAVE_VALUE(pf[15], 0x02A0E821); /* addu $sp, $zr, $s5 */
 	SAVE_VALUE(pf[16], 0); /* nop */
 
