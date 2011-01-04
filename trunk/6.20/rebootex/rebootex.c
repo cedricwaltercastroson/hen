@@ -312,7 +312,7 @@ _start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 
 	/* before return from sub_88605430 of reboot, call our sub_88FC0304 */
 	SAVE_VALUE(pf[13], 0x00113821); /* addu $a3, $zr, $s1 */
-	SAVE_CALL(pf[14], (((((unsigned int ) sub_88FC0304) & 0x0FFFFFFC) >> 2) | 0x08000000));
+	SAVE_VALUE(pf[14], (((((unsigned int ) sub_88FC0304) & 0x0FFFFFFC) >> 2) | 0x08000000));
 	SAVE_VALUE(pf[15], 0x02A0E821); /* addu $sp, $zr, $s5 */
 	SAVE_VALUE(pf[16], 0); /* nop */
 
