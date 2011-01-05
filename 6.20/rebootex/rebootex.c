@@ -228,7 +228,7 @@ sub_88FC0304(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	return f3(a0, a1, a2);
 }
 
-unsigned int sub_88FC0890(unsigned char *a0, unsigned int a1) __attribute__((noinline));
+unsigned int sub_88FC0890(unsigned char, unsigned int) __attribute__((noinline));
 
 unsigned int __attribute__((noinline))
 main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
