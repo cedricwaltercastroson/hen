@@ -1,9 +1,16 @@
 #include "psptypes.h"
 
-static int __strncmp(const char *s1, const char *s2, int len) __attribute__((noinline));
-static void __memset(void *s, char c, int len) __attribute__((noinline));
-static void __memcpy(void *dst, void *src, int len) __attribute__((noinline));
-static int __strlen(char *s) __attribute__((noinline));
+#define MAKE_CALL(__f) \
+	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
+
+#define SAVE_VALUE(__a, __v) do {\
+	_sw((__v), (__a) + 0x88600000U);\
+} while (0)
+
+#define SAVE_CALL(__a, __f) do {\
+	SAVE_VALUE((__a), MAKE_CALL(__f));\
+} while (0)
+
 
 /* global variables */
 
@@ -17,7 +24,7 @@ unsigned int (*reboot4)(char *); /* ref 0x88FC71F0 */
 unsigned int (*reboot5)(void); /* ref 0x88FC71F4 */
 unsigned int (*reboot6)(unsigned char *, unsigned int); /* ref 0x88FC721C */
 
-unsigned int (*func1)(unsigned char *, unsigned char *, unsigned char *); /* ref 0x88FC7200 */
+unsigned int (*func1)(void *, unsigned int, void *); /* ref 0x88FC7200 */
 unsigned int (*func2)(unsigned char *, unsigned int); /* ref 0x88FC7218 */
 
 char *rtm_init; /* ref 0x88FC71FC */
@@ -53,6 +60,68 @@ static unsigned int size_sysctrl_bin;
 static unsigned char sysctrl_bin[];
 
 #include "sysctrl_bin.inc"
+
+/* util functions */
+
+static int __attribute__((noinline))
+__strncmp(const char *s1, const char *s2, int len)
+{
+	int i;
+
+	if (len <= 0)
+		return 0;
+
+	for (i = 0; *s1 == *s2 && i < len; ++s1, ++s2, ++i)
+		if (*s1 == 0)
+			return 0;
+
+	return *(unsigned char *) s1 - *(unsigned char *) s2;
+}
+
+static void __attribute__((noinline))
+__memset(void *p, char c, int len)
+{
+	int i;
+	char *s;
+
+	if (len <= 0)
+		return;
+
+	for (i = 0, s = p; i < len; i++, s++)
+		*s = c;
+
+	return;
+}
+
+static void __attribute__((noinline))
+__memcpy(void *dst, void *src, int len)
+{
+	int i;
+	char *d, *s;
+
+	if (len <= 0)
+		return;
+
+	d = dst;
+	s = src;
+	for (i = 0; i < len; i++, d++, s++)
+		*d = *s;
+
+	return;
+}
+
+static int __attribute__((noinline))
+__strlen(char *s)
+{
+	int len = 0;
+
+	while (*s) {
+		len++;
+		s++;
+	}
+
+	return len;
+}
 
 /* 0x88FC00D4 */
 void __attribute__((noinline))
@@ -109,18 +178,19 @@ sub_88FC021C(void)
 
 /* 0x88FC025C */
 unsigned int __attribute__((noinline))
-sub_88FC025C(char *a0, char *a1, char *a2)
+sub_88FC025C(void *a0, unsigned int a1, void *a2)
 {
 	unsigned int len;
 
-	if (_lw(a0 + 304) == 0xB301AEBAU) { /* 0xB301AEBA is in systemctrl header */
+	/* a0 is beginning of systemctrl. offset 304 is 0xB301AEBAU */
+	if (_lw(a0 + 304) == 0xB301AEBAU) {
 		len = _lw(a0 + 176);
 		__memcpy(a0, a0 + 336, len);
 		_sw(len, a2);
 		return 0;
 	}
 
-	return func1(a0, a1, a2); /* XXX at most 3 params */
+	return func1(a0, a1, a2);
 }
 
 /* 0x88FC02C8 */
@@ -131,14 +201,11 @@ sub_88FC02C8(unsigned char *s, unsigned int a1)
 
 	for (i = 0; i < 88; i++) {
 		if (s[i + 212] != 0)
-			return func2(s, a1); /* XXX at most 4 params. 2 seems reasonable */
+			return func2(s, a1);
 	}
 
 	return 0;
 }
-
-#define MAKE_CALL(__f) \
-	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
 
 /* 0x88FC0304 */
 unsigned int __attribute__((noinline))
@@ -159,6 +226,56 @@ sub_88FC0304(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	sub_88FC00D4();
 
 	return f3(a0, a1, a2);
+}
+
+unsigned int sub_88FC0890(unsigned char *a0, unsigned int a1) __attribute__((noinline));
+
+unsigned int __attribute__((noinline))
+main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
+{
+	unsigned int *pf;
+
+	if (_lw(0x88FB0000) == 0)
+		pf = model0;
+	else
+		pf = model1;
+
+	SAVE_CALL(pf[4], sub_88FC0188); /* replace reboot4 */
+	SAVE_CALL(pf[5], sub_88FC0100); /* replace reboot3 */
+	SAVE_CALL(pf[6], sub_88FC021C); /* replace reboot5 */
+	SAVE_CALL(pf[7], sub_88FC0890); /* replace reboot6 */
+
+	/* mask sub_88603798 of reboot */
+	SAVE_VALUE(pf[8], 0x03E00008); /* jr ra */
+	SAVE_VALUE(pf[9], 0x24020001); /* addiu $v1, $zr, 1 */
+
+	/* mask some condition branch in sub_88602670 of reboot */
+	SAVE_VALUE(pf[10], 0); /* nop */
+	SAVE_VALUE(pf[11], 0); /* nop */
+	SAVE_VALUE(pf[12], 0); /* nop */
+
+	/* before return from sub_88605430 of reboot, call our sub_88FC0304 */
+	SAVE_VALUE(pf[13], 0x00113821); /* addu $a3, $zr, $s1 */
+	SAVE_VALUE(pf[14], (((((unsigned int) sub_88FC0304) & 0x0FFFFFFC) >> 2) | 0x08000000)); /* j sub_88FC0304 */
+	SAVE_VALUE(pf[15], 0x02A0E821); /* addu $sp, $zr, $s5 */
+	SAVE_VALUE(pf[16], 0); /* nop */
+
+	reboot4 = (void *) (pf[0] | 0x88600000);
+	reboot3 = (void *) (pf[1] | 0x88600000);
+	reboot5 = (void *) (pf[2] | 0x88600000);
+	reboot6 = (void *) (pf[3] | 0x88600000);
+
+	rtm_init = *(char **) 0x88FB0010;
+	rtm_addr = *(char **) 0x88FB0014;
+	rtm_len = _lw(0x88FB0018);
+	rtm_op = _lw(0x88FB001C);
+
+	has_hen_prx = 0;
+	has_rtm_prx = 0;
+
+	sub_88FC00D4();
+
+	return reboot0(a0, a1, a2, a3);
 }
 
 typedef struct {
@@ -182,11 +299,13 @@ typedef struct {
 	char pad2[20];
 } __attribute__((packed)) uk2_t;
 
+
 /* 0x88FC0604 */
 int __attribute__((noinline))
 sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned int a3)
 {
 	uk2_t uk2;
+	uk2_t *puk2;
 	uk_t *uk = (uk_t *) a0;
 	unsigned int len, i, len2;
 	unsigned char *p0, *p1, *p2, *p;
@@ -200,25 +319,21 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 	__memcpy(p2, a2, len2);
 	uk->o52 += len2;
 
-	if ((int) uk->o36 < 0)
+	if ((int) uk->o36 <= 0)
 		return -2;
 
-	i = 0;
+	puk2 = (uk2_t *) p0;
+	len = __strlen(a1) + 1;
 
-	if ((int) uk->o36 > 0) {
-		uk2_t *tmp = (uk2_t *) p0;
-
-		len = __strlen(a1) + 1;
-		for (; i < uk->o36; i++) {
-			if (!__strncmp(p1 + tmp->ozr, a1, len))
-				break;
-			tmp++;
-		}
-		if (i == uk->o36)
-			return -2;
+	for (i = 0; i < uk->o36; i++) {
+		if (!__strncmp(p1 + puk2->ozr, a1, len))
+			break;
+		puk2++;
 	}
+	if (i == uk->o36)
+		return -2;
 
-	memset(&uk2, 0, sizeof(uk2_t));
+	__memset(&uk2, 0, sizeof(uk2_t));
 	uk2.ozr = p2 - p1;
 	uk2.o8 = (unsigned short) a3;
 	uk2.o11 = -128;
@@ -279,121 +394,9 @@ sub_88FC0890(unsigned char *a0, unsigned int a1)
 	return r;
 }
 
-#define SAVE_VALUE(__a, __v) do {\
-	_sw((__v), (__a) + 0x88600000U);\
-} while (0)
-
-#define SAVE_CALL(__a, __f) do {\
-	SAVE_VALUE((__a), MAKE_CALL(__f));\
-} while (0)
-
-
 unsigned int __attribute__ ((section (".text.start")))
 _start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 {
-	unsigned int *pf;
-
-	if (_lw(0x88FB0000) == 0)
-		pf = model0;
-	else
-		pf = model1;
-
-	SAVE_CALL(pf[4], sub_88FC0188); /* replace reboot4 */
-	SAVE_CALL(pf[5], sub_88FC0100); /* replace reboot3 */
-	SAVE_CALL(pf[6], sub_88FC021C); /* replace reboot5 */
-	SAVE_CALL(pf[7], sub_88FC0890); /* replace reboot6 */
-
-	/* mask sub_88603798 of reboot */
-	SAVE_VALUE(pf[8], 0x03E00008); /* jr ra */
-	SAVE_VALUE(pf[9], 0x24020001); /* addiu $v1, $zr, 1 */
-
-	/* mask some condition branch in sub_88602670 of reboot */
-	SAVE_VALUE(pf[10], 0); /* nop */
-	SAVE_VALUE(pf[11], 0); /* nop */
-	SAVE_VALUE(pf[12], 0); /* nop */
-
-	/* before return from sub_88605430 of reboot, call our sub_88FC0304 */
-	SAVE_VALUE(pf[13], 0x00113821); /* addu $a3, $zr, $s1 */
-	SAVE_VALUE(pf[14], (((((unsigned int) sub_88FC0304) & 0x0FFFFFFC) >> 2) | 0x08000000)); /* j sub_88FC0304 */
-	SAVE_VALUE(pf[15], 0x02A0E821); /* addu $sp, $zr, $s5 */
-	SAVE_VALUE(pf[16], 0); /* nop */
-
-	reboot4 = (void *) (pf[0] | 0x88600000);
-	reboot3 = (void *) (pf[1] | 0x88600000);
-	reboot5 = (void *) (pf[2] | 0x88600000);
-	reboot6 = (void *) (pf[3] | 0x88600000);
-
-	rtm_init = *(char **) 0x88FB0010;
-	rtm_addr = *(char **) 0x88FB0014;
-	rtm_len = _lw(0x88FB0018);
-	rtm_op = _lw(0x88FB001C);
-
-	has_hen_prx = 0;
-	has_rtm_prx = 0;
-
-	sub_88FC00D4();
-
-	return reboot0(a0, a1, a2, a3);
+	return main(a0, a1, a2, a3);
 }
 
-/* util functions */
-
-static int
-__strncmp(const char *s1, const char *s2, int len)
-{
-	int i;
-
-	if (len <= 0)
-		return 0;
-
-	for (i = 0; *s1 == *s2 && i < len; ++s1, ++s2, ++i)
-		if (*s1 == 0)
-			return 0;
-
-	return *(unsigned char *) s1 - *(unsigned char *) s2;
-}
-
-static void
-__memset(void *p, char c, int len)
-{
-	int i;
-	char *s;
-
-	if (len <= 0)
-		return;
-
-	for (i = 0, s = p; i < len; i++, s++)
-		*s = c;
-
-	return;
-}
-
-static void
-__memcpy(void *dst, void *src, int len)
-{
-	int i;
-	char *d, *s;
-
-	if (len <= 0)
-		return;
-
-	d = dst;
-	s = src;
-	for (i = 0; i < len; i++, d++, s++)
-		*d = *s;
-
-	return;
-}
-
-static int
-__strlen(char *s)
-{
-	int len = 0;
-
-	while (*s) {
-		len++;
-		s++;
-	}
-
-	return len;
-}
