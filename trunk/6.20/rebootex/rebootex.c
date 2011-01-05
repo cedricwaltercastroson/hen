@@ -14,27 +14,9 @@
 
 /* global variables */
 
-/* all rebootX come from reboot.bin */
-unsigned int (*reboot0)(unsigned int, unsigned int, unsigned int, unsigned int) = (void *) 0x88660000; /* ref 0x88FC09C8 */
-void (*reboot1)(void) = (void *) 0x88600938; /* ref 0x88FC09CC */
-void (*reboot2)(void) = (void *) 0x886001E4; /* ref 0x88FC09D0 */
-
-unsigned int (*reboot3)(unsigned int, unsigned int); /* ref 0x88FC7210 */
-unsigned int (*reboot4)(char *); /* ref 0x88FC71F0 */
-unsigned int (*reboot5)(void); /* ref 0x88FC71F4 */
-unsigned int (*reboot6)(unsigned char *, unsigned int); /* ref 0x88FC721C */
-
-unsigned int (*func1)(void *, unsigned int, void *); /* ref 0x88FC7200 */
-unsigned int (*func2)(unsigned char *, unsigned int); /* ref 0x88FC7218 */
-
-char *rtm_init; /* ref 0x88FC71FC */
-
-int has_hen_prx; /* ref 0x88FC7214 */
-int has_rtm_prx; /* ref 0x88FC71F8 */
-
-char *hen_str = "/hen.prx";
-char *rtm_str = "/rtm.prx";
-char *init_str = "/kd/init.prx";
+#define HEN_STR "/hen.prx"
+#define RTM_STR "/rtm.prx"
+#define INIT_STR "/kd/init.prx"
 
 unsigned int model0[] = {
 	0x000082AC, 0x00008420, 0x000083C4, 0x0000565C,
@@ -52,6 +34,23 @@ unsigned int model1[] = {
 	0x00007450
 }; /* ref 0x88FC0984 */
 
+/* all rebootX come from reboot.bin */
+unsigned int (*reboot0)(unsigned int, unsigned int, unsigned int, unsigned int) = (void *) 0x88660000; /* ref 0x88FC09C8 */
+void (*reboot1)(void) = (void *) 0x88600938; /* ref 0x88FC09CC */
+void (*reboot2)(void) = (void *) 0x886001E4; /* ref 0x88FC09D0 */
+
+unsigned int (*reboot3)(unsigned int, unsigned int); /* ref 0x88FC7210 */
+unsigned int (*reboot4)(char *); /* ref 0x88FC71F0 */
+unsigned int (*reboot5)(void); /* ref 0x88FC71F4 */
+unsigned int (*reboot6)(unsigned char *, unsigned int); /* ref 0x88FC721C */
+
+unsigned int (*func1)(void *, unsigned int, void *); /* ref 0x88FC7200 */
+unsigned int (*func2)(unsigned char *, unsigned int); /* ref 0x88FC7218 */
+
+int has_hen_prx; /* ref 0x88FC7214 */
+int has_rtm_prx; /* ref 0x88FC71F8 */
+
+char *rtm_init; /* ref 0x88FC71FC */
 char *rtm_addr; /* ref 0x88FC7204 */
 unsigned int rtm_len; /* ref 0x88FC720C */
 unsigned int rtm_op; /* ref 0x88FC7208 */
@@ -64,18 +63,19 @@ static unsigned char sysctrl_bin[];
 /* util functions */
 
 static int __attribute__((noinline))
-__strncmp(const char *s1, const char *s2, int len)
+__memcmp(const char *s1, const char *s2, int len)
 {
 	int i;
 
 	if (len <= 0)
 		return 0;
 
-	for (i = 0; *s1 == *s2 && i < len; ++s1, ++s2, ++i)
-		if (*s1 == 0)
-			return 0;
+	for (i = 0; i < len; s1++, s2++, i++) {
+		if (*s1 != *s2)
+			return *s1 - *s2;
+	}
 
-	return *(unsigned char *) s1 - *(unsigned char *) s2;
+	return 0;
 }
 
 static void __attribute__((noinline))
@@ -150,11 +150,11 @@ sub_88FC0100(unsigned int a0, unsigned int a1)
 unsigned int __attribute__((noinline))
 sub_88FC0188(char *s)
 {
-	if (!__strncmp(s, hen_str, 9)) {
+	if (!__memcmp(s, HEN_STR, 9)) {
 		has_hen_prx = 1;
 		return 0;
 	}
-	if (!__strncmp(s, rtm_str, 9)) {
+	if (!__memcmp(s, RTM_STR, 9)) {
 		has_rtm_prx = 1;
 		return 0;
 	}
@@ -326,7 +326,7 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 	len = __strlen(a1) + 1;
 
 	for (i = 0; i < uk->o36; i++) {
-		if (!__strncmp(p1 + puk2->ozr, a1, len))
+		if (!__memcmp(p1 + puk2->ozr, a1, len))
 			break;
 		puk2++;
 	}
@@ -387,9 +387,9 @@ sub_88FC0890(unsigned char *a0, unsigned int a1)
 	unsigned int r;
 	
 	r = reboot6(a0, a1);
-	sub_88FC0604(a0, init_str, hen_str, 255);
+	sub_88FC0604(a0, INIT_STR, HEN_STR, 255);
 	if (rtm_init)
-		sub_88FC0604(a0, rtm_init, rtm_str, rtm_op);
+		sub_88FC0604(a0, rtm_init, RTM_STR, rtm_op);
 
 	return r;
 }
