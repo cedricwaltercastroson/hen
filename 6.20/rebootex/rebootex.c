@@ -69,7 +69,8 @@ sub_88FC0100(unsigned int a0, unsigned int a1)
 	if (has_hen_prx) {
 		__memcpy((void *) 0x88FC0000, sysctrl_bin, size_sysctrl_bin);
 		return size_sysctrl_bin;
-	} else if (has_rtm_prx) {
+	}
+	if (has_rtm_prx) {
 		__memcpy((void *) 0x88FC0000, rtm_addr, rtm_len);
 		return rtm_len;
 	}
@@ -84,11 +85,11 @@ sub_88FC0188(char *s)
 		has_hen_prx = 1;
 		return 0;
 	}
-	
 	if (!__strncmp(s, rtm_str, 9)) {
 		has_rtm_prx = 1;
 		return 0;
 	}
+	return reboot4(s);
 }
 
 /* 0x88FC021C */
@@ -173,7 +174,7 @@ typedef struct {
 } __attribute__((packed)) uk_t;
 
 typedef struct {
-	unsigned int o0; /* offset 0 */
+	unsigned int ozr; /* offset 0 */
 	unsigned int pad;
 	unsigned short o8; /* offset 8 */
 	unsigned char o10; /* offset 10 */
@@ -209,7 +210,7 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 
 		len = __strlen(a1) + 1;
 		for (; i < uk->o36; i++) {
-			if (!__strncmp(p1 + tmp->o0, a1, len))
+			if (!__strncmp(p1 + tmp->ozr, a1, len))
 				break;
 			tmp++;
 		}
@@ -218,7 +219,7 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 	}
 
 	memset(&uk2, 0, sizeof(uk2_t));
-	uk2.o0 = p2 - p1;
+	uk2.ozr = p2 - p1;
 	uk2.o8 = (unsigned short) a3;
 	uk2.o11 = -128;
 	uk2.o10 = 1;
@@ -241,9 +242,15 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 		return -3;
 
 	for (i = 0; i < uk->o20; i++) {
+#if 0
+		unsigned short *tmp = (unsigned short *) (a0 + uk->o16 + (i << 5));
+
+		(*tmp)++;
+#endif
 		unsigned int v0, v1;
 
 		p = a0 + uk->o16 + (i << 5);
+
 		v0 = p[1];
 		v1 = p[0];
 		v0 <<= 8;
