@@ -1,10 +1,12 @@
 #include "psptypes.h"
 
+#define REBOOT_BASE 0x88600000
+
 #define MAKE_CALL(__f) \
 	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
 
 #define SAVE_VALUE(__a, __v) do {\
-	_sw((__v), (__a) + 0x88600000U);\
+	_sw((__v), (__a) + REBOOT_BASE);\
 } while (0)
 
 #define SAVE_CALL(__a, __f) do {\
@@ -35,7 +37,7 @@ unsigned int model1[] = {
 }; /* ref 0x88FC0984 */
 
 /* all rebootX come from reboot.bin */
-unsigned int (*reboot0)(unsigned int, unsigned int, unsigned int, unsigned int) = (void *) 0x88600000; /* ref 0x88FC09C8 */
+unsigned int (*reboot0)(unsigned int, unsigned int, unsigned int, unsigned int) = (void *) REBOOT_BASE; /* ref 0x88FC09C8 */
 void (*reboot1)(void) = (void *) 0x88600938; /* ref 0x88FC09CC */
 void (*reboot2)(void) = (void *) 0x886001E4; /* ref 0x88FC09D0 */
 
@@ -260,10 +262,10 @@ main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	SAVE_VALUE(pf[15], 0x02A0E821); /* addu $sp, $zr, $s5 */
 	SAVE_VALUE(pf[16], 0); /* nop */
 
-	reboot4 = (void *) (pf[0] | 0x88600000);
-	reboot3 = (void *) (pf[1] | 0x88600000);
-	reboot5 = (void *) (pf[2] | 0x88600000);
-	reboot6 = (void *) (pf[3] | 0x88600000);
+	reboot4 = (void *) (pf[0] | REBOOT_BASE);
+	reboot3 = (void *) (pf[1] | REBOOT_BASE);
+	reboot5 = (void *) (pf[2] | REBOOT_BASE);
+	reboot6 = (void *) (pf[3] | REBOOT_BASE);
 
 	rtm_init = *(char **) 0x88FB0010;
 	rtm_addr = *(char **) 0x88FB0014;
