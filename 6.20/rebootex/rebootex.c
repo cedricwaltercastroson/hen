@@ -381,13 +381,13 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 }
 
 /* 0x88FC0890 */
-unsigned int __attribute__((noinline))
+int __attribute__((noinline))
 sub_88FC0890(unsigned char *a0, unsigned int a1)
 {
-	unsigned int r;
+	int r;
 	
-	r = reboot6(a0, a1);
-	sub_88FC0604(a0, INIT_STR, HEN_STR, 255);
+	reboot6(a0, a1);
+	r = sub_88FC0604(a0, INIT_STR, HEN_STR, 255);
 	if (rtm_init)
 		sub_88FC0604(a0, rtm_init, RTM_STR, rtm_op);
 	return r;
