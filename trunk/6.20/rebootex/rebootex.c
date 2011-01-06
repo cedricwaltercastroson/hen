@@ -230,7 +230,7 @@ sub_88FC0304(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	return f3(a0, a1, a2);
 }
 
-int sub_88FC0890(unsigned char *, unsigned int) __attribute__((noinline));
+unsigned int sub_88FC0890(unsigned char *, unsigned int) __attribute__((noinline));
 
 unsigned int __attribute__((noinline))
 main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
@@ -346,6 +346,7 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 	len += p2 - p1;
 
 	p = p0 + (i << 5);
+	/* XXX alloca can be replaced by memmove */
 	buf = alloca(len); /* allocation on stack. gcc built-in inline function */
 	__memcpy(buf, p, len);
 	__memcpy(p0 + ((i + 1) << 5), buf, len);
@@ -383,13 +384,13 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 }
 
 /* 0x88FC0890 */
-int __attribute__((noinline))
+unsigned int __attribute__((noinline))
 sub_88FC0890(unsigned char *a0, unsigned int a1)
 {
-	int r;
+	unsigned int r;
 	
-	reboot6(a0, a1);
-	r = sub_88FC0604(a0, INIT_STR, HEN_STR, 255);
+	r = reboot6(a0, a1);
+	sub_88FC0604(a0, INIT_STR, HEN_STR, 255);
 	if (rtm_init)
 		sub_88FC0604(a0, rtm_init, RTM_STR, rtm_op);
 	return r;
