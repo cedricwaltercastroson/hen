@@ -53,7 +53,7 @@ int has_hen_prx; /* ref 0x88FC7214 */
 int has_rtm_prx; /* ref 0x88FC71F8 */
 
 char *rtm_init; /* ref 0x88FC71FC */
-char *rtm_addr; /* ref 0x88FC7204 */
+void *rtm_addr; /* ref 0x88FC7204 */
 unsigned int rtm_len; /* ref 0x88FC720C */
 unsigned int rtm_op; /* ref 0x88FC7208 */
 
@@ -230,7 +230,7 @@ sub_88FC0304(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	return f3(a0, a1, a2);
 }
 
-unsigned int sub_88FC0890(unsigned char *, unsigned int) __attribute__((noinline));
+int sub_88FC0890(unsigned char *, unsigned int) __attribute__((noinline));
 
 unsigned int __attribute__((noinline))
 main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
@@ -268,7 +268,7 @@ main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	reboot6 = (void *) (pf[3] | REBOOT_BASE);
 
 	rtm_init = *(char **) 0x88FB0010;
-	rtm_addr = *(char **) 0x88FB0014;
+	rtm_addr = *(void **) 0x88FB0014;
 	rtm_len = _lw(0x88FB0018);
 	rtm_op = _lw(0x88FB001C);
 
