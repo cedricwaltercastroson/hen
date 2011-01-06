@@ -35,7 +35,7 @@ unsigned int model1[] = {
 }; /* ref 0x88FC0984 */
 
 /* all rebootX come from reboot.bin */
-unsigned int (*reboot0)(unsigned int, unsigned int, unsigned int, unsigned int) = (void *) 0x88660000; /* ref 0x88FC09C8 */
+unsigned int (*reboot0)(unsigned int, unsigned int, unsigned int, unsigned int) = (void *) 0x88600000; /* ref 0x88FC09C8 */
 void (*reboot1)(void) = (void *) 0x88600938; /* ref 0x88FC09CC */
 void (*reboot2)(void) = (void *) 0x886001E4; /* ref 0x88FC09D0 */
 
@@ -70,9 +70,9 @@ __memcmp(const char *s1, const char *s2, int len)
 	if (len <= 0)
 		return 0;
 
-	for (i = 0; i < len; s1++, s2++, i++) {
-		if (*s1 != *s2)
-			return *s1 - *s2;
+	for (i = 0; i < len; i++) {
+		if (s1[i] != s2[i])
+			return s1[i] - s2[i];
 	}
 
 	return 0;
@@ -87,8 +87,8 @@ __memset(void *p, char c, int len)
 	if (len <= 0)
 		return;
 
-	for (i = 0, s = p; i < len; i++, s++)
-		*s = c;
+	for (i = 0, s = p; i < len; i++)
+		s[i] = c;
 
 	return;
 }
@@ -390,7 +390,6 @@ sub_88FC0890(unsigned char *a0, unsigned int a1)
 	sub_88FC0604(a0, INIT_STR, HEN_STR, 255);
 	if (rtm_init)
 		sub_88FC0604(a0, rtm_init, RTM_STR, rtm_op);
-
 	return r;
 }
 
