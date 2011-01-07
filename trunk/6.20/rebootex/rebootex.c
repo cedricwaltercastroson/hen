@@ -45,7 +45,7 @@ int (*sceBootLfatClose)(void);
 int (*sceBootDecryptPSP)(void *, void *);
 
 int (*sceDecryptPSP)(void *, unsigned int, void *);
-int (*sceSignCheck)(unsigned char *, unsigned int);
+int (*sceKernelCheckExecFile)(unsigned char *, unsigned int);
 
 int has_hen_prx;
 
@@ -187,13 +187,13 @@ secDecryptPSPPatched(void *a0, unsigned int a1, void *a2)
 }
 
 int __attribute__((noinline))
-sceSignCheckPatched(unsigned char *s, unsigned int a1)
+sceKernelCheckExecFilePatched(unsigned char *s, unsigned int a1)
 {
 	int i;
 
 	for (i = 0; i < 88; i++) {
 		if (s[i + 212] != 0)
-			return sceSignCheck(s, a1);
+			return sceKernelCheckExecFile(s, a1);
 	}
 
 	return 0;
@@ -204,7 +204,7 @@ PatchLoadCore(void *a0, void *a1, void *a2, int (*module_start)(void *, void *, 
 {
 	u32 text_addr = (u32) module_start;
 	unsigned int f1 = MAKE_CALL(secDecryptPSPPatched);
-	unsigned int f2 = MAKE_CALL(sceSignCheckPatched);
+	unsigned int f2 = MAKE_CALL(sceKernelCheckExecFilePatched);
 
 	_sw(f1, text_addr + 13792);
 	_sw(f1, text_addr + 23852);
@@ -213,7 +213,7 @@ PatchLoadCore(void *a0, void *a1, void *a2, int (*module_start)(void *, void *, 
 	_sw(f2, text_addr+ 24088);
 
 	sceDecryptPSP = (void *) (text_addr + 30640);
-	sceSignCheck = (void *) (text_addr + 30616);
+	sceKernelCheckExecFile = (void *) (text_addr + 30616);
 
 	ClearCaches();
 
