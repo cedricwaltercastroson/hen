@@ -37,17 +37,17 @@ unsigned int model1[] = {
 }; /* ref 0x88FC0984 */
 
 /* all rebootX come from reboot.bin */
-unsigned int (*reboot0)(unsigned int, unsigned int, unsigned int, unsigned int) = (void *) REBOOT_BASE; /* ref 0x88FC09C8 */
-void (*reboot1)(void) = (void *) 0x88600938; /* ref 0x88FC09CC */
-void (*reboot2)(void) = (void *) 0x886001E4; /* ref 0x88FC09D0 */
+int (*Real_Reboot)(void *, void *, void *, void *) = (void *) REBOOT_BASE; /* ref 0x88FC09C8 */
+void (*DcacheClear)(void) = (void *) 0x88600938; /* ref 0x88FC09CC */
+void (*IcacheClear)(void) = (void *) 0x886001E4; /* ref 0x88FC09D0 */
 
-unsigned int (*reboot3)(unsigned int, unsigned int); /* ref 0x88FC7210 */
-unsigned int (*reboot4)(char *); /* ref 0x88FC71F0 */
-unsigned int (*reboot5)(void); /* ref 0x88FC71F4 */
+int (*sceBootLfatRead)(void *, void *); /* ref 0x88FC7210 */
+int (*sceBootLfatOpen)(char *); /* ref 0x88FC71F0 */
+int (*sceBootLfatClose)(void); /* ref 0x88FC71F4 */
 unsigned int (*reboot6)(unsigned char *, unsigned int); /* ref 0x88FC721C */
 
-unsigned int (*func1)(void *, unsigned int, void *); /* ref 0x88FC7200 */
-unsigned int (*func2)(unsigned char *, unsigned int); /* ref 0x88FC7218 */
+int (*func1)(void *, unsigned int, void *); /* ref 0x88FC7200 */
+int (*func2)(unsigned char *, unsigned int); /* ref 0x88FC7218 */
 
 int has_hen_prx; /* ref 0x88FC7214 */
 int has_rtm_prx; /* ref 0x88FC71F8 */
@@ -127,15 +127,15 @@ __strlen(char *s)
 
 /* 0x88FC00D4 */
 void __attribute__((noinline))
-sub_88FC00D4(void)
+ClearCaches(void)
 {
-	reboot1();
-	reboot2();
+	DcacheClear();
+	IcacheClear();
 }
 
 /* 0x88FC0100 */
-unsigned int __attribute__((noinline))
-sub_88FC0100(unsigned int a0, unsigned int a1)
+int __attribute__((noinline))
+sceBootLfatReadPatched(void *a0, void *a1)
 {
 	if (has_hen_prx) {
 		__memcpy((void *) 0x88FC0000, sysctrl_bin, size_sysctrl_bin);
@@ -145,12 +145,12 @@ sub_88FC0100(unsigned int a0, unsigned int a1)
 		__memcpy((void *) 0x88FC0000, rtm_addr, rtm_len);
 		return rtm_len;
 	}
-	return reboot3(a0, a1);
+	return sceBootLfatRead(a0, a1);
 }
 
 /* 0x88FC0188 */
-unsigned int __attribute__((noinline))
-sub_88FC0188(char *s)
+int __attribute__((noinline))
+sceBootLfatOpenPatched(char *s)
 {
 	if (!__memcmp(s, HEN_STR, 9)) {
 		has_hen_prx = 1;
@@ -160,12 +160,12 @@ sub_88FC0188(char *s)
 		has_rtm_prx = 1;
 		return 0;
 	}
-	return reboot4(s);
+	return sceBootLfatOpen(s);
 }
 
 /* 0x88FC021C */
-unsigned int __attribute__((noinline))
-sub_88FC021C(void)
+int __attribute__((noinline))
+sceBootLfatClosePatched(void)
 {
 	if (has_hen_prx) {
 		has_hen_prx = 0;
@@ -175,11 +175,11 @@ sub_88FC021C(void)
 		has_rtm_prx = 0;
 		return 0;
 	}
-	return reboot5();
+	return sceBootLfatClose();
 }
 
 /* 0x88FC025C */
-unsigned int __attribute__((noinline))
+int __attribute__((noinline))
 sub_88FC025C(void *a0, unsigned int a1, void *a2)
 {
 	unsigned int len;
@@ -196,7 +196,7 @@ sub_88FC025C(void *a0, unsigned int a1, void *a2)
 }
 
 /* 0x88FC02C8 */
-unsigned int __attribute__((noinline))
+int __attribute__((noinline))
 sub_88FC02C8(unsigned char *s, unsigned int a1)
 {
 	int i;
@@ -210,30 +210,31 @@ sub_88FC02C8(unsigned char *s, unsigned int a1)
 }
 
 /* 0x88FC0304 */
-unsigned int __attribute__((noinline))
-sub_88FC0304(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
+int __attribute__((noinline))
+PatchLoadCore(void *a0, void *a1, void *a2, int (*module_start)(void *, void *, void*))
 {
+	u32 text_addr = (u32) module_start;
 	unsigned int f1 = MAKE_CALL(sub_88FC025C);
 	unsigned int f2 = MAKE_CALL(sub_88FC02C8);
-	unsigned int (*f3)(unsigned int, unsigned int, unsigned int) = (void *) a3;
 
-	_sw(f1, a3 + 13792);
-	_sw(f1, a3 + 23852);
-	_sw(f2, a3 + 23888);
-	_sw(f2, a3 + 23936);
-	_sw(f2, a3 + 24088);
+	_sw(f1, text_addr + 13792);
+	_sw(f1, text_addr + 23852);
+	_sw(f2, text_addr + 23888);
+	_sw(f2, text_addr + 23936);
+	_sw(f2, text_addr+ 24088);
 
-	func1 = (void *) (a3 + 30640);
-	func2 = (void *) (a3 + 30616);
-	sub_88FC00D4();
+	func1 = (void *) (text_addr + 30640);
+	func2 = (void *) (text_addr + 30616);
 
-	return f3(a0, a1, a2);
+	ClearCaches();
+
+	return module_start(a0, a1, a2);
 }
 
-unsigned int sub_88FC0890(unsigned char *, unsigned int) __attribute__((noinline));
+unsigned int sub_88FC0890(void *, void *) __attribute__((noinline));
 
-unsigned int __attribute__((noinline))
-main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
+int __attribute__((noinline))
+main(void *a0, void *a1, void *a2, void *a3)
 {
 	unsigned int *pf;
 
@@ -242,9 +243,9 @@ main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	else
 		pf = model1;
 
-	SAVE_CALL(pf[4], sub_88FC0188); /* replace reboot4 */
-	SAVE_CALL(pf[5], sub_88FC0100); /* replace reboot3 */
-	SAVE_CALL(pf[6], sub_88FC021C); /* replace reboot5 */
+	SAVE_CALL(pf[4], sceBootLfatOpenPatched); /* replace sceBootLfatOpen */
+	SAVE_CALL(pf[5], sceBootLfatReadPatched); /* replace sceBootLfatRead */
+	SAVE_CALL(pf[6], sceBootLfatClosePatched); /* replace sceBootLfatClose */
 	SAVE_CALL(pf[7], sub_88FC0890); /* replace reboot6 */
 
 	/* mask sub_88603798 of reboot */
@@ -256,15 +257,15 @@ main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	SAVE_VALUE(pf[11], 0); /* nop */
 	SAVE_VALUE(pf[12], 0); /* nop */
 
-	/* before return from sub_88605430 of reboot, call our sub_88FC0304 */
+	/* before return from sub_88605430 of reboot, call our PatchLoadCore */
 	SAVE_VALUE(pf[13], 0x00113821); /* addu $a3, $zr, $s1 */
-	SAVE_VALUE(pf[14], (((((unsigned int) sub_88FC0304) & 0x0FFFFFFC) >> 2) | 0x08000000)); /* j sub_88FC0304 */
+	SAVE_VALUE(pf[14], (((((unsigned int) PatchLoadCore) & 0x0FFFFFFC) >> 2) | 0x08000000)); /* j PatchLoadCore */
 	SAVE_VALUE(pf[15], 0x02A0E821); /* addu $sp, $zr, $s5 */
 	SAVE_VALUE(pf[16], 0); /* nop */
 
-	reboot4 = (void *) (pf[0] | REBOOT_BASE);
-	reboot3 = (void *) (pf[1] | REBOOT_BASE);
-	reboot5 = (void *) (pf[2] | REBOOT_BASE);
+	sceBootLfatOpen = (void *) (pf[0] | REBOOT_BASE);
+	sceBootLfatRead = (void *) (pf[1] | REBOOT_BASE);
+	sceBootLfatClose = (void *) (pf[2] | REBOOT_BASE);
 	reboot6 = (void *) (pf[3] | REBOOT_BASE);
 
 	rtm_init = *(char **) 0x88FB0010;
@@ -275,11 +276,12 @@ main(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
 	has_hen_prx = 0;
 	has_rtm_prx = 0;
 
-	sub_88FC00D4();
+	ClearCaches();
 
-	return reboot0(a0, a1, a2, a3);
+	return Real_Reboot(a0, a1, a2, a3);
 }
 
+/* XXX probably BtcnfHeader */
 typedef struct {
 	char pad[16];
 	unsigned int o16; /* offset 16 */
@@ -292,6 +294,7 @@ typedef struct {
 	unsigned int o52; /* offset 52 */
 } __attribute__((packed)) uk_t;
 
+/* XXX probably ModuleEntry */
 typedef struct {
 	unsigned int ozr; /* offset 0 */
 	unsigned int pad;
@@ -300,6 +303,15 @@ typedef struct {
 	unsigned char o11; /* offset 11 */
 	char pad2[20];
 } __attribute__((packed)) uk2_t;
+/*
+typedef struct {
+        u32 name;
+        u32 unk0;
+        u32 flags;
+        u32 unk1;
+        u8  hash[16];
+}ModuleEntry;
+*/
 
 
 /* 0x88FC0604 */
@@ -385,7 +397,7 @@ sub_88FC0604(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned i
 
 /* 0x88FC0890 */
 unsigned int __attribute__((noinline))
-sub_88FC0890(unsigned char *a0, unsigned int a1)
+sub_88FC0890(void *a0, void *a1)
 {
 	unsigned int r;
 	
@@ -396,8 +408,8 @@ sub_88FC0890(unsigned char *a0, unsigned int a1)
 	return r;
 }
 
-unsigned int __attribute__ ((section (".text.start")))
-_start(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3)
+int __attribute__ ((section (".text.start")))
+_start(void *a0, void *a1, void *a2, void *a3)
 {
 	return main(a0, a1, a2, a3);
 }
