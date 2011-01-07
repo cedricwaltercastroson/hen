@@ -24,7 +24,7 @@ unsigned int model0[] = {
 	0x00003798, 0x0000379C, 0x000026D4, 0x00002728,
 	0x00002740, 0x00005550, 0x00005554, 0x00005558,
 	0x00007388
-}; /* ref 0x88FC0940 */
+};
 
 unsigned int model1[] = {
 	0x00008374, 0x000084E8, 0x0000848C, 0x00005724,
@@ -32,22 +32,22 @@ unsigned int model1[] = {
 	0x00003860, 0x00003864, 0x0000279C, 0x000027F0,
 	0x00002808, 0x00005618, 0x0000561C, 0x00005620,
 	0x00007450
-}; /* ref 0x88FC0984 */
+};
 
 /* all rebootX come from reboot.bin */
-int (*RebootEntry)(void *, void *, void *, void *) = (void *) REBOOT_BASE; /* ref 0x88FC09C8 */
-void (*DcacheClear)(void) = (void *) 0x88600938; /* ref 0x88FC09CC */
-void (*IcacheClear)(void) = (void *) 0x886001E4; /* ref 0x88FC09D0 */
+int (*RebootEntry)(void *, void *, void *, void *) = (void *) REBOOT_BASE;
+void (*DcacheClear)(void) = (void *) 0x88600938;
+void (*IcacheClear)(void) = (void *) 0x886001E4;
 
-int (*sceBootLfatRead)(void *, void *); /* ref 0x88FC7210 */
-int (*sceBootLfatOpen)(char *); /* ref 0x88FC71F0 */
-int (*sceBootLfatClose)(void); /* ref 0x88FC71F4 */
-unsigned int (*reboot6)(void *, void *); /* ref 0x88FC721C */
+int (*sceBootLfatRead)(void *, void *);
+int (*sceBootLfatOpen)(char *);
+int (*sceBootLfatClose)(void);
+int (*sceBootDecryptPSP)(void *, void *);
 
-int (*func1)(void *, unsigned int, void *); /* ref 0x88FC7200 */
-int (*func2)(unsigned char *, unsigned int); /* ref 0x88FC7218 */
+int (*sceDecryptPSP)(void *, unsigned int, void *);
+int (*sceSignCheck)(unsigned char *, unsigned int);
 
-int has_hen_prx; /* ref 0x88FC7214 */
+int has_hen_prx;
 
 static unsigned int size_sysctrl_bin;
 static unsigned char sysctrl_bin[];
@@ -133,7 +133,6 @@ __memmove(void *dst, void *src, int len)
 	}
 }
 
-/* 0x88FC00D4 */
 void __attribute__((noinline))
 ClearCaches(void)
 {
@@ -141,7 +140,6 @@ ClearCaches(void)
 	IcacheClear();
 }
 
-/* 0x88FC0100 */
 int __attribute__((noinline))
 sceBootLfatReadPatched(void *a0, void *a1)
 {
@@ -152,7 +150,6 @@ sceBootLfatReadPatched(void *a0, void *a1)
 	return sceBootLfatRead(a0, a1);
 }
 
-/* 0x88FC0188 */
 int __attribute__((noinline))
 sceBootLfatOpenPatched(char *s)
 {
@@ -163,7 +160,6 @@ sceBootLfatOpenPatched(char *s)
 	return sceBootLfatOpen(s);
 }
 
-/* 0x88FC021C */
 int __attribute__((noinline))
 sceBootLfatClosePatched(void)
 {
@@ -174,9 +170,8 @@ sceBootLfatClosePatched(void)
 	return sceBootLfatClose();
 }
 
-/* 0x88FC025C */
 int __attribute__((noinline))
-sub_88FC025C(void *a0, unsigned int a1, void *a2)
+secDecryptPSPPatched(void *a0, unsigned int a1, void *a2)
 {
 	unsigned int len;
 
@@ -188,30 +183,28 @@ sub_88FC025C(void *a0, unsigned int a1, void *a2)
 		return 0;
 	}
 
-	return func1(a0, a1, a2);
+	return sceDecryptPSP(a0, a1, a2);
 }
 
-/* 0x88FC02C8 */
 int __attribute__((noinline))
-sub_88FC02C8(unsigned char *s, unsigned int a1)
+sceSignCheckPatched(unsigned char *s, unsigned int a1)
 {
 	int i;
 
 	for (i = 0; i < 88; i++) {
 		if (s[i + 212] != 0)
-			return func2(s, a1);
+			return sceSignCheck(s, a1);
 	}
 
 	return 0;
 }
 
-/* 0x88FC0304 */
 int __attribute__((noinline))
 PatchLoadCore(void *a0, void *a1, void *a2, int (*module_start)(void *, void *, void*))
 {
 	u32 text_addr = (u32) module_start;
-	unsigned int f1 = MAKE_CALL(sub_88FC025C);
-	unsigned int f2 = MAKE_CALL(sub_88FC02C8);
+	unsigned int f1 = MAKE_CALL(secDecryptPSPPatched);
+	unsigned int f2 = MAKE_CALL(sceSignCheckPatched);
 
 	_sw(f1, text_addr + 13792);
 	_sw(f1, text_addr + 23852);
@@ -219,15 +212,15 @@ PatchLoadCore(void *a0, void *a1, void *a2, int (*module_start)(void *, void *, 
 	_sw(f2, text_addr + 23936);
 	_sw(f2, text_addr+ 24088);
 
-	func1 = (void *) (text_addr + 30640);
-	func2 = (void *) (text_addr + 30616);
+	sceDecryptPSP = (void *) (text_addr + 30640);
+	sceSignCheck = (void *) (text_addr + 30616);
 
 	ClearCaches();
 
 	return module_start(a0, a1, a2);
 }
 
-unsigned int sub_88FC0890(void *, void *) __attribute__((noinline));
+int sceBootDecryptPSPPatched(void *, void *) __attribute__((noinline));
 
 int __attribute__((noinline))
 main(void *a0, void *a1, void *a2, void *a3)
@@ -242,7 +235,7 @@ main(void *a0, void *a1, void *a2, void *a3)
 	SAVE_CALL(pf[4], sceBootLfatOpenPatched); /* replace sceBootLfatOpen */
 	SAVE_CALL(pf[5], sceBootLfatReadPatched); /* replace sceBootLfatRead */
 	SAVE_CALL(pf[6], sceBootLfatClosePatched); /* replace sceBootLfatClose */
-	SAVE_CALL(pf[7], sub_88FC0890); /* replace reboot6 */
+	SAVE_CALL(pf[7], sceBootDecryptPSPPatched); /* replace sceBootDecryptPSP */
 
 	/* mask sub_88603798 of reboot */
 	SAVE_VALUE(pf[8], 0x03E00008); /* jr ra */
@@ -262,7 +255,7 @@ main(void *a0, void *a1, void *a2, void *a3)
 	sceBootLfatOpen = (void *) (pf[0] | REBOOT_BASE);
 	sceBootLfatRead = (void *) (pf[1] | REBOOT_BASE);
 	sceBootLfatClose = (void *) (pf[2] | REBOOT_BASE);
-	reboot6 = (void *) (pf[3] | REBOOT_BASE);
+	sceBootDecryptPSP = (void *) (pf[3] | REBOOT_BASE);
 
 	has_hen_prx = 0;
 
@@ -304,7 +297,6 @@ typedef struct {
 */
 
 
-/* 0x88FC0604 */
 int __attribute__((noinline))
 tag_module(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned int a3)
 {
@@ -366,14 +358,14 @@ tag_module(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned int
 	return 0;
 }
 
-/* 0x88FC0890 */
-unsigned int __attribute__((noinline))
-sub_88FC0890(void *a0, void *a1)
+int __attribute__((noinline))
+sceBootDecryptPSPPatched(void *a0, void *a1)
 {
-	unsigned int r;
+	int r;
 	
-	r = reboot6(a0, a1);
+	r = sceBootDecryptPSP(a0, a1);
 	tag_module(a0, "/kd/init.prx", HEN_STR, 255);
+
 	return r;
 }
 
