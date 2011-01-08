@@ -202,18 +202,18 @@ sceKernelCheckExecFilePatched(unsigned char *s, unsigned int a1)
 int __attribute__((noinline))
 PatchLoadCore(void *a0, void *a1, void *a2, int (*module_start)(void *, void *, void*))
 {
-	u32 text_addr = (u32) module_start;
+	u32 text_addr = (u32) module_start; /* loadcore.prx offset 0xBC4 */
 	unsigned int f1 = MAKE_CALL(secDecryptPSPPatched);
 	unsigned int f2 = MAKE_CALL(sceKernelCheckExecFilePatched);
 
-	_sw(f1, text_addr + 13792);
-	_sw(f1, text_addr + 23852);
-	_sw(f2, text_addr + 23888);
-	_sw(f2, text_addr + 23936);
-	_sw(f2, text_addr+ 24088);
+	_sw(f1, text_addr + 13792); /* 0x41A4 mask call to sceDecryptPSP*/
+	_sw(f1, text_addr + 23852); /* 0x68F0 mask call to sceDecryptPSP */
+	_sw(f2, text_addr + 23888); /* 0x6914 mask call to sceKernelCheckExecFile */
+	_sw(f2, text_addr + 23936); /* 0x6944 mask call to sceKernelCheckExecFile */
+	_sw(f2, text_addr+ 24088); /* 0x69DC mask call to sceKernelCheckExecFile */
 
-	sceDecryptPSP = (void *) (text_addr + 30640);
-	sceKernelCheckExecFile = (void *) (text_addr + 30616);
+	sceDecryptPSP = (void *) (text_addr + 30640); /* 0x8374 */
+	sceKernelCheckExecFile = (void *) (text_addr + 30616); /* 0x835C */
 
 	ClearCaches();
 
