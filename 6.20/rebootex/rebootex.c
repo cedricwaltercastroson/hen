@@ -34,7 +34,6 @@ unsigned int model1[] = {
 	0x00007450
 };
 
-/* all rebootX come from reboot.bin */
 int (*RebootEntry)(void *, void *, void *, void *) = (void *) REBOOT_BASE;
 void (*DcacheClear)(void) = (void *) 0x88600938;
 void (*IcacheClear)(void) = (void *) 0x886001E4;
@@ -56,7 +55,7 @@ static unsigned char sysctrl_bin[];
 
 /* util functions */
 
-static int __attribute__((noinline))
+static int
 __memcmp(const char *s1, const char *s2, int len)
 {
 	int i;
@@ -72,7 +71,7 @@ __memcmp(const char *s1, const char *s2, int len)
 	return 0;
 }
 
-static void __attribute__((noinline))
+static void
 __memset(void *p, char c, int len)
 {
 	int i;
@@ -87,7 +86,7 @@ __memset(void *p, char c, int len)
 	return;
 }
 
-static void __attribute__((noinline))
+static void
 __memcpy(void *dst, void *src, int len)
 {
 	int i;
@@ -104,7 +103,7 @@ __memcpy(void *dst, void *src, int len)
 	return;
 }
 
-static int __attribute__((noinline))
+static int
 __strlen(char *s)
 {
 	int len = 0;
@@ -117,7 +116,7 @@ __strlen(char *s)
 	return len;
 }
 
-static inline void
+static void
 __memmove(void *dst, void *src, int len)
 {
 	char *d, *s;
@@ -133,14 +132,14 @@ __memmove(void *dst, void *src, int len)
 	}
 }
 
-void __attribute__((noinline))
+void
 ClearCaches(void)
 {
 	DcacheClear();
 	IcacheClear();
 }
 
-int __attribute__((noinline))
+int
 sceBootLfatReadPatched(void *a0, void *a1)
 {
 	if (has_hen_prx) {
@@ -150,7 +149,7 @@ sceBootLfatReadPatched(void *a0, void *a1)
 	return sceBootLfatRead(a0, a1);
 }
 
-int __attribute__((noinline))
+int
 sceBootLfatOpenPatched(char *s)
 {
 	if (!__memcmp(s, HEN_STR, 9)) {
@@ -160,7 +159,7 @@ sceBootLfatOpenPatched(char *s)
 	return sceBootLfatOpen(s);
 }
 
-int __attribute__((noinline))
+int
 sceBootLfatClosePatched(void)
 {
 	if (has_hen_prx) {
@@ -170,7 +169,7 @@ sceBootLfatClosePatched(void)
 	return sceBootLfatClose();
 }
 
-int __attribute__((noinline))
+int
 secDecryptPSPPatched(void *a0, unsigned int a1, void *a2)
 {
 	unsigned int len;
@@ -186,7 +185,7 @@ secDecryptPSPPatched(void *a0, unsigned int a1, void *a2)
 	return sceDecryptPSP(a0, a1, a2);
 }
 
-int __attribute__((noinline))
+int
 sceKernelCheckExecFilePatched(unsigned char *s, unsigned int a1)
 {
 	int i;
@@ -199,8 +198,9 @@ sceKernelCheckExecFilePatched(unsigned char *s, unsigned int a1)
 	return 0;
 }
 
-int __attribute__((noinline))
-PatchLoadCore(void *a0, void *a1, void *a2, int (*module_start)(void *, void *, void*))
+int
+PatchLoadCore(void *a0, void *a1, void *a2,
+		int (*module_start)(void *, void *, void*))
 {
 	u32 text_addr = (u32) module_start; /* loadcore.prx offset 0xBC4 */
 	unsigned int f1 = MAKE_CALL(secDecryptPSPPatched);
@@ -220,9 +220,113 @@ PatchLoadCore(void *a0, void *a1, void *a2, int (*module_start)(void *, void *, 
 	return module_start(a0, a1, a2);
 }
 
-int sceBootDecryptPSPPatched(void *, void *) __attribute__((noinline));
 
-int __attribute__((noinline))
+typedef struct {
+	u32 magic;
+	u32 version;
+	u32 unk0[2];
+	u32 modes_start;
+	u32 modes_nr;
+	u32 unk1[2];
+	u32 modules_start;
+	u32 modules_nr;
+	u32 unk2[2];
+	u32 names_start;
+	u32 names_end;
+	u32 unk3[2];
+} BtcnfHeader;
+
+typedef struct {
+	u32 name;
+	u32 unk0;
+	u32 flags;
+	u32 unk1;
+	u8  hash[16];
+} ModuleEntry;
+
+typedef struct {
+	u16 modules_nr;
+	u16 module_start;
+	u32 mode_mask;
+	u32 mode_id;
+	u32 mode_name;
+	u32 unk[4];
+} ModeEntry;
+
+
+void
+inject_module(void *a0, char *mod_name, char *neu_mod_name, u16 flags)
+{
+	ModuleEntry mod;
+	ModuleEntry *pmod;
+	ModeEntry *pme;
+	int i, len, len2;
+	char *modules_start, *names_start, *names_end;
+	BtcnfHeader *hdr = a0;
+
+	modules_start = (char *) a0 + hdr->modules_start;
+	names_start = (char *) a0 + hdr->names_start;
+	names_end = (char *) a0 + hdr->names_end;
+
+	/* append new module name */
+	len2 = __strlen(neu_mod_name) + 1;
+	__memcpy(names_end, neu_mod_name, len2);
+	hdr->names_end += len2;
+
+	pmod = (ModuleEntry *) modules_start;
+	len = __strlen(mod_name) + 1;
+
+	if (hdr->modules_nr < 0)
+		return;
+
+	/* search mod by name */
+	for (i = 0; i < hdr->modules_nr; i++) {
+		if (!__memcmp(names_start + pmod->name, mod_name, len))
+			break;
+		pmod++;
+	}
+	if (i == hdr->modules_nr)
+		return;
+
+	__memset(&mod, 0, sizeof(ModuleEntry));
+	mod.name = names_end - names_start;
+	mod.flags = flags | 0x80010000;
+
+	len = (hdr->modules_nr - i) * sizeof(ModuleEntry);
+	len += len2;
+	len += names_end - names_start;
+
+	modules_start += i * sizeof(ModuleEntry);
+	__memmove(modules_start + sizeof(ModuleEntry), modules_start, len);
+	__memcpy(modules_start, &mod, sizeof(ModuleEntry));
+
+
+	hdr->modules_nr += 1;
+	hdr->names_start += 32;
+	hdr->names_end += 32;
+
+	if (hdr->modes_nr <= 0)
+		return;
+
+	pme = (ModeEntry *) ((char *) a0 + hdr->modes_start);
+	for (i = 0; i < hdr->modes_nr; i++) {
+		pme->modules_nr++;
+		pme++;
+	}
+}
+
+int
+sceBootDecryptPSPPatched(void *a0, void *a1)
+{
+	int r;
+	
+	r = sceBootDecryptPSP(a0, a1);
+	inject_module(a0, "/kd/init.prx", HEN_STR, 255);
+
+	return r;
+}
+
+int
 main(void *a0, void *a1, void *a2, void *a3)
 {
 	unsigned int *pf;
@@ -262,111 +366,6 @@ main(void *a0, void *a1, void *a2, void *a3)
 	ClearCaches();
 
 	return RebootEntry(a0, a1, a2, a3);
-}
-
-/* XXX probably BtcnfHeader */
-typedef struct {
-	char pad[16];
-	unsigned int o16; /* offset 16 */
-	unsigned int o20; /* offset 20 */
-	char pad2[8];
-	unsigned int o32; /* offset 32 */
-	unsigned int o36; /* offset 36 */
-	char pad3[8];
-	unsigned int o48; /* offset 48 */
-	unsigned int o52; /* offset 52 */
-} __attribute__((packed)) uk_t;
-
-/* XXX probably ModuleEntry */
-typedef struct {
-	unsigned int ozr; /* offset 0 */
-	unsigned int pad;
-	unsigned short o8; /* offset 8 */
-	unsigned char o10; /* offset 10 */
-	unsigned char o11; /* offset 11 */
-	char pad2[20];
-} __attribute__((packed)) uk2_t;
-/*
-typedef struct {
-        u32 name;
-        u32 unk0;
-        u32 flags;
-        u32 unk1;
-        u8  hash[16];
-}ModuleEntry;
-*/
-
-
-int __attribute__((noinline))
-tag_module(unsigned char *a0, unsigned char *a1, unsigned char *a2, unsigned int a3)
-{
-	uk2_t uk2;
-	uk2_t *puk2;
-	uk_t *uk = (uk_t *) a0;
-	unsigned int len, i, len2;
-	unsigned char *p0, *p1, *p2, *p;
-
-	p0 = a0 + uk->o32;
-	p1 = a0 + uk->o48;
-	p2 = a0 + uk->o52;
-
-	len2 = __strlen(a2) + 1;
-	__memcpy(p2, a2, len2);
-	uk->o52 += len2;
-
-	if ((int) uk->o36 <= 0)
-		return -2;
-
-	puk2 = (uk2_t *) p0;
-	len = __strlen(a1) + 1;
-
-	for (i = 0; i < uk->o36; i++) {
-		if (!__memcmp(p1 + puk2->ozr, a1, len))
-			break;
-		puk2++;
-	}
-	if (i == uk->o36)
-		return -2;
-
-	__memset(&uk2, 0, sizeof(uk2_t));
-	uk2.ozr = p2 - p1;
-	uk2.o8 = (unsigned short) a3;
-	uk2.o11 = -128;
-	uk2.o10 = 1;
-
-	len = (uk->o36 - i) << 5;
-	len += len2;
-	len += p2 - p1;
-
-	p = p0 + (i << 5);
-	__memmove(p + 32, p, len);
-	__memcpy(p, &uk2, sizeof(uk2_t));
-
-	uk->o36 += 1;
-	uk->o48 += 32;
-	uk->o52 += 32;
-
-	if ((int) uk->o20 <= 0)
-		return -3;
-
-	for (i = 0; i < uk->o20; i++) {
-		unsigned short *tmp = (unsigned short *) (a0 + uk->o16 + (i << 5));
-
-		(*tmp)++;
-	}
-
-	return 0;
-}
-
-int __attribute__((noinline))
-sceBootDecryptPSPPatched(void *a0, void *a1)
-{
-	int r;
-	
-	r = sceBootDecryptPSP(a0, a1);
-	tag_module(a0, "/kd/init.prx", HEN_STR, 255);
-
-	return r;
 }
 
 int __attribute__ ((section (".text.start")))
