@@ -9,6 +9,13 @@
 #define MAKE_CALL(__f) \
 	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
 
+#define MAKE_JMP(__f) \
+	(((((u32)__f) & 0x0FFFFFFC) >> 2) | 0x08000000)
+
+#define find_text_addr_by_name(__name) \
+	(u32) _lw((u32) (sceKernelFindModuleByName(__name)) + 108)
+
+
 PSP_MODULE_INFO("SystemControl", 0x3007, 1, 1);
 PSP_MAIN_THREAD_ATTR(0);
 
@@ -19,8 +26,42 @@ int g_0000825C;
 unsigned int rebootex_size;
 void *alloc_addr;
 
+int *apitype_addr;
+int *filename_addr;
+int *keyconfig_addr;
+
 int (*ProbeExec1) (void *, int *);
 int (*ProbeExec2) (void *, int *);
+int (*PartitionCheck) (void *, void *);
+
+int
+hook_sceKernelStartThread(int a0, int a1, int a2)
+{
+	return 0;
+}
+
+int
+hook_sceKernelCreateThread(int a0, int a1)
+{
+	return 0;
+}
+
+int
+sub_000012A0(int a0, int a1)
+{
+	return 0;
+}
+
+void
+PartitionCheckPatched(int a0, int a1)
+{
+}
+
+int
+sub_00001CBC(u32 a0, u32 a1)
+{
+	return 0;
+}
 
 void
 sceKernelCheckExecFilePatched(void *buf, int *check)
@@ -60,12 +101,10 @@ sctrlHENFindFunction(char *module, char *name, u32 addr)
 void
 PatchLoadCore(void)
 {
-	char *module;
 	u32 text_addr;
 	u32 fp;
 
-	module = (char *) sceKernelFindModuleByName("sceLoaderCore");
-	text_addr = _lw((u32) (module + 108)); /* module->text_addr */
+	text_addr = find_text_addr_by_name("sceLoaderCore");
 
 	_sw((u32) sceKernelCheckExecFilePatched, text_addr + 0x86B4);
 	fp = MAKE_CALL(sceKernelCheckExecFilePatched);
@@ -105,6 +144,41 @@ PatchLoadCore(void)
 void
 PatchModuleMgr(void)
 {
+	u32 text_addr;
+	u32 fp;
+
+	text_addr = find_text_addr_by_name("sceModuleManager");
+
+	if (model == 4)
+		_sw(MAKE_CALL(sub_00001CBC), text_addr + 0x7C3C);
+
+	_sw(MAKE_JMP(sceKernelCheckExecFilePatched), text_addr + 0x8854);
+
+	PartitionCheck = (void *) (text_addr + 0x7FC0);
+	apitype_addr = (void *) (text_addr + 0x9990);
+	filename_addr = (void *) (text_addr + 0x9994);
+	keyconfig_addr = (void *) (text_addr + 0x99EC);
+
+	_sw(0, text_addr + 0x760);
+	_sw(0x24020000, text_addr + 0x7C0); /* addiu v0, $zr, 0	*/
+	_sw(0, text_addr + 0x30B0);
+	_sw(0, text_addr + 0x310C);
+	_sw(0x10000009, text_addr + 0x3138); /* beq $zr, $zr, 0x9 ??? */
+	_sw(0, text_addr + 0x3444);
+	_sw(0, text_addr + 0x349C);
+	_sw(0x10000010, text_addr + 0x34C8); /* beq $zr, $zr, 0x10 ??? */
+
+	fp = MAKE_CALL(PartitionCheckPatched);
+	_sw(fp, text_addr + 0x64FC);
+	_sw(fp, text_addr + 0x6878);
+
+	_sw(MAKE_CALL(sub_000012A0), text_addr + 0x842C);
+	_sw(0, text_addr + 0x4360);
+	_sw(0, text_addr + 0x43A8);
+	_sw(0, text_addr + 0x43C0);
+
+	_sw(MAKE_JMP(hook_sceKernelCreateThread), text_addr + 0x894C);
+	_sw(MAKE_JMP(hook_sceKernelStartThread), text_addr + 0x8994);
 }
 
 void
