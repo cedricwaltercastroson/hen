@@ -56,18 +56,18 @@ rebootex_callback(unsigned int a1, unsigned int a2, unsigned int a3,
 static int
 power_callback(void)
 {
-	unsigned int (*f1)(char *) = (void *) 0x8801EB78; /* sceKernelFindModuleByName */
-	int (*f2)(void) = (void *) 0x8800A1C4; /* sceKernelGetModel */
-	void (*f3)(void) = (void *) 0x88000E98; /* sceKernelIcacheInvalidateAll */
-	void (*f4)(void) = (void *) 0x88000744; /* sceKernelDcacheWritebackInvalidateAll */
+	unsigned int (*_sceKernelFindModuleByName)(char *) = (void *) 0x8801EB78;
+	int (*_sceKernelGetModel)(void) = (void *) 0x8800A1C4;
+	void (*_sceKernelIcacheInvalidateAll)(void) = (void *) 0x88000E98;
+	void (*_sceKernelDcacheWritebackInvalidateAll)(void) = (void *) 0x88000744;
 	unsigned int addr;
 	int m;
 
-	addr = f1("sceLoadExec");
+	addr = _sceKernelFindModuleByName("sceLoadExec");
 	addr += 108;
 	addr = *(unsigned int *) addr;
 
-	m = f2();
+	m = _sceKernelGetModel();
 	if (m == 3)
 		m = 2;
 	model = m;
@@ -158,14 +158,14 @@ power_callback(void)
 
 	func_rebootex = (void *) addr;
 
-	f3();
-	f4();
+	_sceKernelIcacheInvalidateAll();
+	_sceKernelDcacheWritebackInvalidateAll();
 
 	return 0;
 }
 
 static void
-clear_cache(void)
+ClearCaches(void)
 {
 	sceKernelIcacheInvalidateAll();
 	sceKernelDcacheWritebackInvalidateAll();
@@ -182,9 +182,9 @@ main(void)
 	unsigned int* address_low = (unsigned int *) 0x08800000;
 	unsigned int* address_high = (unsigned int *) 0x08800004;
 	/* prototype of sceUtility_private_2DC8380C, scePower_driver_CE5D389B */
-	int (*f1)(int);
+	int (*_scePowerUnregisterCallback)(int);
 	/* prototype of sceUtility_private_764F5A3C, scePower_driver_1A41E0ED */
-	void *(*f2)(int, SceUID);
+	void *(*_scePowerRegisterCallback)(int, SceUID);
 
 
 	loginit();
@@ -211,11 +211,11 @@ main(void)
 		panic();
 
 	memset((void *) 0x08800000, 0, 0x00100000);
-	f1 = (void*) ((unsigned int) address_low - 648U); /* sceUtility_private_2DC8380C */
-	log("power unregister at %p\n", f1);
-	f1(0x08080000);
+	_scePowerUnregisterCallback = (void*) ((unsigned int) address_low - 648U); /* sceUtility_private_2DC8380C */
+	log("power unregister at %p\n", pspUtilityPowerUnregisterCallback);
+	_scePowerUnregisterCallback(0x08080000);
 	log("power unregister done\n");
-	clear_cache();
+	ClearCaches();
 
 	p = (unsigned int *) 0x08800000;
 
@@ -230,15 +230,15 @@ main(void)
 
 	log("create callback\n");
 	sceuid = sceKernelCreateCallback("hen", 0, 0);
-	f2 = (void *) ((unsigned int) address_low - 624U);
+	_scePowerRegisterCallback = (void *) ((unsigned int) address_low - 624U);
 	log("power register\n");
-	f2((0x0880CCB0U -(unsigned int) p) >> 4, sceuid); /* sceUtility_private_764F5A3C */
+	_scePowerRegisterCallback((0x0880CCB0U -(unsigned int) p) >> 4, sceuid); /* sceUtility_private_764F5A3C */
 	log("power register done\n");
-	clear_cache();
+	ClearCaches();
 
 	_sw((unsigned int) power_callback, 0x08800010);
 	_sw(0x08800000, 0x08804234);
-	clear_cache();
+	ClearCaches();
 
 	log("suspend intr\n");
 	intr = sceKernelCpuSuspendIntr();

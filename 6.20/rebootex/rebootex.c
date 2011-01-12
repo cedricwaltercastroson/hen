@@ -140,7 +140,7 @@ ClearCaches(void)
 }
 
 int
-sceBootLfatReadPatched(void *a0, void *a1)
+sceBootLfatRead_Patched(void *a0, void *a1)
 {
 	if (has_hen_prx) {
 		__memcpy(a0, sysctrl_bin, size_sysctrl_bin);
@@ -150,7 +150,7 @@ sceBootLfatReadPatched(void *a0, void *a1)
 }
 
 int
-sceBootLfatOpenPatched(char *s)
+sceBootLfatOpen_Patched(char *s)
 {
 	if (!__memcmp(s, HEN_STR, 9)) {
 		has_hen_prx = 1;
@@ -160,7 +160,7 @@ sceBootLfatOpenPatched(char *s)
 }
 
 int
-sceBootLfatClosePatched(void)
+sceBootLfatClose_Patched(void)
 {
 	if (has_hen_prx) {
 		has_hen_prx = 0;
@@ -170,7 +170,7 @@ sceBootLfatClosePatched(void)
 }
 
 int
-secDecryptPSPPatched(void *a0, unsigned int a1, void *a2)
+secDecryptPSP_Patched(void *a0, unsigned int a1, void *a2)
 {
 	unsigned int len;
 
@@ -186,7 +186,7 @@ secDecryptPSPPatched(void *a0, unsigned int a1, void *a2)
 }
 
 int
-sceKernelCheckExecFilePatched(unsigned char *s, unsigned int a1)
+sceKernelCheckExecFile_Patched(unsigned char *s, unsigned int a1)
 {
 	int i;
 
@@ -203,14 +203,16 @@ PatchLoadCore(void *a0, void *a1, void *a2,
 		int (*module_start)(void *, void *, void*))
 {
 	u32 text_addr = (u32) module_start; /* loadcore.prx offset 0xBC4 */
-	unsigned int f1 = MAKE_CALL(secDecryptPSPPatched);
-	unsigned int f2 = MAKE_CALL(sceKernelCheckExecFilePatched);
+	unsigned int fp;
 
-	_sw(f1, text_addr + 13792); /* 0x41A4 mask call to sceDecryptPSP*/
-	_sw(f1, text_addr + 23852); /* 0x68F0 mask call to sceDecryptPSP */
-	_sw(f2, text_addr + 23888); /* 0x6914 mask call to sceKernelCheckExecFile */
-	_sw(f2, text_addr + 23936); /* 0x6944 mask call to sceKernelCheckExecFile */
-	_sw(f2, text_addr+ 24088); /* 0x69DC mask call to sceKernelCheckExecFile */
+	fp = MAKE_CALL(secDecryptPSP_Patched);
+	_sw(fp, text_addr + 13792); /* 0x41A4 mask call to sceDecryptPSP*/
+	_sw(fp, text_addr + 23852); /* 0x68F0 mask call to sceDecryptPSP */
+
+	fp = MAKE_CALL(sceKernelCheckExecFile_Patched);
+	_sw(fp, text_addr + 23888); /* 0x6914 mask call to sceKernelCheckExecFile */
+	_sw(fp, text_addr + 23936); /* 0x6944 mask call to sceKernelCheckExecFile */
+	_sw(fp, text_addr+ 24088); /* 0x69DC mask call to sceKernelCheckExecFile */
 
 	sceDecryptPSP = (void *) (text_addr + 30640); /* 0x8374 */
 	sceKernelCheckExecFile = (void *) (text_addr + 30616); /* 0x835C */
@@ -316,7 +318,7 @@ inject_module(void *a0, char *mod_name, char *neu_mod_name, u16 flags)
 }
 
 int
-sceBootDecryptPSPPatched(void *a0, void *a1)
+sceBootDecryptPSP_Patched(void *a0, void *a1)
 {
 	int r;
 	
@@ -336,10 +338,10 @@ main(void *a0, void *a1, void *a2, void *a3)
 	else
 		pf = model1;
 
-	SAVE_CALL(pf[4], sceBootLfatOpenPatched); /* replace sceBootLfatOpen */
-	SAVE_CALL(pf[5], sceBootLfatReadPatched); /* replace sceBootLfatRead */
-	SAVE_CALL(pf[6], sceBootLfatClosePatched); /* replace sceBootLfatClose */
-	SAVE_CALL(pf[7], sceBootDecryptPSPPatched); /* replace sceBootDecryptPSP */
+	SAVE_CALL(pf[4], sceBootLfatOpen_Patched); /* replace sceBootLfatOpen */
+	SAVE_CALL(pf[5], sceBootLfatRead_Patched); /* replace sceBootLfatRead */
+	SAVE_CALL(pf[6], sceBootLfatClose_Patched); /* replace sceBootLfatClose */
+	SAVE_CALL(pf[7], sceBootDecryptPSP_Patched); /* replace sceBootDecryptPSP */
 
 	/* mask sub_88603798 of reboot */
 	SAVE_VALUE(pf[8], 0x03E00008); /* jr ra */
