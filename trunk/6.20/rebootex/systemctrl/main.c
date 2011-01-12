@@ -52,14 +52,14 @@ int (*PartitionCheck) (void *, void *); /* 0x00008294 */
 
 /* 0x0000165C */
 int
-hook_sceKernelStartThread(int a0, int a1, int a2)
+sceKernelStartThread_Patched(int a0, int a1, int a2)
 {
 	return 0;
 }
 
 /* 0x000015E8 */
 int
-hook_sceKernelCreateThread(int a0, int a1)
+sceKernelCreateThread_Patched(int a0, int a1)
 {
 	return 0;
 }
@@ -72,7 +72,7 @@ sub_000012A0(int a0, int a1)
 
 /* 0x00001AB8 */
 void
-PartitionCheckPatched(int a0, int a1)
+PartitionCheck_Patched(int a0, int a1)
 {
 }
 
@@ -84,20 +84,20 @@ sub_00001CBC(u32 a0, u32 a1)
 
 /* 0x00001A34 */
 void
-sceKernelCheckExecFilePatched(void *buf, int *check)
+sceKernelCheckExecFile_Patched(void *buf, int *check)
 {
 }
 
 /* 0x00000150 */
 int
-ProbeExec1Patched(void *a0, void *a1)
+ProbeExec1_Patched(void *a0, void *a1)
 {
 	return 0;
 }
 
 /* 0x000004B4 */
 int
-ProbeExec2Patched(void *a0, void *a1)
+ProbeExec2_Patched(void *a0, void *a1)
 {
 	return 0;
 }
@@ -115,6 +115,14 @@ sub_0000037C(int a0)
 
 int
 sub_000016D8(int a0, int a1, int a2, int a3)
+{
+	return 0;
+}
+
+/* 0x00000ABC */
+int
+sceIoAssign_Patched(const char *dev1, const char *dev2, const char *dev3,
+		int mode, void *unk1, long unk2)
 {
 	return 0;
 }
@@ -143,15 +151,15 @@ PatchLoadCore(void)
 
 	text_addr = find_text_addr_by_name("sceLoaderCore");
 
-	_sw((u32) sceKernelCheckExecFilePatched, text_addr + 0x000086B4);
-	fp = MAKE_CALL(sceKernelCheckExecFilePatched);
+	_sw((u32) sceKernelCheckExecFile_Patched, text_addr + 0x000086B4);
+	fp = MAKE_CALL(sceKernelCheckExecFile_Patched);
 	_sw(fp, text_addr + 0x00001578);
 	_sw(fp, text_addr + 0x000015C8);
 	_sw(fp, text_addr + 0x00004A18);
 
 	_sw(text_addr + 0x00008B58, text_addr + 0x00008B74);
-	_sw(MAKE_CALL(ProbeExec1Patched), text_addr + 0x000046A4);
-	_sw(MAKE_CALL(ProbeExec2Patched), text_addr + 0x00004878);
+	_sw(MAKE_CALL(ProbeExec1_Patched), text_addr + 0x000046A4);
+	_sw(MAKE_CALL(ProbeExec2_Patched), text_addr + 0x00004878);
 	_sw(0x3C090000, text_addr + 0x000040A4);
 	_sw(0, text_addr + 0x00007E84);
 	_sw(0, text_addr + 0x00006880);
@@ -190,7 +198,7 @@ PatchModuleMgr(void)
 	if (model == 4)
 		_sw(MAKE_CALL(sub_00001CBC), text_addr + 0x00007C3C);
 
-	_sw(MAKE_JMP(sceKernelCheckExecFilePatched), text_addr + 0x00008854);
+	_sw(MAKE_JMP(sceKernelCheckExecFile_Patched), text_addr + 0x00008854);
 
 	PartitionCheck = (void *) (text_addr + 0x00007FC0);
 	apitype_addr = (void *) (text_addr + 0x00009990);
@@ -206,7 +214,7 @@ PatchModuleMgr(void)
 	_sw(0, text_addr + 0x0000349C);
 	_sw(0x10000010, text_addr + 0x000034C8); /* beq $zr, $zr, 0x10 ??? */
 
-	fp = MAKE_CALL(PartitionCheckPatched);
+	fp = MAKE_CALL(PartitionCheck_Patched);
 	_sw(fp, text_addr + 0x000064FC);
 	_sw(fp, text_addr + 0x00006878);
 
@@ -215,8 +223,8 @@ PatchModuleMgr(void)
 	_sw(0, text_addr + 0x000043A8);
 	_sw(0, text_addr + 0x000043C0);
 
-	_sw(MAKE_JMP(hook_sceKernelCreateThread), text_addr + 0x0000894C);
-	_sw(MAKE_JMP(hook_sceKernelStartThread), text_addr + 0x00008994);
+	_sw(MAKE_JMP(sceKernelCreateThread_Patched), text_addr + 0x0000894C);
+	_sw(MAKE_JMP(sceKernelStartThread_Patched), text_addr + 0x00008994);
 }
 
 /* 0x00000878 */
