@@ -42,6 +42,10 @@ int *apitype_addr; /* 0x00008288 */
 int *filename_addr; /* 0x00008284 */
 int *keyconfig_addr; /* 0x0000839C */
 
+int g_00008268; 
+int g_0000827C;
+int g_00008280;  
+
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *); /* 0x00008294 */
@@ -101,6 +105,18 @@ ProbeExec2Patched(void *a0, void *a1)
 void
 sub_00003938(int a0, int a1)
 {
+}
+
+int
+sub_0000037C(int a0)
+{
+	return 0;
+}
+
+int
+sub_000016D8(int a0, int a1, int a2, int a3)
+{
+	return 0;
 }
 
 /* 0x00000BA8 */
@@ -207,6 +223,29 @@ PatchModuleMgr(void)
 void
 PatchMemlmd(void)
 {
+	u32 text_addr;
+	u32 fp;
+	u32 *table;
+
+	text_addr = find_text_addr_by_name("sceMemlmd");
+
+	if (model == 0)
+		table = model0;
+	else
+		table = model1;
+
+	fp = MAKE_CALL(sub_0000037C);
+	_sw(fp, text_addr + table[2]);
+	_sw(fp, text_addr + table[3]);
+
+	fp = MAKE_CALL(sub_000016D8);
+	_sw(fp, text_addr + table[4]);
+
+	g_00008268 = text_addr + table[0];
+	g_0000827C = text_addr + 0x00000134;
+	g_00008280 = text_addr + table[1];
+
+	_sw(fp, text_addr + table[5]);
 }
 
 /* 0x00000814 */
