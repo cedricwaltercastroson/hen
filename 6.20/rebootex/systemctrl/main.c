@@ -5,6 +5,7 @@
 #include "pspkernel.h"
 #include "psputility.h"
 #include "psputilsforkernel.h"
+#include "pspinit.h"
 
 #define MAKE_CALL(__f) \
 	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
@@ -49,6 +50,27 @@ int g_00008280;
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *); /* 0x00008294 */
+
+/* 0x000003F4 */
+void
+PatchSyscall(u32 fp, u32 neufp)
+{
+	u32 sr;
+	u32 *vectors, *end;
+	u32 addr;
+
+	__asm__ ("cfc0 $v0, $12;":"=r"(sr));
+	vectors = (u32 *) _lw(sr);
+	end = vectors + 0x10000;
+
+again:
+	addr = vectors[4];
+	if (addr == fp)
+		_sw(neufp, vectors[4]);
+	vectors++;
+	if (vectors != end)
+		goto again;
+}
 
 /* 0x0000165C */
 int
@@ -127,6 +149,13 @@ sceIoAssign_Patched(const char *dev1, const char *dev2, const char *dev3,
 	return 0;
 }
 
+/* 0x00000A28 */
+int
+sceIoMkDir_Patched(int a0, int a1)
+{
+	return 0;
+}
+
 /* 0x00000BA8 */
 void
 ClearCaches(void)
@@ -137,7 +166,7 @@ ClearCaches(void)
 
 /* 0x00000BC4 */
 u32
-sctrlHENFindFunction(char *module, char *name, u32 addr)
+sctrlHENFindFunction(char *module, char *name, u32 nid)
 {
 	return 0;
 }
@@ -260,6 +289,18 @@ PatchMemlmd(void)
 void
 PatchIoFileMgr(void)
 {
+	u32 text_addr;
+
+	text_addr = find_text_addr_by_name("sceIOFileManager");
+
+	PatchSyscall(text_addr + 0x00001AAC, (u32) sceIoAssign_Patched);
+
+#ifndef sceKernelApplicationType
+#define sceKernelApplicationType InitForKernel_7233B5BC
+#endif
+	/* InitForKernel_7233B5BC() == PSP_INIT_KEYCONFIG_VSH */
+	if (sceKernelApplicationType() == 0x100)
+		PatchSyscall(text_addr + 0x00004260, (u32) sceIoMkDir_Patched);
 }
 
 /* 0x000007DC */
