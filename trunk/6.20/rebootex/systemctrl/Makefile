@@ -17,7 +17,7 @@ USE_KERNEL_LIBS = 1
 
 LIBDIR =
 LIBS = 
-LDFLAGS = -nostdlib -nodefaultlibs
+LDFLAGS = -nostdlib -nodefaultlibs -e module_bootstart
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
