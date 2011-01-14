@@ -51,6 +51,85 @@ int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *); /* 0x00008294 */
 
+/* param of sub_00000000 */
+typedef struct {
+	u32 unk1;
+	u8 pad[12];
+	u8 unk2;
+	u8 unk3;
+} __attribute__((packed)) unk1_t;
+
+int
+sub_00000000(u32 a0)
+{
+	unk1_t *unk = (unk1_t *) a0;
+
+	if (unk->unk1 == 0x464C457F)
+		return 0;
+	return (((unk->unk3 << 8) | unk->unk2) ^ 2) < 1;
+}
+
+u32
+sub_00000038(u32 a0, u32 a1)
+{
+	int a2;
+	u32 v0;
+
+	a2 = (int) _lw(a1 + 0x4C);
+	if (a2 < 0)
+		a2 += 3;
+
+	if ((a0 + (u32) a2 + 0x77C00000U) < 0x00400001U)
+		return 0;
+
+	v0 = (u32) a2 / 4;
+	v0 <<= 2;
+	v0 += a0;
+	_sw(*(unsigned short *) v0, a1 + 0x58);
+
+	return _lw(v0);
+}
+
+/* 0x00000090 */
+int
+PatchExec1(u32 a0, u32 a1)
+{
+	return 0;
+}
+
+
+/* 0x00000150 */
+int
+ProbeExec1_Patched(void *a0, void *a1)
+{
+	return 0;
+}
+
+int
+sub_000001E4(u32 a0)
+{
+	return 0;
+}
+
+/* 0x00000280 */
+int
+PatchExec3(int a0, int a1, int a2, int a3)
+{
+	return 0;
+}
+
+void
+sub_0000031C(int a0, int a1, int a2)
+{
+}
+
+/* 0x00000364 */
+int
+SystemCtrlForUser_1C90BECB(int a0)
+{
+	return 0;
+}
+
 /* 0x000003F4 */
 void
 PatchSyscall(u32 fp, u32 neufp)
@@ -108,13 +187,6 @@ sub_00001CBC(u32 a0, u32 a1)
 void
 sceKernelCheckExecFile_Patched(void *buf, int *check)
 {
-}
-
-/* 0x00000150 */
-int
-ProbeExec1_Patched(void *a0, void *a1)
-{
-	return 0;
 }
 
 /* 0x000004B4 */
@@ -307,6 +379,13 @@ PatchIoFileMgr(void)
 void
 PatchInterruptMgr(void)
 {
+	u32 text_addr;
+
+	text_addr = find_text_addr_by_name("sceInterruptManager");
+	_sw(0, text_addr + 0x00000E94);
+	_sw(0, text_addr + 0x00000E98);
+	_sw(0, text_addr + 0x00000DE8);
+	_sw(0, text_addr + 0x00000DEC);
 }
 
 /* 0x0000119C */
