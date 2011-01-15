@@ -25,7 +25,8 @@ extern int sceKernelStartThread_Patched(int, int, int);
 extern int sub_0000037C(int);
 extern int sceIoMkDir_Patched(int, int);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
-extern int sub_000016D8(int, int, int, int);
+extern void sub_000016D8(int, int, int, int);
+extern void sub_00003938(int, int);
 
 PSP_MODULE_INFO("SystemControl", 0x3007, 1, 1);
 PSP_MAIN_THREAD_ATTR(0);
@@ -300,51 +301,9 @@ sub_0000094C(void)
 {
 }
 
-/* 0x0000165C */
+/* 0x00000A28 */
 int
-sceKernelStartThread_Patched(int a0, int a1, int a2)
-{
-	return 0;
-}
-
-/* 0x000015E8 */
-int
-sceKernelCreateThread_Patched(int a0, int a1)
-{
-	return 0;
-}
-
-int
-sub_000012A0(int a0, int a1)
-{
-	return 0;
-}
-
-/* 0x00001AB8 */
-void
-PartitionCheck_Patched(int a0, int a1)
-{
-}
-
-int
-sub_00001CBC(u32 a0, u32 a1)
-{
-	return 0;
-}
-
-/* 0x00001A34 */
-void
-sceKernelCheckExecFile_Patched(void *buf, int *check)
-{
-}
-
-void
-sub_00003938(int a0, int a1)
-{
-}
-
-int
-sub_000016D8(int a0, int a1, int a2, int a3)
+sceIoMkDir_Patched(int a0, int a1)
 {
 	return 0;
 }
@@ -357,13 +316,6 @@ sceIoAssign_Patched(const char *dev1, const char *dev2, const char *dev3,
 	return 0;
 }
 
-/* 0x00000A28 */
-int
-sceIoMkDir_Patched(int a0, int a1)
-{
-	return 0;
-}
-
 /* 0x00000BA8 */
 void
 ClearCaches(void)
@@ -372,11 +324,23 @@ ClearCaches(void)
 	sceKernelDcacheWritebackInvalidateAll();
 }
 
-/* 0x00000BC4 */
+/* 0x00000BC4
+ * SystemCtrlForKernel_159AF5CC
+ */
 u32
 sctrlHENFindFunction(char *module, char *name, u32 nid)
 {
 	return 0;
+}
+
+void
+sub_00000D48(u32 a0)
+{
+}
+
+void
+sub_00000D90(int a0)
+{
 }
 
 /* 0x0000101C */
@@ -454,4 +418,52 @@ module_bootstart(void)
 	ClearCaches();
 
 	return 0;
+}
+
+int
+sub_000012A0(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x000015E8 */
+int
+sceKernelCreateThread_Patched(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x0000165C */
+int
+sceKernelStartThread_Patched(int a0, int a1, int a2)
+{
+	return 0;
+}
+
+void
+sub_000016D8(int a0, int a1, int a2, int a3)
+{
+}
+
+/* 0x00001AB8 */
+void
+PartitionCheck_Patched(int a0, int a1)
+{
+}
+
+int
+sub_00001CBC(u32 a0, u32 a1)
+{
+	return 0;
+}
+
+/* 0x00001A34 */
+void
+sceKernelCheckExecFile_Patched(void *buf, int *check)
+{
+}
+
+void
+sub_00003938(int a0, int a1)
+{
 }
