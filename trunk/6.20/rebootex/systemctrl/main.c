@@ -445,6 +445,18 @@ sub_000016D8(int a0, int a1, int a2, int a3)
 {
 }
 
+int
+sub_00001838(int a0, int a1, int a2, int a3, int t0, int t1, int t2, int t3)
+{
+	return 0;
+}
+
+/* 0x00001A34 */
+void
+sceKernelCheckExecFile_Patched(void *buf, int *check)
+{
+}
+
 /* 0x00001AB8 */
 void
 PartitionCheck_Patched(int a0, int a1)
@@ -457,9 +469,43 @@ sub_00001CBC(u32 a0, u32 a1)
 	return 0;
 }
 
-/* 0x00001A34 */
+/* 0x00001D50 */
 void
-sceKernelCheckExecFile_Patched(void *buf, int *check)
+SystemCtrlForKernel_CE0A654E(int a0, int a1, int a2, int a3)
+{
+}
+
+/* 0x00001D74 */
+int
+SystemCtrlForKernel_B86E36D1(void)
+{
+	return 0;
+}
+
+int
+sub_00001E1C(int a0)
+{
+	return 0;
+}
+
+void
+sub_00001E74(int a0)
+{
+}
+
+int
+sub_00001F28(void)
+{
+	return 0;
+}
+
+void
+sub_00001F50(int a0)
+{
+}
+
+void
+sub_00001FA4(int a0)
 {
 }
 
