@@ -64,48 +64,60 @@ int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *); /* 0x00008294 */
 
-/* param of sub_00000000 */
+/* ELF file header */
 typedef struct {
-	u32 unk1;
-	u8 pad[12];
-	u8 unk2;
-	u8 unk3;
-} __attribute__((packed)) unk1_t;
+	u32		e_magic;		// 0
+	u8		e_class;		// 4
+	u8		e_data;			// 5
+	u8		e_idver;		// 6
+	u8		e_pad[9];		// 7
+	u16		e_type;			// 16
+	u16		e_machine;		// 18
+	u32		e_version;		// 20
+	u32		e_entry;		// 24
+	u32		e_phoff;		// 28
+	u32		e_shoff;		// 32
+	u32		e_flags;		// 36
+	u16		e_ehsize;		// 40
+	u16		e_phentsize;	// 42
+	u16		e_phnum;		// 44
+	u16		e_shentsize;	// 46
+	u16		e_shnum;		// 48
+	u16		e_shstrndx;		// 50
+} __attribute__((packed)) Elf32_Ehdr;
 
+#define ELF_MAGIC	0x464C457FU
+
+/* 0x00000000 */
 int
-sub_00000000(u32 a0)
+IsStaticElf(Elf32_Ehdr *hdr)
 {
-	unk1_t *unk = (unk1_t *) a0;
-
-	if (unk->unk1 == 0x464C457F)
+	if (hdr->e_magic != ELF_MAGIC)
 		return 0;
-	return (((unk->unk3 << 8) | unk->unk2) ^ 2) < 1;
+	return hdr->e_type == 2;
 }
 
-u32
-sub_00000038(u32 a0, u32 a1)
+/* 0x00000038 */
+int
+PatchExec2(void *buf, int *check)
 {
-	int a2;
-	u32 v0;
+	int index = check[0x4C/4];
+	u32 addr;
 
-	a2 = (int) _lw(a1 + 0x4C);
-	if (a2 < 0)
-		a2 += 3;
+	if (index < 0)
+		index += 3;
 
-	if ((a0 + (u32) a2 + 0x77C00000U) < 0x00400001U)
+	addr = (u32) (buf + index);
+	if (addr < 0x88800001)
 		return 0;
 
-	v0 = (u32) a2 / 4;
-	v0 <<= 2;
-	v0 += a0;
-	_sw(*(unsigned short *) v0, a1 + 0x58);
-
-	return _lw(v0);
+	check[0x58/4] = ((u32 *) buf)[index/4] & 0xFFFF;
+	return ((u32 *) buf)[index/4];
 }
 
 /* 0x00000090 */
 int
-PatchExec1(u32 a0, u32 a1)
+PatchExec1(void *buf, int *check)
 {
 	return 0;
 }
@@ -113,13 +125,14 @@ PatchExec1(u32 a0, u32 a1)
 
 /* 0x00000150 */
 int
-ProbeExec1_Patched(void *a0, void *a1)
+ProbeExec1_Patched(void *buf, int *check)
 {
 	return 0;
 }
 
-int
-sub_000001E4(u32 a0)
+/* 0x000001E4 */
+char *
+GetStrTab(Elf32_Ehdr *hdr)
 {
 	return 0;
 }
@@ -591,7 +604,7 @@ SystemCtrlForUser_745286D1(int a0, int a1)
 
 /* 0x000026D4 */
 void
-patchSceUpdateDL(void)
+PatchSceUpdateDL(void)
 {
 }
 
@@ -629,7 +642,6 @@ sub_00002DBC(void)
 {
 }
 
-/* un-used function? */
 void
 sub_00002EB0(int a0, int a1, int a2)
 {
