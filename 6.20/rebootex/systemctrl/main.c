@@ -6,6 +6,8 @@
 #include "psputility.h"
 #include "psputilsforkernel.h"
 #include "pspinit.h"
+#include "pspctrl.h"
+#include "psploadexec_kernel.h"
 
 #define MAKE_CALL(__f) \
 	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
@@ -510,6 +512,386 @@ sub_00001FA4(int a0)
 }
 
 void
+sub_00002058(int a0)
+{
+}
+
+void
+sub_000020F0(int a0)
+{
+}
+
+void
+sub_000020FC(int a0)
+{
+}
+
+void
+sub_00002108(int a0)
+{
+}
+
+void
+sub_00002200(int a0, int a1, int a2, int a3)
+{
+}
+
+/* 0x00002324 */
+void
+SystemCtrlForKernel_2F157BAF(int a0)
+{
+}
+
+void
+sub_00002338(void)
+{
+}
+
+/* 0x000023A4 */
+u32
+findFunctionIn_scePower_Service(u32 nid)
+{
+	return sctrlHENFindFunction("scePower_Service", "scePower", nid);
+}
+
+/* 0x000023BC */
+void
+SystemCtrlForKernel_CC9ADCF8(int a0, int a1)
+{
+}
+
+u32
+sub_0000240C(int a0)
+{
+	return 0;
+}
+
+void
+sub_00002424(void)
+{
+}
+
+void
+sub_000024E4(int a0)
+{
+}
+
+/* 0x00002620 */
+void
+VshCtrlLib_FD26DA72(int a0)
+{
+}
+
+/* 0x00002664 */
+int
+SystemCtrlForUser_745286D1(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x000026D4 */
+void
+patchSceUpdateDL(void)
+{
+}
+
+void
+sub_00002780(int a0)
+{
+}
+
+/* 0x000027EC SystemCtrlForKernel_98012538 */
+void
+SetSpeed(int a0, int a1)
+{
+}
+
+/* 0x00002948 */
+void
+sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
+{
+}
+
+/* 0x00002C90 */
+int
+VshCtrlLib_CD6B3913(int a0)
+{
+	return 0;
+}
+
+void
+sub_00002D38(int a0)
+{
+}
+
+void
+sub_00002DBC(void)
+{
+}
+
+/* un-used function? */
+void
+sub_00002EB0(int a0, int a1, int a2)
+{
+}
+
+int
+sub_00002FDC(void)
+{
+	return 0;
+}
+
+/* 0x00003054  SystemCtrlForKernel_F9584CAD */
+void
+oe_malloc(int a0)
+{
+}
+
+/* 0x000030A4 SystemCtrlForKernel_A65E8BC4 */
+void
+oe_free(int a0)
+{
+}
+
+/* 0x000030F4 */
+int
+SystemCtrlForUser_8E426F09(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x0000319C */
+void
+sctrlSEGetConfig(int a0)
+{
+}
+
+/* 0x000031A4 */
+int
+SystemCtrlForUser_AD4D5EA5(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x0000325C */
+void
+sctrlSESetConfig(int a0)
+{
+}
+
+/* 0x00003264 */
+SceUID
+kuKernelLoadModule(const char *path, int flags, SceKernelLMOption *option)
+{
+	return 0;
+}
+
+/* 0x000032D0 */
+SceUID
+kuKernelLoadModuleWithApitype2(int apitype, const char *path, int flags, SceKernelLMOption *option)
+{
+	return 0;
+}
+
+/* 0x0000334C */
+int
+kuKernelInitApitype(void)
+{
+	return 0;
+}
+
+/* 0x00003354 */
+int
+kuKernelInitFileName(char *fname)
+{
+	return 0;
+}
+
+/* 0x000033A4 */
+int
+kuKernelBootFrom(void)
+{
+	return 0;
+}
+
+/* 0x000033AC */
+int
+kuKernelInitKeyConfig(void)
+{
+	return 0;
+}
+
+/* 0x000033B4 */
+int
+kuKernelGetUserLevel(void)
+{
+	return 0;
+}
+
+/* 0x000033F8 */
+int
+kuKernelSetDdrMemoryProtection(void *addr, int size, int prot)
+{
+	return 0;
+}
+
+/* 0x00003464 */
+int
+KUBridge_24331850(void)
+{
+	return 0;
+}
+
+/* 0x000034A8 */
+int
+sctrlHENIsSE(void)
+{
+	return 1;
+}
+
+/* 0x000034B0 */
+int
+sctrlHENIsDevhook(void)
+{
+	return 0;
+}
+
+/* 0x000034B8 */
+int
+sctrlHENGetVersion(void)
+{
+	return 0x00001000;
+}
+
+/* 0x000034C0 */
+int
+sctrlSEGetVersion(void)
+{
+	return 2;
+}
+
+/* 0x000034C8 */
+int
+sctrlKernelSetDevkitVersion(int a0)
+{
+	return 0;
+}
+
+/* 0x0000353C */
+int
+sctrlKernelSetUserLevel(int level)
+{
+	return 0;
+}
+
+/* 0x000035B8 */
+int
+sctrlKernelLoadExecVSHWithApitype(int apitype, const char *file, struct SceKernelLoadExecVSHParam *param)
+{
+	return 0;
+}
+
+/* 0x00003650 */
+PspIoDrv *
+sctrlHENFindDriver(char* drvname)
+{
+	return 0;
+}
+
+/* 0x000036C4 */
+int
+sctrlKernelLoadExecVSHDisc(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x00003720 */
+int
+sctrlKernelLoadExecVSHDiscUpdater(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x0000377C */
+int
+sctrlKernelLoadExecVSHMs1(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x000037D8 */
+int
+sctrlKernelLoadExecVSHMs2(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x00003834 */
+int
+sctrlKernelLoadExecVSHMs3(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x00003890 */
+int
+sctrlKernelLoadExecVSHMs4(int a0, int a1)
+{
+	return 0;
+}
+
+/* 0x000038EC */
+int
+sctrlKernelExitVSH(int a0)
+{
+	return 0;
+}
+
+void
 sub_00003938(int a0, int a1)
 {
 }
+
+void
+sub_000039BC(int a0)
+{
+}
+
+void
+sub_00003B7C(int a0)
+{
+}
+
+int
+sub_00003BD4(int a0, int a1, int a2, int a3)
+{
+	return 0;
+}
+
+void
+sub_00003CB8(int a0, int a1, int a2)
+{
+}
+
+/* 0x00003EA8 */
+int
+sctrlKernelSetInitKeyConfig(int a0)
+{
+	return 0;
+}
+
+/* 0x00003F04 */
+int
+sctrlKernelSetInitFileName(int a0)
+{
+	return 0;
+}
+
+/* 0x00003F44 */
+int
+sctrlKernelSetInitApitype(int a0)
+{
+	return 0;
+}
+
+/* 0x00003FA0 pspSdkSetK1 */
