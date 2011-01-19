@@ -207,12 +207,14 @@ main(void)
 		address_high++;
 	} while (address_high < (unsigned int *) 0x0A000000);
 
-	if (address_high == (unsigned int *) 0x0A000000)
+	if (address_high == (unsigned int *) 0x0A000000) {
+		log("panic: cannot find sceVshHV\n");
 		panic();
+	}
 
 	memset((void *) 0x08800000, 0, 0x00100000);
 	_scePowerUnregisterCallback = (void*) ((unsigned int) address_low - 648U); /* sceUtility_private_2DC8380C */
-	log("power unregister at %p\n", pspUtilityPowerUnregisterCallback);
+	log("power unregister at %p\n", _scePowerUnregisterCallback);
 	_scePowerUnregisterCallback(0x08080000);
 	log("power unregister done\n");
 	ClearCaches();
