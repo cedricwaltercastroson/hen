@@ -90,8 +90,10 @@ typedef struct {
 
 /* 0x00000000 */
 int
-IsStaticElf(Elf32_Ehdr *hdr)
+IsStaticElf(void *buf)
 {
+	Elf32_Ehdr *hdr = buf;
+
 	if (hdr->e_magic != ELF_MAGIC)
 		return 0;
 	return hdr->e_type == 2;
@@ -101,24 +103,55 @@ IsStaticElf(Elf32_Ehdr *hdr)
 int
 PatchExec2(void *buf, int *check)
 {
-	int index = check[0x4C/4];
+	int index = check[19];
 	u32 addr;
 
 	if (index < 0)
 		index += 3;
 
 	addr = (u32) (buf + index);
-	if (addr < 0x88800001)
+	if (addr < 0x88800001U)
 		return 0;
 
-	check[0x58/4] = ((u32 *) buf)[index/4] & 0xFFFF;
-	return ((u32 *) buf)[index/4];
+	addr = _lw(addr);
+	check[22] = addr & 0xFFFF;
+
+	return addr;
 }
 
 /* 0x00000090 */
 int
 PatchExec1(void *buf, int *check)
 {
+	int i;
+
+	if (_lw((u32) buf) != ELF_MAGIC)
+		return -1;
+
+	i = check[2];
+	if (i >= 0x120) {
+		if (i != 0x120 && i != 0x141 && i != 0x142 &&
+				i != 0x143 && i != 0x140)
+			return -1;
+
+		if (check[4] == 0) {
+			if (check[17] == 0)
+				return -1;
+			check[18] = 1;
+			return 0;
+		}
+
+		check[18] = 1;
+		check[17] = 1;
+		PatchExec2(buf, check);
+	} else {
+		if (i >= 0x52)
+			return -1;
+		if (check[17] == 0)
+			return -2;
+		check[18] = 1;
+	}
+
 	return 0;
 }
 
@@ -132,7 +165,7 @@ ProbeExec1_Patched(void *buf, int *check)
 
 /* 0x000001E4 */
 char *
-GetStrTab(Elf32_Ehdr *hdr)
+GetStrTab(void *buf)
 {
 	return 0;
 }
