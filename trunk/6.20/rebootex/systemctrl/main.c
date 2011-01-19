@@ -46,7 +46,7 @@ u32 model1[] = {
 };
 
 int model; /* 0x00008270 */
-int g_000083A4;
+u32 g_000083A4;
 int g_00008258;
 int g_0000825C;
 unsigned int rebootex_size; /* 0x00008264 */
@@ -86,11 +86,25 @@ typedef struct {
 	u16		e_shstrndx;		// 50
 } __attribute__((packed)) Elf32_Ehdr;
 
+/* ELF section header */
+typedef struct { 
+	u32		sh_name;		// 0
+	u32		sh_type;		// 4
+	u32		sh_flags;		// 8
+	u32		sh_addr;		// 12
+	u32		sh_offset;		// 16
+	u32		sh_size;		// 20
+	u32		sh_link;		// 24
+	u32		sh_info;		// 28
+	u32		sh_addralign;	// 32
+	u32		sh_entsize;		// 36
+} __attribute__((packed)) Elf32_Shdr;
+
 #define ELF_MAGIC	0x464C457FU
 
 /* 0x00000000 */
 int
-IsStaticElf(void *buf)
+is_static_elf(void *buf)
 {
 	Elf32_Ehdr *hdr = buf;
 
@@ -160,33 +174,102 @@ PatchExec1(void *buf, int *check)
 int
 ProbeExec1_Patched(void *buf, int *check)
 {
-	return 0;
+	int r;
+	u16 attr, realattr;
+	u16 *check2;
+
+	r = ProbeExec1(buf, check);
+	if (_lw((u32) buf) != ELF_MAGIC)
+		return r;
+
+	realattr = *(u16 *) (((check[19] >> 1) << 1) + (u32) buf);
+	attr = realattr & 0x1E00;
+
+	if (attr != 0) {
+		check2 = (u16 *) check;
+		if (attr != (check2[44] & 0x1E00))
+			check2[44] = realattr;
+	}
+
+	if (check[18] == 0)
+		check[18] = 1;
+
+	return r;
 }
 
 /* 0x000001E4 */
 char *
 GetStrTab(void *buf)
 {
-	return 0;
+	Elf32_Ehdr *hdr = (Elf32_Ehdr *) buf;
+	int i;
+	u8 *p;
+
+	if (hdr->e_magic != ELF_MAGIC)
+		return NULL;
+
+	p = buf + hdr->e_shoff;
+	for (i = 0; i < hdr->e_shnum; i++) {
+		if (hdr->e_shstrndx == i) {
+			Elf32_Shdr *section = (Elf32_Shdr *) p;
+
+			if (section->sh_type == 3)
+				return (char *) buf + section->sh_offset;
+		}
+		p += hdr->e_shentsize;
+	}
+
+	return NULL;
 }
 
 /* 0x00000280 */
 int
-PatchExec3(int a0, int a1, int a2, int a3)
+PatchExec3(void *buf, int *check, int is_plain, int res)
 {
+	if (!is_plain)
+		return res;
+
+	if (check[2] >= 0x52) {
+		if (is_static_elf(buf)) {
+			check[8] = 3;
+		}
+		return res;
+	}
+
+	if (!PatchExec2(buf, check) & 0xFF00)
+		return res;
+
+	check[17] = 1;
+
 	return 0;
 }
 
-void
-sub_0000031C(int a0, int a1, int a2)
+int
+sub_0000031C(int *a0, u32 a1)
 {
+	int i, cnt;
+	u32 addr;
+
+	cnt = a0[2];
+	for (i = 0; i < cnt; i++) {
+		addr = i * 8;
+		addr += a0[1];
+		if (_lw(addr) == a1)
+			return 1;
+	}
+
+	return 0;
 }
 
 /* 0x00000364 */
-int
-SystemCtrlForUser_1C90BECB(int a0)
+u32
+SystemCtrlForUser_1C90BECB(u32 a0)
 {
-	return 0;
+	u32 tmp = g_000083A4;
+
+	g_000083A4 = a0 | 0x80000000U;
+
+	return tmp;
 }
 
 int
