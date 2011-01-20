@@ -90,7 +90,7 @@ power_callback(void)
 	*/
 	_sw(0x3C0188FC, addr + ((m == 0) ? 0x2F74 : 0x2D24)); /* lui $at, 0x88FC */
 
-	/* restore the effect of sceKernelPowerLock */
+	/* restore the effect of scePowerRegisterCallback */
 	_sw(0xACC24230, 0x8800CCB0); /* sw v0, 0x4230(a2) */
 	_sw(0x0A003322, 0x8800CCB4); /* j 0x0800CC88 */
 	_sw(0x00001021, 0x8800CCB8); /* addu $v0, $zr, $zr */
