@@ -151,7 +151,7 @@ power_offset(void *func)
 int
 main(void)
 {
-	static int __attribute__ ((aligned (16))) power_buf[0x40000];
+	static int __attribute__ ((aligned (16))) power_buf[0x80000];
 
 	pspUtilityHtmlViewerParam param;
 	SceUID sceuid;
@@ -194,9 +194,9 @@ main(void)
 	ClearCaches();
 
 	sceuid = sceKernelCreateCallback("hen", 0, 0);
-	log("power register 0x%08x\n", 0xCCB0U - (offset & 0xFFFFF));
+	log("power register 0x%08x\n", 0xCCB0U - (offset & 0xFFFFFF));
 	/* this line stores 0/nop to 0x8800CCBC */
-	_scePowerRegisterCallback((0xCCB0U - (offset & 0xFFFFF)) >> 4, sceuid);
+	_scePowerRegisterCallback((0xCCB0U - (offset & 0xFFFFFF)) >> 4, sceuid);
 	log("power register OK\n");
 	ClearCaches();
 
