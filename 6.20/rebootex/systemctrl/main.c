@@ -9,6 +9,59 @@
 #include "pspctrl.h"
 #include "psploadexec_kernel.h"
 
+typedef struct {
+	int magic;//offset 0x000083E8 - 0x00    // 0x47434E54 == "TNCG" 
+	int vshcpuspeed; //0x000083EC - 0x04
+	int vshbusspeed; //0x000083F0 - 0x08
+	int umdisocpuspeed; //0x000083F4 - 0x0C
+	int umdisobusspeed; //0x000083F8 - 0x10
+	int fakeregion;//0x000083FC - 0x14                 //13 Debug II
+	int skipgameboot;//0x00008400 - 0x18
+	int showmac;//0x00008404 0x1C   //1 show 0 hide
+	int notnupdate;//0x00008408 - 0x20    //1 normal 0 tnupdate
+	int hidepic;//0x0000840C - 0x24
+	int nospoofversion;//0x00008410 - 0x28 //1 normal 0 spoof
+	int slimcolor;//0x00008414 - 0x2C
+	int fastscroll;//0x00008418 - 0x30 //1 enabled 0 disabled
+	int protectflash;//0x0000841C - 0x34
+	int fakeindex;//0x00008420 - 0x38
+	int unk;//0x00008224 - 0x3C
+} TNConfig;
+
+typedef struct SceModule2
+{
+	struct SceModule2	*next; // 0
+	u16					attribute; // 4
+	u8					version[2]; // 6
+	char				modname[27]; // 8
+	char				terminal; // 0x23
+	char				mod_state;	// 0x24
+	char				unk1;    // 0x25
+	char				unk2[2]; // 0x26
+	u32					unk3;	// 0x28
+	SceUID				modid; // 0x2C
+	u32					unk4; // 0x30
+	SceUID				mem_id; // 0x34
+	u32					mpid_text;	// 0x38
+	u32					mpid_data; // 0x3C
+	void *				ent_top; // 0x40
+	unsigned int		ent_size; // 0x44
+	void *				stub_top; // 0x48
+	u32					stub_size; // 0x4C
+	u32					entry_addr_; // 0x50
+	u32					unk5[4]; // 0x54
+	u32					entry_addr; // 0x64
+	u32					gp_value; // 0x68
+	u32					text_addr; // 0x6C
+	u32					text_size; // 0x70
+	u32					data_size;	// 0x74
+	u32					bss_size; // 0x78
+	u32					nsegment; // 0x7C
+	u32					segmentaddr[4]; // 0x80
+	u32					segmentsize[4]; // 0x90
+} SceModule2;
+
+
 #define MAKE_CALL(__f) \
 	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
 
@@ -17,6 +70,8 @@
 
 #define find_text_addr_by_name(__name) \
 	(u32) _lw((u32) (sceKernelFindModuleByName(__name)) + 108)
+
+extern int ModuleMgrForKernel_329C89DB(void);
 
 extern int sub_00001CBC(u32, u32);
 extern void sceKernelCheckExecFile_Patched(void *buf, int *check);
@@ -59,6 +114,7 @@ int *keyconfig_addr; /* 0x0000839C */
 int g_00008268; 
 int g_0000827C;
 int g_00008280;  
+int g_is_updl_not_patched;
 
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
@@ -719,9 +775,29 @@ SystemCtrlForUser_745286D1(int a0, int a1)
 }
 
 /* 0x000026D4 */
-void
+int
 PatchSceUpdateDL(void)
 {
+	u32 ret, k1;
+
+	if ((ret = ModuleMgrForKernel_329C89DB()) < 0)
+		return ret;
+
+	k1 = pspSdkSetK1(0);
+	if(g_is_updl_not_patched) {
+		SceModule2 *mod = (SceModule2 *) sceKernelFindModuleByName("SceUpdateDL_Library");
+		if(mod) {
+			if(sceKernelFindModuleByName("sceVshNpSignin_Module")) {
+				if(sceKernelFindModuleByName("npsignup_plugin_module")) {
+					strcpy((char *)mod->text_addr + 0x32BC, "http://total-noob.blogspot.com/updatelist.txt");
+					ClearCaches();
+				}
+			}
+		}
+	}
+	pspSdkSetK1(k1);
+
+	return ret;
 }
 
 void
@@ -781,30 +857,63 @@ oe_free(int a0)
 {
 }
 
-/* 0x000030F4 */
+/* 0x000030F4 SystemCtrlForUser_8E426F09 */
 int
-SystemCtrlForUser_8E426F09(int a0, int a1)
+sctrlSEGetConfigEx(void *buf, SceSize size)
 {
-	return 0;
+	int res = -1;
+	int k1;
+	SceUID fd;
+
+	k1 = pspSdkSetK1(0);
+	memset (buf, 0, size);
+	if ((fd = sceIoOpen("flashfat1:/config.tn", PSP_O_RDONLY, 0)) > 0) {
+		res = sceIoRead(fd, buf, size);
+		sceIoClose(fd);
+	}
+	pspSdkSetK1(k1);
+
+    return res;
 }
 
 /* 0x0000319C */
-void
-sctrlSEGetConfig(int a0)
+int
+sctrlSEGetConfig(void *buf)
 {
+	return sctrlSEGetConfigEx(buf, 0x40);
 }
 
-/* 0x000031A4 */
+/* 0x000031A4 SystemCtrlForUser_AD4D5EA5 */
 int
-SystemCtrlForUser_AD4D5EA5(int a0, int a1)
+sctrlSESetConfigEx(TNConfig *config, int size)
 {
+	int w;
+	u32 k1;
+	SceUID fd;
+
+	k1 = pspSdkSetK1(0);
+	if((fd = sceIoOpen("flashfat1:/config.tn", 0x602, 0x1FF)) < 0) {
+		pspSdkSetK1(k1);
+		return -1;
+	}
+
+	config->magic = 0x47434E54;
+	if ((w = sceIoWrite(fd,config,size)) < size) {
+		sceIoClose(fd);
+		pspSdkSetK1(k1);
+		return -1;
+	}
+
+	sceIoClose(fd);
+	pspSdkSetK1(k1);
 	return 0;
 }
 
 /* 0x0000325C */
-void
-sctrlSESetConfig(int a0)
+int
+sctrlSESetConfig(TNConfig *config)
 {
+	return sctrlSESetConfigEx(config, 0x40);
 }
 
 /* 0x00003264 */
@@ -902,7 +1011,16 @@ sctrlSEGetVersion(void)
 int
 sctrlKernelSetDevkitVersion(int a0)
 {
-	return 0;
+	u32 k1;
+	int old;
+
+	k1 = pspSdkSetK1(0);
+	old = sceKernelDevkitVersion();
+	_sh(a0 >> 16, 0x88011AAC);
+	_sh(a0 & 0xFFFF, 0x88011AB4);
+	pspSdkSetK1(k1);
+
+	return old;
 }
 
 /* 0x0000353C */
@@ -923,7 +1041,18 @@ sctrlKernelLoadExecVSHWithApitype(int apitype, const char *file, struct SceKerne
 PspIoDrv *
 sctrlHENFindDriver(char* drvname)
 {
-	return 0;
+	u32 text_addr, k1;
+	PspIoDrv *(*iomgr_find_driver)(char *);
+	PspIoDrv *ret;
+
+	k1 = pspSdkSetK1(0);
+	text_addr = find_text_addr_by_name("sceIOFileManager");
+
+	iomgr_find_driver = (void *) (text_addr + 0x2A38);
+	ret = iomgr_find_driver(drvname);
+	pspSdkSetK1(k1);
+
+	return ret;
 }
 
 /* 0x000036C4 */

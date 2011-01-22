@@ -1,5 +1,5 @@
 TARGET = systemctrl
-OBJS = main.o
+OBJS = main.o stub.o
 
 INCDIR = 
 CFLAGS = -O2 -G0 -Wall -fshort-wchar -fno-pic -mno-check-zero-division
