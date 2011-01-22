@@ -15,7 +15,7 @@ EXTRA_TARGETS = EBOOT.PBP
 PSP_EBOOT_TITLE = HEN
 
 BUILD_PRX = 1
-#ENCRYPT = 1
+ENCRYPT = 1
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
