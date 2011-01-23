@@ -34,19 +34,8 @@ extern int sceIoMkDir_Patched(int, int);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
 extern void sub_000016D8(int, int, int, int);
 extern void sub_00003938(int, int);
+extern int sub_00001838(int, int, int, int, int, int, int, int);
 
-
-/* 0x00006A0C */
-u32 model0[] = {
-	0x00000F10, 0x00001158, 0x000010D8, 0x0000112C,
-	0x00000E10, 0x00000E74
-};
-
-/* 0x00006A24 */
-u32 model1[] = {
-	0x00000FA8, 0x000011F0, 0x00001170, 0x000011C4,
-	0x00000EA8, 0x000011F0
-};
 
 int model; /* 0x00008270 */
 u32 g_000083A4;
@@ -65,6 +54,7 @@ int g_00008280;
 int g_is_updl_not_patched; /* 0x00008408 */
 int g_00008260;
 int g_00008290;
+int g_0000826C; /* function pointer */
 
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
@@ -406,6 +396,18 @@ PatchIoFileMgr(void)
 void
 PatchMemlmd(void)
 {
+	/* 0x00006A0C */
+	static u32 model0[] = {
+		0x00000F10, 0x00001158, 0x000010D8, 0x0000112C,
+		0x00000E10, 0x00000E74
+	};
+
+	/* 0x00006A24 */
+	static u32 model1[] = {
+		0x00000FA8, 0x000011F0, 0x00001170, 0x000011C4,
+		0x00000EA8, 0x000011F0
+	};
+
 	u32 text_addr;
 	u32 fp;
 	u32 *table;
@@ -431,9 +433,44 @@ PatchMemlmd(void)
 	_sw(fp, text_addr + table[5]);
 }
 
+/* 0x0000094C */
 void
-sub_0000094C(void)
+PatchSceMesgLed(void)
 {
+	static u32 g_000069CC[] = {0x00001E3C, 0x00003808, 0x00003B4C, 0x00001ECC};
+	static u32 g_000069DC[] = {0x00001ECC, 0x00003D10, 0x0000415C, 0x00001F5C};
+	static u32 g_000069EC[] = {0x00001F5C, 0x000041F0, 0x00004684, 0x00001FEC};
+	static u32 g_000069FC[] = {0x00001FEC, 0x00004674, 0x00004B50, 0x0000207C};
+
+	u32 text_addr, fp;
+	u32 *p;
+
+	text_addr = find_text_addr_by_name("sceMesgLed");
+	switch (model) {
+	case 0:
+		p = g_000069CC;
+		break;
+	case 1:
+		p = g_000069DC;
+		break;
+	case 2:
+	case 3: /* fall-thru. fix for 4G */
+		p = g_000069EC;
+		break;
+	case 4:
+		p = g_000069FC;
+		break;
+	default: /* missing in TN HEN */
+		return;
+	}
+
+	fp = MAKE_CALL(sub_00001838);
+	_sw(fp, text_addr + 0x00001908);
+	_sw(fp, text_addr + p[0]);
+	g_0000826C = text_addr + 0xE0;
+	_sw(fp, text_addr + p[1]);
+	_sw(fp, text_addr + p[2]);
+	_sw(fp, text_addr + p[3]);
 }
 
 /* 0x00000A28 */
