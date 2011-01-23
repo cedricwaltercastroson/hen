@@ -8,6 +8,7 @@
 #include "pspinit.h"
 #include "pspctrl.h"
 #include "psploadexec_kernel.h"
+#include "pspmodulemgr_kernel.h"
 
 typedef struct {
 	int magic;//offset 0x000083E8 - 0x00    // 0x47434E54 == "TNCG" 
@@ -61,6 +62,18 @@ typedef struct SceModule2
 	u32					segmentsize[4]; // 0x90
 } SceModule2;
 
+/**
+  * Copied from M33 SDK
+  *
+  * Load a module with the VSH apitype.
+  * 
+  * @param path - The path to the module to load.
+  * @param flags - Unused, always 0 .
+  * @param option  - Pointer to a mod_param_t structure. Can be NULL.
+  *
+  * @returns The UID of the loaded module on success, otherwise one of ::PspKernelErrorCodes.
+  */
+extern SceUID sceKernelLoadModuleVSH(const char *path, int flags, SceKernelLMOption *option);
 
 #define MAKE_CALL(__f) \
 	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
@@ -70,8 +83,6 @@ typedef struct SceModule2
 
 #define find_text_addr_by_name(__name) \
 	(u32) _lw((u32) (sceKernelFindModuleByName(__name)) + 108)
-
-extern int ModuleMgrForKernel_329C89DB(const char *, int, void *);
 
 extern int sub_00001CBC(u32, u32);
 extern void sceKernelCheckExecFile_Patched(void *buf, int *check);
@@ -775,12 +786,12 @@ SystemCtrlForUser_745286D1(int a0, int a1)
 }
 
 /* 0x000026D4 */
-int
-PatchSceUpdateDL(const char *a0, int a1, void *a2)
+SceUID 
+PatchSceUpdateDL(const char *path, int flags, SceKernelLMOption *option)
 {
 	u32 ret, k1;
 
-	if ((ret = ModuleMgrForKernel_329C89DB(a0, a1, a2)) < 0)
+	if ((ret = sceKernelLoadModuleVSH(path, flags, option)) < 0)
 		return ret;
 
 	k1 = pspSdkSetK1(0);
