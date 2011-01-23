@@ -105,7 +105,7 @@ u32 g_000083A4;
 int g_00008258;
 int g_0000825C;
 unsigned int rebootex_size; /* 0x00008264 */
-void *alloc_addr; /* 0x00008264 */
+void *alloc_addr; /* 0x0000828C */
 
 int *apitype_addr; /* 0x00008288 */
 int *filename_addr; /* 0x00008284 */
@@ -114,7 +114,7 @@ int *keyconfig_addr; /* 0x0000839C */
 int g_00008268; 
 int g_0000827C;
 int g_00008280;  
-int g_is_updl_not_patched;
+int g_is_updl_not_patched; /* 0x00008408 */
 
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
