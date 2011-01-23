@@ -71,7 +71,7 @@ typedef struct SceModule2
 #define find_text_addr_by_name(__name) \
 	(u32) _lw((u32) (sceKernelFindModuleByName(__name)) + 108)
 
-extern int ModuleMgrForKernel_329C89DB(void);
+extern int ModuleMgrForKernel_329C89DB(const char *, int, void *);
 
 extern int sub_00001CBC(u32, u32);
 extern void sceKernelCheckExecFile_Patched(void *buf, int *check);
@@ -776,11 +776,11 @@ SystemCtrlForUser_745286D1(int a0, int a1)
 
 /* 0x000026D4 */
 int
-PatchSceUpdateDL(void)
+PatchSceUpdateDL(const char *a0, int a1, void *a2)
 {
 	u32 ret, k1;
 
-	if ((ret = ModuleMgrForKernel_329C89DB()) < 0)
+	if ((ret = ModuleMgrForKernel_329C89DB(a0, a1, a2)) < 0)
 		return ret;
 
 	k1 = pspSdkSetK1(0);
@@ -789,7 +789,7 @@ PatchSceUpdateDL(void)
 		if(mod) {
 			if(sceKernelFindModuleByName("sceVshNpSignin_Module")) {
 				if(sceKernelFindModuleByName("npsignup_plugin_module")) {
-					strcpy((char *)mod->text_addr + 0x32BC, "http://total-noob.blogspot.com/updatelist.txt");
+					strcpy((char *) mod->text_addr + 0x32BC, "http://total-noob.blogspot.com/updatelist.txt");
 					ClearCaches();
 				}
 			}
