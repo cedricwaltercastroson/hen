@@ -151,7 +151,7 @@ power_offset(void *func)
 int
 main(void)
 {
-	static int __attribute__ ((aligned (16))) power_buf[0x80000];
+	static int power_buf[0x80000] __attribute__ ((aligned (16)));
 
 	pspUtilityHtmlViewerParam param;
 	SceUID sceuid;
