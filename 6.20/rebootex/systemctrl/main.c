@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <string.h>
 
 #include "pspsdk.h"
@@ -10,70 +9,10 @@
 #include "psploadexec_kernel.h"
 #include "pspmodulemgr_kernel.h"
 
-typedef struct {
-	int magic;//offset 0x000083E8 - 0x00    // 0x47434E54 == "TNCG" 
-	int vshcpuspeed; //0x000083EC - 0x04
-	int vshbusspeed; //0x000083F0 - 0x08
-	int umdisocpuspeed; //0x000083F4 - 0x0C
-	int umdisobusspeed; //0x000083F8 - 0x10
-	int fakeregion;//0x000083FC - 0x14                 //13 Debug II
-	int skipgameboot;//0x00008400 - 0x18
-	int showmac;//0x00008404 0x1C   //1 show 0 hide
-	int notnupdate;//0x00008408 - 0x20    //1 normal 0 tnupdate
-	int hidepic;//0x0000840C - 0x24
-	int nospoofversion;//0x00008410 - 0x28 //1 normal 0 spoof
-	int slimcolor;//0x00008414 - 0x2C
-	int fastscroll;//0x00008418 - 0x30 //1 enabled 0 disabled
-	int protectflash;//0x0000841C - 0x34
-	int fakeindex;//0x00008420 - 0x38
-	int unk;//0x00008224 - 0x3C
-} TNConfig;
+#include "systemctrl.h"
 
-typedef struct SceModule2
-{
-	struct SceModule2	*next; // 0
-	u16					attribute; // 4
-	u8					version[2]; // 6
-	char				modname[27]; // 8
-	char				terminal; // 0x23
-	char				mod_state;	// 0x24
-	char				unk1;    // 0x25
-	char				unk2[2]; // 0x26
-	u32					unk3;	// 0x28
-	SceUID				modid; // 0x2C
-	u32					unk4; // 0x30
-	SceUID				mem_id; // 0x34
-	u32					mpid_text;	// 0x38
-	u32					mpid_data; // 0x3C
-	void *				ent_top; // 0x40
-	unsigned int		ent_size; // 0x44
-	void *				stub_top; // 0x48
-	u32					stub_size; // 0x4C
-	u32					entry_addr_; // 0x50
-	u32					unk5[4]; // 0x54
-	u32					entry_addr; // 0x64
-	u32					gp_value; // 0x68
-	u32					text_addr; // 0x6C
-	u32					text_size; // 0x70
-	u32					data_size;	// 0x74
-	u32					bss_size; // 0x78
-	u32					nsegment; // 0x7C
-	u32					segmentaddr[4]; // 0x80
-	u32					segmentsize[4]; // 0x90
-} SceModule2;
-
-/**
-  * Copied from M33 SDK
-  *
-  * Load a module with the VSH apitype.
-  * 
-  * @param path - The path to the module to load.
-  * @param flags - Unused, always 0 .
-  * @param option  - Pointer to a mod_param_t structure. Can be NULL.
-  *
-  * @returns The UID of the loaded module on success, otherwise one of ::PspKernelErrorCodes.
-  */
-extern SceUID sceKernelLoadModuleVSH(const char *path, int flags, SceKernelLMOption *option);
+PSP_MODULE_INFO("SystemControl", 0x3007, 1, 1);
+PSP_MAIN_THREAD_ATTR(0);
 
 #define MAKE_CALL(__f) \
 	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
@@ -90,14 +29,12 @@ extern int sub_000012A0(int, int);
 extern void PartitionCheck_Patched(int, int);
 extern int sceKernelCreateThread_Patched(int, int);
 extern int sceKernelStartThread_Patched(int, int, int);
-extern int sub_0000037C(int);
+extern int sub_0000037C(PSP_Header *hdr);
 extern int sceIoMkDir_Patched(int, int);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
 extern void sub_000016D8(int, int, int, int);
 extern void sub_00003938(int, int);
 
-PSP_MODULE_INFO("SystemControl", 0x3007, 1, 1);
-PSP_MAIN_THREAD_ATTR(0);
 
 /* 0x00006A0C */
 u32 model0[] = {
@@ -122,52 +59,17 @@ int *apitype_addr; /* 0x00008288 */
 int *filename_addr; /* 0x00008284 */
 int *keyconfig_addr; /* 0x0000839C */
 
-int g_00008268; 
+int (*g_00008268)(void); 
 int g_0000827C;
 int g_00008280;  
 int g_is_updl_not_patched; /* 0x00008408 */
+int g_00008260;
+int g_00008290;
 
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *); /* 0x00008294 */
 
-/* ELF file header */
-typedef struct {
-	u32		e_magic;		// 0
-	u8		e_class;		// 4
-	u8		e_data;			// 5
-	u8		e_idver;		// 6
-	u8		e_pad[9];		// 7
-	u16		e_type;			// 16
-	u16		e_machine;		// 18
-	u32		e_version;		// 20
-	u32		e_entry;		// 24
-	u32		e_phoff;		// 28
-	u32		e_shoff;		// 32
-	u32		e_flags;		// 36
-	u16		e_ehsize;		// 40
-	u16		e_phentsize;	// 42
-	u16		e_phnum;		// 44
-	u16		e_shentsize;	// 46
-	u16		e_shnum;		// 48
-	u16		e_shstrndx;		// 50
-} __attribute__((packed)) Elf32_Ehdr;
-
-/* ELF section header */
-typedef struct { 
-	u32		sh_name;		// 0
-	u32		sh_type;		// 4
-	u32		sh_flags;		// 8
-	u32		sh_addr;		// 12
-	u32		sh_offset;		// 16
-	u32		sh_size;		// 20
-	u32		sh_link;		// 24
-	u32		sh_info;		// 28
-	u32		sh_addralign;	// 32
-	u32		sh_entsize;		// 36
-} __attribute__((packed)) Elf32_Shdr;
-
-#define ELF_MAGIC	0x464C457FU
 
 /* 0x00000000 */
 int
@@ -340,23 +242,45 @@ SystemCtrlForUser_1C90BECB(u32 a0)
 }
 
 int
-sub_0000037C(int a0)
+sub_0000037C(PSP_Header *hdr)
 {
+	char *p, *end;
+	PSP_Header *hdr2;
+
+	if (hdr->signature != 0x5053507E) /* ~PSP */
+		return 0;
+
+	p = (char *) hdr;
+	end = (char *) &hdr->seg_size[1];
+
+	for (hdr2 = (PSP_Header *) p; p != end; p++) {
+		if (hdr2->scheck[0] != 0 &&
+				hdr->reserved2[0] != 0 &&
+				hdr->reserved2[1] != 0)
+			return g_00008268(); /* XXX at most 3 parameters */
+	}
+
 	return 0;
 }
 
 /* 0x000003D4 */
 int
-SystemCtrlForKernel_AC0E84D1(u32 a0)
+SystemCtrlForKernel_AC0E84D1(int a0)
 {
-	return 0;
+	int prev = g_00008260;
+
+	g_00008260 = a0;
+	return prev;
 }
 
 /* 0x000003E4 */
 int
-SystemCtrlForKernel_1F3037FB(u32 a0)
+SystemCtrlForKernel_1F3037FB(int a0)
 {
-	return 0;
+	int prev = g_00008290;
+
+	g_00008290 = a0;
+	return prev;
 }
 
 /* 0x000003F4 */
@@ -367,7 +291,7 @@ PatchSyscall(u32 fp, u32 neufp)
 	u32 *vectors, *end;
 	u32 addr;
 
-	__asm__ ("cfc0 $v0, $12;":"=r"(sr));
+	__asm__ ("cfc0 $v0, $12;" : "=r"(sr));
 	vectors = (u32 *) _lw(sr);
 	end = vectors + 0x10000;
 
@@ -381,8 +305,21 @@ again:
 }
 
 int
-sub_00000428(int a0)
+sub_00000428(char *a0)
 {
+	int i;
+	char **s;
+
+	if (a0 == NULL)
+		return 0;
+
+	s = (char **) 0x00006888;
+
+	for (i = 0; i < 27; i++, s += 3) {
+		if (!strcmp(a0, *s))
+			return 0x00006888 + i / 12;
+	}
+
 	return 0;
 }
 
@@ -487,7 +424,7 @@ PatchMemlmd(void)
 	fp = MAKE_CALL(sub_000016D8);
 	_sw(fp, text_addr + table[4]);
 
-	g_00008268 = text_addr + table[0];
+	g_00008268 = (void *) (text_addr + table[0]);
 	g_0000827C = text_addr + 0x00000134;
 	g_00008280 = text_addr + table[1];
 
