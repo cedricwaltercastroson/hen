@@ -53,13 +53,22 @@ int *apitype_addr; /* 0x00008288 */
 char **filename_addr; /* 0x00008284 */
 int *keyconfig_addr; /* 0x0000839C */
 
-int (*g_00008268)(void); 
 int g_0000827C;
 int g_00008280;  
-int g_is_updl_not_patched; /* 0x00008408 */
 int g_00008260;
 int g_00008290;
-int g_0000826C; /* function pointer */
+int g_0000826C;
+
+int g_000083B8;
+int g_000083C8;
+int g_000083D0;
+int g_000083CC;
+int g_00008270;
+int g_00008264;
+int g_0000828C;
+
+int (*func_00008268)(void); 
+int (*func_000083BC) (int, int, int, int);
 
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
@@ -254,7 +263,7 @@ sub_0000037C(PSP_Header *hdr)
 		if (hdr2->scheck[0] != 0 &&
 				hdr->reserved2[0] != 0 &&
 				hdr->reserved2[1] != 0)
-			return g_00008268(); /* XXX at most 3 parameters */
+			return func_00008268(); /* XXX at most 3 parameters */
 	}
 
 	return 0;
@@ -434,7 +443,7 @@ PatchMemlmd(void)
 	fp = MAKE_CALL(sub_000016D8);
 	_sw(fp, text_addr + table[4]);
 
-	g_00008268 = (void *) (text_addr + table[0]);
+	func_00008268 = (void *) (text_addr + table[0]);
 	g_0000827C = text_addr + 0x00000134;
 	g_00008280 = text_addr + table[1];
 
@@ -680,10 +689,31 @@ SystemCtrlForKernel_CE0A654E(int a0, int a1, int a2, int a3)
 }
 
 /* 0x00001D74 */
-int
+void
 SystemCtrlForKernel_B86E36D1(void)
 {
-	return 0;
+	int *(*func)(int);
+	int *res, *p;
+	int s1;
+
+	if (g_00008258 == 0)
+		return;
+	
+	if (g_00008258 + g_0000825C >= 0x35)
+		return;
+
+	func = (void *) 0x88003E2C;
+	res = func(2);
+	s1 = g_00008258 << 20;
+	res[2] = s1;
+	p = (int *) res[4];
+	p[5] = (g_0000825C << 21) | 0xFC;
+
+	res = func(8);
+	res[1] = s1 + 0x88800000;
+	res[2] = g_0000825C << 20;
+	p = (int *) res[4];
+	p[5] = (g_0000825C << 21) | 0xFC;
 }
 
 int
@@ -756,9 +786,25 @@ sub_00002108(int a0)
 {
 }
 
-void
+int
 sub_00002200(int a0, int a1, int a2, int a3)
 {
+	char *s = (char *) 0x88FB0000;
+
+	for (; s != (char *) 0x88FB0020; s++)
+		*s = 0;
+
+	_sw(g_00008258, 0x88FB0008);
+	_sw(g_0000825C, 0x88FB000C);
+	_sw(g_000083B8, 0x88FB0010);
+	_sw(g_000083C8, 0x88FB0014);
+	_sw(g_000083D0, 0x88FB0018);
+	_sw(g_000083CC, 0x88FB001C);
+	_sw(g_00008270, 0x88FB0000);
+	_sw(g_00008264, 0x88FB0004);
+	memcpy((void *) 0x88FC0000, (void *) g_0000828C, g_00008264);
+
+	return func_000083BC(a0, a1, a2, a3);
 }
 
 /* 0x00002324 */
@@ -835,7 +881,7 @@ PatchSceUpdateDL(const char *path, int flags, SceKernelLMOption *option)
 		return ret;
 
 	k1 = pspSdkSetK1(0);
-	if(g_is_updl_not_patched) {
+	if(tnconfig.notnupdate) {
 		SceModule2 *mod = (SceModule2 *) sceKernelFindModuleByName("SceUpdateDL_Library");
 		if(mod) {
 			if(sceKernelFindModuleByName("sceVshNpSignin_Module")) {
