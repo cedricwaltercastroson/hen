@@ -8,6 +8,8 @@
 #include "pspctrl.h"
 #include "psploadexec_kernel.h"
 #include "pspmodulemgr_kernel.h"
+#include "pspthreadman_kernel.h"
+#include "pspsysmem_kernel.h"
 
 #include "systemctrl.h"
 
@@ -222,7 +224,7 @@ sub_0000031C(int *a0, u32 a1)
 
 /* 0x00000364 */
 u32
-SystemCtrlForUser_1C90BECB(u32 a0)
+sctrlHENSetStartModuleHandler(u32 a0)
 {
 	u32 prev = g_000083A4;
 
@@ -731,7 +733,7 @@ findFunctionIn_scePower_Service(u32 nid)
 
 /* 0x000023BC */
 void
-SystemCtrlForKernel_CC9ADCF8(int a0, int a1)
+sctrlHENSetSpeed(int a0, int a1)
 {
 }
 
@@ -752,15 +754,15 @@ sub_000024E4(int a0)
 }
 
 /* 0x00002620 */
-void
-VshCtrlLib_FD26DA72(int a0)
+int
+vctrlVSHRegisterVshMenu(int (* ctrl)(SceCtrlData *, int))
 {
+	return 0;
 }
 
 /* 0x00002664 */
-/* sctrlHENSetMemory */
 int
-SystemCtrlForUser_745286D1(int a0, int a1)
+sctrlHENSetMemory(int a0, int a1)
 {
 	return 0;
 }
@@ -810,7 +812,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 
 /* 0x00002C90 */
 int
-VshCtrlLib_CD6B3913(int a0)
+vctrlVSHExitVSHMenu(TNConfig *conf)
 {
 	return 0;
 }
@@ -911,27 +913,49 @@ sctrlSESetConfig(TNConfig *config)
 SceUID
 kuKernelLoadModule(const char *path, int flags, SceKernelLMOption *option)
 {
-	return 0;
+	int k1;
+	SceUID ret;
+
+	k1 = pspSdkSetK1(0);
+
+	ret = sceKernelLoadModule(path, flags, option);
+	pspSdkSetK1(k1);
+
+	return ret;
 }
 
 /* 0x000032D0 */
 SceUID
 kuKernelLoadModuleWithApitype2(int apitype, const char *path, int flags, SceKernelLMOption *option)
 {
-	return 0;
+	SceUID ret;
+	int k1 = pspSdkSetK1(0);
+
+	//ModuleMgrForKernel_B691CB9F
+	ret = sceKernelLoadModuleForLoadExec(apitype, path, flags, option);
+	pspSdkSetK1(k1);
+
+	return ret;
 }
 
 /* 0x0000334C */
 int
 kuKernelInitApitype(void)
 {
-	return 0;
+	return sceKernelInitApitype();
 }
 
 /* 0x00003354 */
 int
 kuKernelInitFileName(char *fname)
 {
+	char *file;
+	int k1 = pspSdkSetK1(0);
+
+	file = sceKernelInitFileName();
+	strcpy(fname, file);
+	pspSdkSetK1(k1);
+
 	return 0;
 }
 
@@ -939,7 +963,7 @@ kuKernelInitFileName(char *fname)
 int
 kuKernelBootFrom(void)
 {
-	return 0;
+	return sceKernelBootFrom();
 }
 
 /* 0x000033AC */
@@ -953,21 +977,41 @@ kuKernelInitKeyConfig(void)
 int
 kuKernelGetUserLevel(void)
 {
-	return 0;
+	int ret;
+	int k1 = pspSdkSetK1(0);
+
+	ret = sceKernelGetUserLevel();
+	pspSdkSetK1(k1);
+
+	return ret;
 }
 
 /* 0x000033F8 */
 int
 kuKernelSetDdrMemoryProtection(void *addr, int size, int prot)
 {
-	return 0;
+	int ret;
+	int k1 = pspSdkSetK1(0);
+
+	//SysMemForKernel_31DFE03F
+	ret = sceKernelSetDdrMemoryProtection(addr, size, prot);
+	pspSdkSetK1(k1);
+
+	return ret;
 }
 
 /* 0x00003464 */
 int
 kuKernelGetModel(void)
 {
-	return 0;
+	int ret;
+	int k1 = pspSdkSetK1(0);
+
+	//SysMemForKernel_864EBFD7
+	ret = sceKernelGetModel();
+	pspSdkSetK1(k1);
+
+	return ret;
 }
 
 /* 0x000034A8 */

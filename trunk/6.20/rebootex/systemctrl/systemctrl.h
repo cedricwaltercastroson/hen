@@ -95,19 +95,6 @@ typedef struct
 	u8		key_data3[0x1C]; // 134
 } __attribute__((packed)) PSP_Header;
 
-/**
-  * Copied from M33 SDK
-  *
-  * Load a module with the VSH apitype.
-  * 
-  * @param path - The path to the module to load.
-  * @param flags - Unused, always 0 .
-  * @param option  - Pointer to a mod_param_t structure. Can be NULL.
-  *
-  * @returns The UID of the loaded module on success, otherwise one of ::PspKernelErrorCodes.
-  */
-extern SceUID sceKernelLoadModuleVSH(const char *path, int flags, SceKernelLMOption *option);
-
 #define find_module_by_name(__name) (SceModule2 *) sceKernelFindModuleByName(__name)
 
 #define find_text_addr_by_name(__name) \
@@ -150,6 +137,23 @@ typedef struct {
 } __attribute__((packed)) Elf32_Shdr;
 
 #define ELF_MAGIC	0x464C457FU
+
+
+/**
+  * Copied from M33 SDK
+  *
+  * Load a module with the VSH apitype.
+  * 
+  * @param path - The path to the module to load.
+  * @param flags - Unused, always 0 .
+  * @param option  - Pointer to a mod_param_t structure. Can be NULL.
+  *
+  * @returns The UID of the loaded module on success, otherwise one of ::PspKernelErrorCodes.
+  */
+extern SceUID sceKernelLoadModuleVSH(const char *path, int flags, SceKernelLMOption *option);
+
+extern int sceKernelLoadModuleForLoadExec(int apitype, const char *path, int flags, SceKernelLMOption *option);
+
 
 #endif
 
