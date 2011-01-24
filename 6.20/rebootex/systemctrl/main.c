@@ -224,11 +224,11 @@ sub_0000031C(int *a0, u32 a1)
 u32
 SystemCtrlForUser_1C90BECB(u32 a0)
 {
-	u32 tmp = g_000083A4;
+	u32 prev = g_000083A4;
 
 	g_000083A4 = a0 | 0x80000000U;
 
-	return tmp;
+	return prev;
 }
 
 int
@@ -260,6 +260,7 @@ SystemCtrlForKernel_AC0E84D1(int a0)
 	int prev = g_00008260;
 
 	g_00008260 = a0;
+
 	return prev;
 }
 
@@ -270,6 +271,7 @@ SystemCtrlForKernel_1F3037FB(int a0)
 	int prev = g_00008290;
 
 	g_00008290 = a0;
+
 	return prev;
 }
 
@@ -285,13 +287,12 @@ PatchSyscall(u32 fp, u32 neufp)
 	vectors = (u32 *) _lw(sr);
 	end = vectors + 0x10000;
 
-again:
-	addr = vectors[4];
-	if (addr == fp)
-		_sw(neufp, vectors[4]);
-	vectors++;
-	if (vectors != end)
-		goto again;
+	do {
+		addr = vectors[4];
+		if (addr == fp)
+			_sw(neufp, vectors[4]);
+		vectors++;
+	} while (vectors != end);
 }
 
 int
