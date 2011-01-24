@@ -712,7 +712,7 @@ sub_00002200(int a0, int a1, int a2, int a3)
 
 /* 0x00002324 */
 void
-SystemCtrlForKernel_2F157BAF(int a0)
+SetConfig(int a0)
 {
 }
 
@@ -757,6 +757,7 @@ VshCtrlLib_FD26DA72(int a0)
 }
 
 /* 0x00002664 */
+/* sctrlHENSetMemory */
 int
 SystemCtrlForUser_745286D1(int a0, int a1)
 {
@@ -963,7 +964,7 @@ kuKernelSetDdrMemoryProtection(void *addr, int size, int prot)
 
 /* 0x00003464 */
 int
-KUBridge_24331850(void)
+kuKernelGetModel(void)
 {
 	return 0;
 }
