@@ -32,12 +32,15 @@ extern void PartitionCheck_Patched(int, int);
 extern int sceKernelCreateThread_Patched(int, int);
 extern int sceKernelStartThread_Patched(int, int, int);
 extern int sub_0000037C(PSP_Header *hdr);
-extern int sceIoMkDir_Patched(int, int);
+extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
 extern void sub_000016D8(int, int, int, int);
 extern void sub_00003938(int, int);
 extern int sub_00001838(int, int, int, int, int, int, int, int);
 
+
+/* 0x000083E8 */
+TNConfig tnconfig;
 
 int model; /* 0x00008270 */
 u32 g_000083A4;
@@ -61,6 +64,8 @@ int g_0000826C; /* function pointer */
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *); /* 0x00008294 */
+
+SceUID heapid; /* 0x00008240 */
 
 
 /* 0x00000000 */
@@ -482,9 +487,18 @@ PatchSceMesgLed(void)
 
 /* 0x00000A28 */
 int
-sceIoMkDir_Patched(int a0, int a1)
+sceIoMkDir_Patched(char *dir, SceMode mode)
 {
-	return 0;
+	int k1 = pspSdkSetK1(0);
+
+	if (!strcmp(dir, "ms0:/PSP/GAME")) {
+		sceIoMkdir("ms0:/seplugins", mode);
+	} else if (!strcmp(dir, "ef0:/PSP/GAME")) {
+		sceIoMkdir("ef0:/seplugins", mode);
+	}
+	pspSdkSetK1(k1);
+
+	return sceIoMkdir(dir, mode);
 }
 
 /* 0x00000ABC */
@@ -492,7 +506,18 @@ int
 sceIoAssign_Patched(const char *dev1, const char *dev2, const char *dev3,
 		int mode, void *unk1, long unk2)
 {
-	return 0;
+	int k1 = pspSdkSetK1(0);
+
+	if (mode == IOASSIGN_RDWR) {
+		if (!strcmp(dev3, "flashfat0:") &&
+				tnconfig.protectflash != 0) {
+			pspSdkSetK1(k1);
+			return -1;
+		}
+	}
+	pspSdkSetK1(k1);
+
+	return sceIoAssign(dev1, dev2, dev3, mode, unk1, unk2);
 }
 
 /* 0x00000BA8 */
@@ -662,8 +687,31 @@ SystemCtrlForKernel_B86E36D1(void)
 }
 
 int
-sub_00001E1C(int a0)
+sub_00001E1C(char *a0)
 {
+	int fakeregion, a1;
+
+	a0[0] = 1;
+	a0[1] = 0;
+
+	fakeregion = tnconfig.fakeregion;
+
+	if (fakeregion < 0xC) {
+		fakeregion += 2;
+		fakeregion += 0xFFF5;
+	}
+
+	a1 = fakeregion & 0xFF;
+	fakeregion = a1 ^ 2;
+	if (fakeregion == 0)
+		a1 = 3;
+	a0[6] = 1;
+	a0[4] = 1;
+	a0[2] = a1;
+	a0[7] = 0;
+	a0[3] = 0;
+	a0[5] = 0;
+
 	return 0;
 }
 
@@ -715,13 +763,23 @@ sub_00002200(int a0, int a1, int a2, int a3)
 
 /* 0x00002324 */
 void
-SetConfig(int a0)
+SetConfig(TNConfig *config)
 {
+	memcpy(&tnconfig, config, sizeof(TNConfig));
 }
 
+/* 0x00002338 */
 void
-sub_00002338(void)
+PatchRegion(void)
 {
+	u32 orig_addr = sctrlHENFindFunction("sceChkreg","sceChkreg_driver",0x59F8491D);
+	if (orig_addr) {
+		if (tnconfig.fakeregion) {
+			_sw(MAKE_JMP(sub_00001E1C), orig_addr);
+			_sw(0x00000000, orig_addr + 4);
+		}
+	}
+	ClearCaches();
 }
 
 /* 0x000023A4 */
@@ -796,6 +854,19 @@ PatchSceUpdateDL(const char *path, int flags, SceKernelLMOption *option)
 void
 sub_00002780(int a0)
 {
+	SceModule2 *loadexec = NULL;
+
+	if(sceKernelInitFileName()) {
+		if(strstr(sceKernelInitFileName(),".PBP")) {
+			_sw(0x88210000,a0+0x960);
+			_sw(0x88210000,a0+0x83C);
+		}
+	}
+
+	loadexec = (SceModule2 *) sceKernelFindModuleByName("sceLoadExec");
+	sub_00001E74(loadexec->text_addr);
+	PatchSceMesgLed();
+	ClearCaches();
 }
 
 /* 0x000027EC SystemCtrlForKernel_98012538 */
@@ -833,21 +904,23 @@ sub_00002EB0(int a0, int a1, int a2)
 }
 
 int
-sub_00002FDC(void)
+mallocinit(void)
 {
 	return 0;
 }
 
 /* 0x00003054  SystemCtrlForKernel_F9584CAD */
-void
-oe_malloc(int a0)
+void *
+oe_malloc(u32 size)
 {
+	return sceKernelAllocHeapMemory(heapid, size);
 }
 
 /* 0x000030A4 SystemCtrlForKernel_A65E8BC4 */
 void
-oe_free(int a0)
+oe_free(void *ptr)
 {
+	sceKernelFreeHeapMemory(heapid, ptr);
 }
 
 /* 0x000030F4 SystemCtrlForUser_8E426F09 */
@@ -1040,7 +1113,7 @@ sctrlHENGetVersion(void)
 int
 sctrlSEGetVersion(void)
 {
-	return 2;
+	return 0x00020000;
 }
 
 /* 0x000034C8 */
@@ -1063,7 +1136,17 @@ sctrlKernelSetDevkitVersion(int a0)
 int
 sctrlKernelSetUserLevel(int level)
 {
-	return 0;
+	int res, k1;
+	u32 text_addr, *thstruct;
+
+	k1 = pspSdkSetK1(0);
+	res = sceKernelGetUserLevel();
+	text_addr = find_text_addr_by_name("sceThreadManager");
+	thstruct = (void *) _lw(text_addr + 0x00019E80);
+	thstruct[5] = (level ^ 8) << 28;
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x000035B8 */
