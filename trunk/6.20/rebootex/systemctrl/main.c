@@ -195,7 +195,7 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
 		return res;
 	}
 
-	if (!PatchExec2(buf, check) & 0xFF00)
+	if (!(PatchExec2(buf, check) & 0xFF00))
 		return res;
 
 	check[17] = 1;
