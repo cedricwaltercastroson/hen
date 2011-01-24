@@ -47,7 +47,7 @@ unsigned int rebootex_size; /* 0x00008264 */
 void *alloc_addr; /* 0x0000828C */
 
 int *apitype_addr; /* 0x00008288 */
-int *filename_addr; /* 0x00008284 */
+char **filename_addr; /* 0x00008284 */
 int *keyconfig_addr; /* 0x0000839C */
 
 int (*g_00008268)(void); 
@@ -899,6 +899,7 @@ sctrlSESetConfigEx(TNConfig *config, int size)
 
 	sceIoClose(fd);
 	pspSdkSetK1(k1);
+
 	return 0;
 }
 
@@ -1092,51 +1093,93 @@ sctrlHENFindDriver(char* drvname)
 
 /* 0x000036C4 */
 int
-sctrlKernelLoadExecVSHDisc(int a0, int a1)
+sctrlKernelLoadExecVSHDisc(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	return 0;
+	int res;
+	int k1 = pspSdkSetK1(0);
+
+	res = sceKernelLoadExecVSHDisc(file, param);
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x00003720 */
 int
-sctrlKernelLoadExecVSHDiscUpdater(int a0, int a1)
+sctrlKernelLoadExecVSHDiscUpdater(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	return 0;
+	int res;
+	int k1 = pspSdkSetK1(0);
+
+	res = sceKernelLoadExecVSHDiscUpdater(file, param);
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x0000377C */
 int
-sctrlKernelLoadExecVSHMs1(int a0, int a1)
+sctrlKernelLoadExecVSHMs1(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	return 0;
+	int res;
+	int k1 = pspSdkSetK1(0);
+
+	res = sceKernelLoadExecVSHMs1(file, param);
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x000037D8 */
 int
-sctrlKernelLoadExecVSHMs2(int a0, int a1)
+sctrlKernelLoadExecVSHMs2(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	return 0;
+	int res;
+	int k1 = pspSdkSetK1(0);
+
+	res = sceKernelLoadExecVSHMs2(file, param);
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x00003834 */
 int
-sctrlKernelLoadExecVSHMs3(int a0, int a1)
+sctrlKernelLoadExecVSHMs3(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	return 0;
+	int res;
+	int k1 = pspSdkSetK1(0);
+
+	res = sceKernelLoadExecVSHMs3(file, param);
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x00003890 */
 int
-sctrlKernelLoadExecVSHMs4(int a0, int a1)
+sctrlKernelLoadExecVSHMs4(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	return 0;
+	int res;
+	int k1 = pspSdkSetK1(0);
+
+	res = sceKernelLoadExecVSHMs4(file, param);
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x000038EC */
 int
-sctrlKernelExitVSH(int a0)
+sctrlKernelExitVSH(struct SceKernelLoadExecVSHParam *param)
 {
-	return 0;
+	int res;
+	int k1 = pspSdkSetK1(0);
+
+	res = sceKernelExitVSHVSH(param);
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 void
@@ -1167,23 +1210,42 @@ sub_00003CB8(int a0, int a1, int a2)
 
 /* 0x00003EA8 */
 int
-sctrlKernelSetInitKeyConfig(int a0)
+sctrlKernelSetInitKeyConfig(int key)
 {
-	return 0;
+	int res;
+	int k1 = pspSdkSetK1(0);
+
+	res = sceKernelApplicationType();
+	*keyconfig_addr = key;
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x00003F04 */
-int
-sctrlKernelSetInitFileName(int a0)
+char *
+sctrlKernelSetInitFileName(char *file)
 {
-	return 0;
+	int k1 = pspSdkSetK1(0);
+
+	*filename_addr = file;
+	pspSdkSetK1(k1);
+
+	return NULL;
 }
 
 /* 0x00003F44 */
 int
-sctrlKernelSetInitApitype(int a0)
+sctrlKernelSetInitApitype(int apitype)
 {
-	return 0;
+	int res;
+	int k1 = pspSdkSetK1(0);
+
+	res = sceKernelInitApitype();
+	*apitype_addr = apitype;
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x00003FA0 pspSdkSetK1 */
