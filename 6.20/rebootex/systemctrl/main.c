@@ -903,10 +903,32 @@ sub_00002EB0(int a0, int a1, int a2)
 {
 }
 
+/* 0x00002FDC */
 int
 mallocinit(void)
 {
-	return 0;
+	u32 size;
+	int apptype = sceKernelApplicationType();
+
+	if (apptype == 0x100) {
+		size = 14 * 1024;
+		goto init_heap;
+	}
+
+	if (apptype != 0x200) {
+		size = 44 * 1024;
+		goto init_heap;
+	}
+
+	if (sceKernelInitApitype() == 0x123)
+		return 0;
+
+	size = 44 * 1024;
+
+init_heap:
+	heapid = sceKernelCreateHeap(1, size, 1, "");
+
+	return heapid < 0 ? heapid : 0;
 }
 
 /* 0x00003054  SystemCtrlForKernel_F9584CAD */
