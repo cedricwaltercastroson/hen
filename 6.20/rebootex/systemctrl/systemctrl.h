@@ -26,7 +26,7 @@ typedef struct {
 	int fastscroll;//0x00008418 - 0x30 //1 enabled 0 disabled
 	int protectflash;//0x0000841C - 0x34
 	int fakeindex;//0x00008420 - 0x38
-	int unk;//0x00008224 - 0x3C
+	int unk;//0x00008424 - 0x3C
 } TNConfig;
 
 typedef struct SceModule2
