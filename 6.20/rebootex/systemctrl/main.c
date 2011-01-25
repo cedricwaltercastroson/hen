@@ -37,6 +37,7 @@ extern int sceIoAssign_Patched(const char *, const char *, const char *, int, vo
 extern void sub_000016D8(int, int, int, int);
 extern void sub_00003938(int, int);
 extern int sub_00001838(int, int, int, int, int, int, int, int);
+extern int sctrlHENGetVersion(void);
 
 
 /* 0x000083E8 */
@@ -70,6 +71,11 @@ int g_0000828C;
 int g_000083B0;
 int g_000083DC;
 int g_000083D4;
+
+/* 0x00006A70 */
+wchar_t verinfo[] = L"6.20 TN- (HEN)";
+/* 0x00006A90 */
+wchar_t macinfo[] = L"00:00:00:00:00:00";
 
 u32 g_scePowerSetClockFrequency_addr; /* 0x000083AC */
 
@@ -780,16 +786,40 @@ sub_00002058(int a0)
 void
 sub_000020F0(int a0)
 {
+	_sw(0, a0 + 0x00000CC8);
+	ClearCaches();
 }
 
 void
 sub_000020FC(int a0)
 {
+	_sw(0, a0 + 0x00002690);
+	ClearCaches();
 }
 
+/* 0x00002108 */
 void
-sub_00002108(int a0)
+PatchSysconfPlugin(u32 text_addr)
 {
+	if (tnconfig.nospoofversion == 0) {
+		int ver = sctrlHENGetVersion();
+
+		verinfo[9] = (ver & 0xF) + 0x41;
+		memcpy((void *) (text_addr + 0x000298AC), verinfo, sizeof(verinfo));
+		_sw(0x3C020000 | ((text_addr + 0x000298AC) >> 16), text_addr + 0x00018920);
+		_sw(0x34420000 | ((text_addr + 0x000298AC) & 0xFFFF), text_addr + 0x00018924);
+	}
+
+	if (tnconfig.showmac == 0) {
+		memcpy((void *) (text_addr + 0x0002DB90), macinfo, sizeof(macinfo));
+	}
+
+	if (model == 0 && tnconfig.slimcolor != 0) {
+		_sw(_lw(text_addr + 0x00007498), text_addr + 0x00007494);
+		_sw(0x24020001, text_addr + 0x00007498);
+	}
+
+	ClearCaches();
 }
 
 int
