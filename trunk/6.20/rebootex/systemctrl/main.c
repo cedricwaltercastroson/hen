@@ -35,24 +35,25 @@ extern int sub_0000037C(PSP_Header *hdr);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
 extern void sub_000016D8(int, int, int, int);
-extern void sub_00003938(int, int);
+extern int sub_00003938(int, int);
 extern int sub_00001838(int, int, int, int, int, int, int, int);
 extern int sctrlHENGetVersion(void);
+extern void sub_00003CB8(int, int, int);
 
 
 /* 0x000083E8 */
-TNConfig tnconfig;
+TNConfig g_tnconfig;
 
-int model; /* 0x00008270 */
+int g_model; /* 0x00008270 */
 u32 g_000083A4;
 int g_00008258;
 int g_0000825C;
-unsigned int rebootex_size; /* 0x00008264 */
-void *alloc_addr; /* 0x0000828C */
+unsigned int g_rebootex_size; /* 0x00008264 */
+void *g_alloc_addr; /* 0x0000828C */
 
-int *apitype_addr; /* 0x00008288 */
-char **filename_addr; /* 0x00008284 */
-int *keyconfig_addr; /* 0x0000839C */
+int *g_apitype_addr; /* 0x00008288 */
+char **g_filename_addr; /* 0x00008284 */
+int *g_keyconfig_addr; /* 0x0000839C */
 
 int g_0000827C;
 int g_00008280;  
@@ -72,10 +73,12 @@ int g_000083B0;
 int g_000083DC;
 int g_000083D4;
 
+char g_00008428[0x24];
+
 /* 0x00006A70 */
-wchar_t verinfo[] = L"6.20 TN- (HEN)";
+wchar_t g_verinfo[] = L"6.20 TN- (HEN)";
 /* 0x00006A90 */
-wchar_t macinfo[] = L"00:00:00:00:00:00";
+wchar_t g_macinfo[] = L"00:00:00:00:00:00";
 
 u32 g_scePowerSetClockFrequency_addr; /* 0x000083AC */
 
@@ -86,7 +89,7 @@ int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *); /* 0x00008294 */
 
-SceUID heapid; /* 0x00008240 */
+SceUID g_heapid; /* 0x00008240 */
 
 
 /* 0x00000000 */
@@ -358,15 +361,15 @@ PatchModuleMgr(void)
 
 	text_addr = find_text_addr_by_name("sceModuleManager");
 
-	if (model == 4)
+	if (g_model == 4)
 		_sw(MAKE_CALL(sub_00001CBC), text_addr + 0x00007C3C);
 
 	_sw(MAKE_JMP(sceKernelCheckExecFile_Patched), text_addr + 0x00008854);
 
 	PartitionCheck = (void *) (text_addr + 0x00007FC0);
-	apitype_addr = (void *) (text_addr + 0x00009990);
-	filename_addr = (void *) (text_addr + 0x00009994);
-	keyconfig_addr = (void *) (text_addr + 0x000099EC);
+	g_apitype_addr = (void *) (text_addr + 0x00009990);
+	g_filename_addr = (void *) (text_addr + 0x00009994);
+	g_keyconfig_addr = (void *) (text_addr + 0x000099EC);
 
 	_sw(0, text_addr + 0x00000760);
 	_sw(0x24020000, text_addr + 0x000007C0); /* addiu v0, $zr, 0	*/
@@ -443,7 +446,7 @@ PatchMemlmd(void)
 
 	text_addr = find_text_addr_by_name("sceMemlmd");
 
-	if (model == 0)
+	if (g_model == 0)
 		table = model0;
 	else
 		table = model1;
@@ -479,7 +482,7 @@ PatchSceMesgLed(void)
 	u32 *p;
 
 	text_addr = find_text_addr_by_name("sceMesgLed");
-	switch (model) {
+	switch (g_model) {
 	case 0:
 		p = model0;
 		break;
@@ -531,7 +534,7 @@ sceIoAssign_Patched(const char *dev1, const char *dev2, const char *dev3,
 
 	if (mode == IOASSIGN_RDWR) {
 		if (!strcmp(dev3, "flashfat0:") &&
-				tnconfig.protectflash != 0) {
+				g_tnconfig.protectflash != 0) {
 			pspSdkSetK1(k1);
 			return -1;
 		}
@@ -618,7 +621,7 @@ module_bootstart(void)
 {
 	SceUID partition_id;
 
-	model = _lw(0x88FB0000);
+	g_model = _lw(0x88FB0000);
 
 	PatchLoadCore();
 	PatchModuleMgr();
@@ -631,13 +634,13 @@ module_bootstart(void)
 	g_000083A4 = 0x80000D90;
 	g_00008258 = _lw(0x88FB0008);
 	g_0000825C = _lw(0x88FB000C);
-	rebootex_size = _lw(0x88FB0004); /* from launcher: uncompressed rebootex size */
+	g_rebootex_size = _lw(0x88FB0004); /* from launcher: uncompressed rebootex size */
 
-	partition_id = sceKernelAllocPartitionMemory(1, "", 1, rebootex_size, 0);
+	partition_id = sceKernelAllocPartitionMemory(1, "", 1, g_rebootex_size, 0);
 	if (partition_id >= 0) {
-		alloc_addr = sceKernelGetBlockHeadAddr(partition_id);
-		memset(alloc_addr, 0, rebootex_size);
-		memcpy(alloc_addr, (void *) 0x88FC0000, rebootex_size);
+		g_alloc_addr = sceKernelGetBlockHeadAddr(partition_id);
+		memset(g_alloc_addr, 0, g_rebootex_size);
+		memcpy(g_alloc_addr, (void *) 0x88FC0000, g_rebootex_size);
 	}
 
 	ClearCaches();
@@ -736,7 +739,7 @@ sub_00001E1C(char *a0)
 	a0[0] = 1;
 	a0[1] = 0;
 
-	fakeregion = tnconfig.fakeregion;
+	fakeregion = g_tnconfig.fakeregion;
 
 	if (fakeregion < 0xC) {
 		fakeregion += 2;
@@ -801,20 +804,20 @@ sub_000020FC(int a0)
 void
 PatchSysconfPlugin(u32 text_addr)
 {
-	if (tnconfig.nospoofversion == 0) {
+	if (g_tnconfig.nospoofversion == 0) {
 		int ver = sctrlHENGetVersion();
 
-		verinfo[9] = (ver & 0xF) + 0x41;
-		memcpy((void *) (text_addr + 0x000298AC), verinfo, sizeof(verinfo));
+		g_verinfo[9] = (ver & 0xF) + 0x41;
+		memcpy((void *) (text_addr + 0x000298AC), g_verinfo, sizeof(g_verinfo));
 		_sw(0x3C020000 | ((text_addr + 0x000298AC) >> 16), text_addr + 0x00018920);
 		_sw(0x34420000 | ((text_addr + 0x000298AC) & 0xFFFF), text_addr + 0x00018924);
 	}
 
-	if (tnconfig.showmac == 0) {
-		memcpy((void *) (text_addr + 0x0002DB90), macinfo, sizeof(macinfo));
+	if (g_tnconfig.showmac == 0) {
+		memcpy((void *) (text_addr + 0x0002DB90), g_macinfo, sizeof(g_macinfo));
 	}
 
-	if (model == 0 && tnconfig.slimcolor != 0) {
+	if (g_model == 0 && g_tnconfig.slimcolor != 0) {
 		_sw(_lw(text_addr + 0x00007498), text_addr + 0x00007494);
 		_sw(0x24020001, text_addr + 0x00007498);
 	}
@@ -847,7 +850,7 @@ sub_00002200(int a0, int a1, int a2, int a3)
 void
 SetConfig(TNConfig *config)
 {
-	memcpy(&tnconfig, config, sizeof(TNConfig));
+	memcpy(&g_tnconfig, config, sizeof(TNConfig));
 }
 
 /* 0x00002338 */
@@ -856,7 +859,7 @@ PatchRegion(void)
 {
 	u32 orig_addr = sctrlHENFindFunction("sceChkreg", "sceChkreg_driver", 0x59F8491D);
 	if (orig_addr) {
-		if (tnconfig.fakeregion) {
+		if (g_tnconfig.fakeregion) {
 			_sw(MAKE_JMP(sub_00001E1C), orig_addr);
 			_sw(0x00000000, orig_addr + 4);
 		}
@@ -922,7 +925,7 @@ PatchSceUpdateDL(const char *path, int flags, SceKernelLMOption *option)
 		return ret;
 
 	k1 = pspSdkSetK1(0);
-	if(tnconfig.notnupdate) {
+	if(g_tnconfig.notnupdate) {
 		SceModule2 *mod = (SceModule2 *) sceKernelFindModuleByName("SceUpdateDL_Library");
 		if(mod) {
 			if(sceKernelFindModuleByName("sceVshNpSignin_Module")) {
@@ -1020,15 +1023,15 @@ int
 vctrlVSHExitVSHMenu(TNConfig *conf)
 {
 	int k1 = pspSdkSetK1(0);
-	int cpuspeed = tnconfig.vshcpuspeed;
+	int cpuspeed = g_tnconfig.vshcpuspeed;
 
 	g_000083B0 = 0;
-	memcpy(&tnconfig, conf, sizeof(TNConfig));
+	memcpy(&g_tnconfig, conf, sizeof(TNConfig));
 
 	if (g_000083DC == 0) {
-		if (cpuspeed != tnconfig.vshcpuspeed) {
-			if (tnconfig.vshcpuspeed != 0) {
-				SetSpeed(tnconfig.vshcpuspeed, tnconfig.vshbusspeed);
+		if (cpuspeed != g_tnconfig.vshcpuspeed) {
+			if (g_tnconfig.vshcpuspeed != 0) {
+				SetSpeed(g_tnconfig.vshcpuspeed, g_tnconfig.vshbusspeed);
 				g_000083D4 = sceKernelGetSystemTimeLow();
 			}
 		}
@@ -1077,23 +1080,23 @@ mallocinit(void)
 	size = 44 * 1024;
 
 init_heap:
-	heapid = sceKernelCreateHeap(1, size, 1, "");
+	g_heapid = sceKernelCreateHeap(1, size, 1, "");
 
-	return heapid < 0 ? heapid : 0;
+	return g_heapid < 0 ? g_heapid : 0;
 }
 
 /* 0x00003054  SystemCtrlForKernel_F9584CAD */
 void *
 oe_malloc(u32 size)
 {
-	return sceKernelAllocHeapMemory(heapid, size);
+	return sceKernelAllocHeapMemory(g_heapid, size);
 }
 
 /* 0x000030A4 SystemCtrlForKernel_A65E8BC4 */
 void
 oe_free(void *ptr)
 {
-	sceKernelFreeHeapMemory(heapid, ptr);
+	sceKernelFreeHeapMemory(g_heapid, ptr);
 }
 
 /* 0x000030F4 SystemCtrlForUser_8E426F09 */
@@ -1332,7 +1335,7 @@ sctrlKernelLoadExecVSHWithApitype(int apitype, const char *file, struct SceKerne
 
 	k1 = pspSdkSetK1(0);
 	text_addr = find_text_addr_by_name("sceLoadExec");
-	if (model == 4)
+	if (g_model == 4)
 		_sceKernelLoadExecVSHWithApitype = (void *) (text_addr + 0x2558);
 	else
 		_sceKernelLoadExecVSHWithApitype = (void *) (text_addr + 0x2304);
@@ -1452,9 +1455,17 @@ sctrlKernelExitVSH(struct SceKernelLoadExecVSHParam *param)
 	return res;
 }
 
-void
+int
 sub_00003938(int a0, int a1)
 {
+	int (*func) (int, u32) = (void *) a0;
+
+	memset(g_00008428, 0, 0x24);
+	_sw(MAKE_JMP(sub_00003CB8), a0 + 0x00000278);
+	_sw(a1, (u32) g_00008428 + 4);
+	ClearCaches();
+
+	return func(4, a1);
 }
 
 void
@@ -1486,7 +1497,7 @@ sctrlKernelSetInitKeyConfig(int key)
 	int k1 = pspSdkSetK1(0);
 
 	res = sceKernelApplicationType();
-	*keyconfig_addr = key;
+	*g_keyconfig_addr = key;
 	pspSdkSetK1(k1);
 
 	return res;
@@ -1498,7 +1509,7 @@ sctrlKernelSetInitFileName(char *file)
 {
 	int k1 = pspSdkSetK1(0);
 
-	*filename_addr = file;
+	*g_filename_addr = file;
 	pspSdkSetK1(k1);
 
 	return NULL;
@@ -1512,7 +1523,7 @@ sctrlKernelSetInitApitype(int apitype)
 	int k1 = pspSdkSetK1(0);
 
 	res = sceKernelInitApitype();
-	*apitype_addr = apitype;
+	*g_apitype_addr = apitype;
 	pspSdkSetK1(k1);
 
 	return res;
