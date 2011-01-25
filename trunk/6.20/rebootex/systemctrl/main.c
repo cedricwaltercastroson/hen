@@ -35,10 +35,10 @@ extern int sub_0000037C(PSP_Header *hdr);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
 extern void sub_000016D8(int, int, int, int);
-extern int sub_00003938(int, int);
+extern int PatchSceKernelStartModule(int, int);
 extern int sub_00001838(int, int, int, int, int, int, int, int);
 extern int sctrlHENGetVersion(void);
-extern void sub_00003CB8(int, int, int);
+extern int sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modstatus, SceKernelSMOption *opt);
 
 
 /* 0x000083E8 */
@@ -628,7 +628,7 @@ PatchLoadCore(void)
 	_sw(0, text_addr + 0x00006884);
 	_sw(0, text_addr + 0x00006990);
 	_sw(0, text_addr + 0x00006994);
-	_sw(MAKE_CALL(sub_00003938), text_addr + 0x00001DB0);
+	_sw(MAKE_CALL(PatchSceKernelStartModule), text_addr + 0x00001DB0);
 	_sw(0x02E02021, text_addr + 0x00001DB4);
 
 	ProbeExec1 = (void *) (text_addr + 0x000061D4);
@@ -1488,13 +1488,14 @@ sctrlKernelExitVSH(struct SceKernelLoadExecVSHParam *param)
 	return res;
 }
 
+/* 0x00003938 */
 int
-sub_00003938(int a0, int a1)
+PatchSceKernelStartModule(int a0, int a1)
 {
 	int (*func) (int, u32) = (void *) a0;
 
 	memset(g_00008428, 0, 0x24);
-	_sw(MAKE_JMP(sub_00003CB8), a0 + 0x00000278);
+	_sw(MAKE_JMP(sceKernelStartModule_Patched), a0 + 0x00000278);
 	_sw(a1, (u32) g_00008428 + 4);
 	ClearCaches();
 
@@ -1502,7 +1503,7 @@ sub_00003938(int a0, int a1)
 }
 
 void
-sub_000039BC(int a0)
+sub_000039BC(char *buf)
 {
 }
 
@@ -1512,14 +1513,73 @@ sub_00003B7C(int a0)
 }
 
 int
-sub_00003BD4(int a0, int a1, int a2, int a3)
+sub_00003BD4(char *buf, int len, char *path, int *active)
 {
 	return 0;
 }
 
-void
-sub_00003CB8(int a0, int a1, int a2)
+/* 0x00003CB8 */
+int
+sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modstatus, SceKernelSMOption *opt)
 {
+	char *buf;
+	char plugin_path[0x40];
+	int fd, apptype, fpl, active, len, ret;
+
+	if (!sceKernelFindModuleByUID(modid))
+		goto out;
+
+	if (!sceKernelFindModuleByName("sceMediaSync"))
+		goto out;
+
+	switch ((apptype = sceKernelApplicationType())) {
+	case 0x100:
+		fd = sceIoOpen("ms0:/seplugins/vsh.txt", 1, 0);
+		break;
+
+	case 0x200:
+		fd = sceIoOpen("ms0:/seplugins/game.txt", 1, 0);
+		break;
+
+	default:
+		goto out;
+	}
+
+	if (fd < 0) {
+		fd = sceIoOpen(apptype == 0x100 ? 
+				"ef0:/seplugins/vsh.txt" : "ef0:/seplugins/game.txt", 
+				1, 0);
+		if (fd < 0)
+			goto out;
+	}
+
+	if ((fpl = sceKernelCreateFpl("", 1, 0, 0x400, 1, NULL)) < 0)
+		goto close_fd_out;
+
+	sceKernelAllocateFpl(fpl, (void **) &buf, NULL);
+	len = sceIoRead(fd, buf, 0x400);
+
+again:
+	memset(plugin_path, 0, 0x40);
+	active = 0;
+	ret = sub_00003BD4(buf, len, plugin_path, &active);
+	if (ret > 0) {
+		len -= ret;
+		if (active)
+			sub_000039BC(plugin_path);
+		goto again;
+	}
+
+	if (buf) {
+		sceKernelFreeFpl(fpl, buf);
+		sceKernelDeleteFpl(fpl);
+	}
+
+close_fd_out:
+	sceIoClose(fd);
+
+out:
+	return sceKernelStartModule(modid, argsize, argp, modstatus, opt);
 }
 
 /* 0x00003EA8 */
