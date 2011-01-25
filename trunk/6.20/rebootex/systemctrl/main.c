@@ -1559,16 +1559,17 @@ sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modsta
 	sceKernelAllocateFpl(fpl, (void **) &buf, NULL);
 	len = sceIoRead(fd, buf, 0x400);
 
-again:
-	memset(plugin_path, 0, 0x40);
-	active = 0;
-	ret = sub_00003BD4(buf, len, plugin_path, &active);
-	if (ret > 0) {
-		len -= ret;
-		if (active)
-			sub_000039BC(plugin_path);
-		goto again;
-	}
+	do {
+		memset(plugin_path, 0, 0x40);
+		active = 0;
+		ret = sub_00003BD4(buf, len, plugin_path, &active);
+		if (ret > 0) {
+			len -= ret;
+			if (active)
+				sub_000039BC(plugin_path);
+		} else
+			break;
+	} while (1);
 
 	if (buf) {
 		sceKernelFreeFpl(fpl, buf);
