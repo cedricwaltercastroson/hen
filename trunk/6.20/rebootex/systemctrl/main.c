@@ -854,7 +854,7 @@ SetConfig(TNConfig *config)
 void
 PatchRegion(void)
 {
-	u32 orig_addr = sctrlHENFindFunction("sceChkreg","sceChkreg_driver",0x59F8491D);
+	u32 orig_addr = sctrlHENFindFunction("sceChkreg", "sceChkreg_driver", 0x59F8491D);
 	if (orig_addr) {
 		if (tnconfig.fakeregion) {
 			_sw(MAKE_JMP(sub_00001E1C), orig_addr);
