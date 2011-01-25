@@ -67,6 +67,12 @@ int g_00008270;
 int g_00008264;
 int g_0000828C;
 
+int g_000083B0;
+int g_000083DC;
+int g_000083D4;
+
+u32 g_scePowerSetClockFrequency_addr; /* 0x000083AC */
+
 int (*func_00008268)(void); 
 int (*func_000083BC) (int, int, int, int);
 
@@ -837,8 +843,13 @@ findFunctionIn_scePower_Service(u32 nid)
 
 /* 0x000023BC */
 void
-sctrlHENSetSpeed(int a0, int a1)
+sctrlHENSetSpeed(int cpuspd, int busspd)
 {
+	int (*_scePowerSetClockFrequency)(int, int, int);
+
+	g_scePowerSetClockFrequency_addr = findFunctionIn_scePower_Service(0x545A7F3C);
+	_scePowerSetClockFrequency = (void *) g_scePowerSetClockFrequency_addr;
+	_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
 }
 
 u32
@@ -917,8 +928,55 @@ sub_00002780(int a0)
 
 /* 0x000027EC SystemCtrlForKernel_98012538 */
 void
-SetSpeed(int a0, int a1)
+SetSpeed(int cpuspd, int busspd)
 {
+	u32 fp;
+	int (*_scePowerSetClockFrequency)(int, int, int);
+
+	switch (cpuspd) {
+	case 0x14:
+	case 0x4B:
+	case 0x64:
+	case 0x85:
+	case 0xDE:
+	case 0x10A:
+	case 0x12C:
+	case 0x14D:
+		fp = findFunctionIn_scePower_Service(0x737486F2);
+		g_scePowerSetClockFrequency_addr = fp;
+		_scePowerSetClockFrequency = (void *) fp;
+		_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
+
+		if (sceKernelApplicationType() == 0x100)
+			return;
+
+		_sw(0x03E00008, fp);
+		_sw(0x00011021, fp + 4);
+
+		fp = findFunctionIn_scePower_Service(0x545A7F3C);
+		_sw(0x03E00008, fp);
+		_sw(0x00011021, fp + 4);
+
+		/* scePowerSetBusClockFrequency */
+		fp = findFunctionIn_scePower_Service(0xB8D7B3FB);
+		_sw(0x03E00008, fp);
+		_sw(0x00011021, fp + 4);
+
+		/* scePowerSetCpuClockFrequency */
+		fp = findFunctionIn_scePower_Service(0x843FBF43);
+		_sw(0x03E00008, fp);
+		_sw(0x00011021, fp + 4);
+
+		fp = findFunctionIn_scePower_Service(0xEBD177D6);
+		_sw(0x03E00008, fp);
+		_sw(0x00011021, fp + 4);
+
+		ClearCaches();
+		break;
+	
+	default:
+		break;
+	}
 }
 
 /* 0x00002948 */
@@ -931,6 +989,23 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 int
 vctrlVSHExitVSHMenu(TNConfig *conf)
 {
+	int k1 = pspSdkSetK1(0);
+	int cpuspeed = tnconfig.vshcpuspeed;
+
+	g_000083B0 = 0;
+	memcpy(&tnconfig, conf, sizeof(TNConfig));
+
+	if (g_000083DC == 0) {
+		if (cpuspeed != tnconfig.vshcpuspeed) {
+			if (tnconfig.vshcpuspeed != 0) {
+				SetSpeed(tnconfig.vshcpuspeed, tnconfig.vshbusspeed);
+				g_000083D4 = sceKernelGetSystemTimeLow();
+			}
+		}
+	}
+
+	pspSdkSetK1(k1);
+
 	return 0;
 }
 
@@ -1112,7 +1187,7 @@ kuKernelBootFrom(void)
 int
 kuKernelInitKeyConfig(void)
 {
-	return 0;
+	return sceKernelApplicationType();
 }
 
 /* 0x000033B4 */
@@ -1167,7 +1242,7 @@ sctrlHENIsSE(void)
 int
 sctrlHENIsDevhook(void)
 {
-	return 0;
+	return 0x0; /* not dummy routine */
 }
 
 /* 0x000034B8 */
@@ -1221,7 +1296,21 @@ sctrlKernelSetUserLevel(int level)
 int
 sctrlKernelLoadExecVSHWithApitype(int apitype, const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	return 0;
+	int k1, res;
+	u32 text_addr;
+	int (*_sceKernelLoadExecVSHWithApitype)(int, const char *, void *);
+
+	k1 = pspSdkSetK1(0);
+	text_addr = find_text_addr_by_name("sceLoadExec");
+	if (model == 4)
+		_sceKernelLoadExecVSHWithApitype = (void *) (text_addr + 0x2558);
+	else
+		_sceKernelLoadExecVSHWithApitype = (void *) (text_addr + 0x2304);
+
+	res = _sceKernelLoadExecVSHWithApitype(apitype, file, param);
+	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x00003650 */
