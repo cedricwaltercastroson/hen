@@ -347,8 +347,41 @@ sub_00000428(char *a0)
 
 /* 0x000004B4 */
 int
-ProbeExec2_Patched(void *a0, void *a1)
+ProbeExec2_Patched(char *buf, int *check)
 {
+	Elf32_Ehdr *hdr;
+	int res;
+
+	res = ProbeExec2(buf, check);
+	if (*(u32 *) buf != ELF_MAGIC)
+		return res;
+
+	hdr = (Elf32_Ehdr *) buf;
+	if (hdr->e_type == 2 && (check[2] + 0xFEC0 < 5))
+		check[2] = 0x120;
+
+	if (check[19] != 0)
+		return res;
+
+	if (hdr->e_type == 2) {
+		char *stab, *p;
+		int i;
+
+		if ((stab = GetStrTab(buf))) {
+			p = buf + hdr->e_shoff;
+			for (i = 0; i < hdr->e_shnum; i++) {
+				Elf32_Shdr *sec = (Elf32_Shdr *) p;
+
+				if (!strcmp(stab + sec->sh_name, ".rodata.sceModuleInfo")) {
+					check[19] = sec->sh_offset;
+					check[22] = 0;
+				}
+
+				p += hdr->e_shentsize;
+			}
+		}
+	}
+
 	return 0;
 }
 
