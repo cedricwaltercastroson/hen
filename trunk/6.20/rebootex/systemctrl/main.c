@@ -709,7 +709,7 @@ PatchModules(SceModule2 *mod)
 	}
 
 	if (g_00008244 == 0) {
-		if (SysMemForKernel_957A966D() != 2)
+		if (SysMemForKernel_957A966D() != 0x00020000)
 			return;
 		if (sceKernelApplicationType() == 0x200)
 			SetSpeed(g_tnconfig.umdisocpuspeed, g_tnconfig.umdisobusspeed);
