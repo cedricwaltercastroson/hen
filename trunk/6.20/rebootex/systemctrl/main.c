@@ -234,21 +234,21 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
 	return 0;
 }
 
-int
-sub_0000031C(int *a0, u32 a1)
+/* 0x0000031C */
+char *
+get_lib_name(int *lib, u32 nid)
 {
 	int i, cnt;
-	u32 addr;
+	u32 *addr;
 
-	cnt = a0[2];
+	cnt = lib[2];
 	for (i = 0; i < cnt; i++) {
-		addr = i * 8;
-		addr += a0[1];
-		if (_lw(addr) == a1)
-			return 1;
+		addr = (u32 *) (i * 8 + lib[1]);
+		if (*addr == nid)
+			return (char *) addr[1];
 	}
 
-	return 0;
+	return NULL;
 }
 
 /* 0x00000364 */
@@ -326,23 +326,24 @@ PatchSyscall(u32 fp, u32 neufp)
 	} while (vectors != end);
 }
 
-int
-sub_00000428(char *a0)
+/* 0x00000428 */
+void *
+find_lib_by_name(char *name)
 {
 	int i;
 	char **s;
 
-	if (a0 == NULL)
-		return 0;
+	if (name == NULL)
+		return NULL;
 
 	s = (char **) 0x00006888;
 
 	for (i = 0; i < 27; i++, s += 3) {
-		if (!strcmp(a0, *s))
+		if (!strcmp(name, *s))
 			return 0x00006888 + i / 12;
 	}
 
-	return 0;
+	return NULL;
 }
 
 /* 0x000004B4 */
@@ -589,8 +590,29 @@ ClearCaches(void)
  * SystemCtrlForKernel_159AF5CC
  */
 u32
-sctrlHENFindFunction(char *module, char *name, u32 nid)
+sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 {
+	SceModule2 *mod;
+	void *lib_addr;
+	int i, ent_sz;
+
+	if (!(mod = (SceModule2 *) sceKernelFindModuleByName(module_name))) {
+		if (!(mod = (SceModule2 *) sceKernelFindModuleByAddress((u32) module_name)))
+			return 0;
+	}
+
+	if ((lib_addr = find_lib_by_name(lib_name)))
+		lib_name = get_lib_name(lib_addr, nid);
+
+
+	ent_sz = mod->ent_size;
+	ent_top = mod->ent_top;
+	i = 0;
+
+	while (i < ent_sz) {
+		/* XXX */
+	}
+
 	return 0;
 }
 
