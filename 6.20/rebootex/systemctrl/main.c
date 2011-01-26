@@ -26,7 +26,7 @@ PSP_MAIN_THREAD_ATTR(0);
 	(u32) _lw((u32) (sceKernelFindModuleByName(__name)) + 108)
 
 extern int sub_00001CBC(u32, u32);
-extern void sceKernelCheckExecFile_Patched(void *buf, int *check);
+extern int sceKernelCheckExecFile_Patched(void *buf, int *check);
 extern int sub_000012A0(int, int);
 extern void PartitionCheck_Patched(int, int);
 extern SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
@@ -782,9 +782,16 @@ sub_00001838(int a0, int a1, int a2, int a3, int t0, int t1, int t2, int t3)
 }
 
 /* 0x00001A34 */
-void
+int
 sceKernelCheckExecFile_Patched(void *buf, int *check)
 {
+	int res = PatchExec1(buf, check);
+
+	if (res == 0)
+		return res;
+
+	res = sceKernelCheckExecFile(buf, check);
+	return PatchExec3(buf, check, ((*(int *) buf) + 0xB9B3BA81) < 1, res);
 }
 
 /* 0x00001AB8 */
@@ -803,6 +810,10 @@ sub_00001CBC(u32 a0, u32 a1)
 void
 SystemCtrlForKernel_CE0A654E(int a0, int a1, int a2, int a3)
 {
+	g_000083B8 = a0;
+	g_000083C8 = a1;
+	g_000083D0 = a2;
+	g_000083CC = a3;
 }
 
 /* 0x00001D74 */
@@ -1005,8 +1016,13 @@ sub_000024E4(int a0)
 
 /* 0x00002620 */
 int
-vctrlVSHRegisterVshMenu(int (* ctrl)(SceCtrlData *, int))
+vctrlVSHRegisterVshMenu(int a0)
 {
+	int k1 = pspSdkSetK1(0);
+
+	g_000083B0 = a0 | 0x80000000;
+	pspSdkSetK1(k1);
+
 	return 0;
 }
 
@@ -1014,7 +1030,21 @@ vctrlVSHRegisterVshMenu(int (* ctrl)(SceCtrlData *, int))
 int
 sctrlHENSetMemory(int a0, int a1)
 {
+	int k1;
+
+	if (!a0)
+		goto out;
+	if (a0 + a1 >= 0x35)
+		goto out;
+
+	k1 = pspSdkSetK1(0);
+	g_00008258 = a0;
+	g_0000825C = a1;
+	pspSdkSetK1(k1);
 	return 0;
+
+out:
+	return 0x80000107;
 }
 
 /* 0x000026D4 */
