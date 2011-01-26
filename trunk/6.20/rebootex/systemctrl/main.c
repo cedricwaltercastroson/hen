@@ -621,7 +621,7 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 				entry_table = entry->entrytable;
 
 				for (j = 0; j < stub_cnt; j++) {
-					if (entry_table[i] == nid)
+					if (entry_table[j] == nid)
 						return entry_table[j + stub_cnt + entry->vstubcount];
 				}
 			}
