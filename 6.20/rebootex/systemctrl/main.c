@@ -39,6 +39,18 @@ extern int PatchSceKernelStartModule(int, int);
 extern int sub_00001838(int, int, int, int, int, int, int, int);
 extern int sctrlHENGetVersion(void);
 extern int sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modstatus, SceKernelSMOption *opt);
+extern void SetSpeed(int, int);
+extern int mallocinit(void);
+
+extern void sub_00001F50(int);
+extern void sub_00001FA4(int);
+extern void sub_00002058(int);
+extern void sub_000020F0(int);
+extern void sub_000024E4(int);
+extern void sub_00002780(int);
+extern void sub_00002D38(int);
+extern void sub_00002DBC(void);
+extern void PatchSysconfPlugin(u32);
 
 
 /* 0x000083E8 */
@@ -72,6 +84,9 @@ int g_0000828C;
 int g_000083B0;
 int g_000083DC;
 int g_000083D4;
+
+int g_00008408; 
+int g_00008244;
 
 SceUID g_00008298;
 void *g_00008274;
@@ -648,9 +663,58 @@ PatchVLF(u32 a0)
 	}
 }
 
+/* XXX */
+extern int SysMemForKernel_957A966D(void);
+
+/* 0x00000D90 */
 void
-sub_00000D90(int a0)
+PatchModules(SceModule2 *mod)
 {
+	u32 text_addr;
+
+#define __panic() do { *(int *) 0 = 0; } while (1)
+
+	text_addr = mod->text_addr;
+
+	if (!strcmp(mod->modname, "sceLowIO_Driver")) {
+		if (mallocinit() < 0) {
+			__panic();
+		}
+	} else if (!strcmp(mod->modname, "sceUmdCache_driver")) {
+		sub_00002D38(text_addr);
+	} else if (!strcmp(mod->modname, "sceMediaSync")) {
+		sub_00002780(text_addr);
+	} else if (!strcmp(mod->modname, "sceImpose_Driver")) {
+		sub_00002DBC();
+	} else if (!strcmp(mod->modname, "sceWlan_Driver")) {
+		sub_000020F0(text_addr);
+	} else if (!strcmp(mod->modname, "vsh_module")) {
+		sub_000024E4(text_addr);
+	} else if (!strcmp(mod->modname, "sysconf_plugin_module")) {
+		PatchSysconfPlugin(text_addr);
+	} else if (!strcmp(mod->modname, "msvideo_main_plugin_module")) {
+		sub_00002058(text_addr);
+	} else if (!strcmp(mod->modname, "game_plugin_module")) {
+		sub_00001FA4(text_addr);
+	} else if (g_00008408 == 0 && 
+			!strcmp(mod->modname, "update_plugin_module")) {
+		sub_00001F50(text_addr);
+	} else if (!strcmp(mod->modname, "VLF_Module")) {
+		PatchVLF(0x2A245FE6);
+		PatchVLF(0x7B08EAAB);
+		PatchVLF(0x22050FC0);
+		PatchVLF(0x158EE61A);
+		PatchVLF(0xD495179F);
+		ClearCaches();
+	}
+
+	if (g_00008244 == 0) {
+		if (SysMemForKernel_957A966D() != 2)
+			return;
+		if (sceKernelApplicationType() == 0x200)
+			SetSpeed(g_tnconfig.umdisocpuspeed, g_tnconfig.umdisobusspeed);
+		g_00008244 = 0x00010000;
+	}
 }
 
 /* 0x0000101C */
@@ -1079,9 +1143,9 @@ sub_00002780(int a0)
 	SceModule2 *loadexec = NULL;
 
 	if(sceKernelInitFileName()) {
-		if(strstr(sceKernelInitFileName(),".PBP")) {
-			_sw(0x88210000,a0+0x960);
-			_sw(0x88210000,a0+0x83C);
+		if(strstr(sceKernelInitFileName(), ".PBP")) {
+			_sw(0x88210000, a0 + 0x960);
+			_sw(0x88210000, a0 + 0x83C);
 		}
 	}
 
