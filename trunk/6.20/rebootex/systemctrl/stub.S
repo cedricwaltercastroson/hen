@@ -9,11 +9,12 @@
 	STUB_FUNC 0xDF8FFFAB, sceKernelStartModule
 	STUB_END
 
-	STUB_START "SysMemForKernel", 0x00010000, 0x00040005
+	STUB_START "SysMemForKernel", 0x00010000, 0x00050005
 	STUB_FUNC 0x31DFE03F, sceKernelSetDdrMemoryProtection
 	STUB_FUNC 0x864EBFD7, sceKernelGetModel
 	STUB_FUNC 0xFE9BC18B, sceKernelDevkitVersion
 	STUB_FUNC 0xC6A782DA, sceKernelCreateHeap
+	STUB_FUNC 0x957A966D, SysMemForKernel_957A966D
 	STUB_END
 
 	STUB_START "LoadCoreForKernel", 0x00010000, 0x00040005
