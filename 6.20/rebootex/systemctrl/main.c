@@ -911,8 +911,8 @@ PatchSysconfPlugin(u32 text_addr)
 
 		g_verinfo[9] = (ver & 0xF) + 0x41;
 		memcpy((void *) (text_addr + 0x000298AC), g_verinfo, sizeof(g_verinfo));
-		_sw(0x3C020000 | ((text_addr + 0x000298AC) >> 16), text_addr + 0x00008920);
-		_sw(0x34420000 | ((text_addr + 0x000298AC) & 0xFFFF), text_addr + 0x00008924);
+		_sw(0x3C020000 | ((text_addr + 0x000298AC) >> 16), text_addr + 0x00018920);
+		_sw(0x34420000 | ((text_addr + 0x000298AC) & 0xFFFF), text_addr + 0x00018924);
 	}
 
 	if (g_tnconfig.showmac == 0) {
@@ -1420,7 +1420,7 @@ sctrlKernelSetUserLevel(int level)
 	k1 = pspSdkSetK1(0);
 	res = sceKernelGetUserLevel();
 	text_addr = find_text_addr_by_name("sceThreadManager");
-	thstruct = (void *) _lw(text_addr + 0x00009E80);
+	thstruct = (void *) _lw(text_addr + 0x00019E80);
 	thstruct[5] = (level ^ 8) << 28;
 	pspSdkSetK1(k1);
 
