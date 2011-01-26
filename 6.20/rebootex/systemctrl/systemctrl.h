@@ -16,7 +16,7 @@ typedef struct {
 	int vshbusspeed; //0x000083F0 - 0x08
 	int umdisocpuspeed; //0x000083F4 - 0x0C
 	int umdisobusspeed; //0x000083F8 - 0x10
-	int fakeregion;//0x000083FC - 0x14                 //13 Debug II
+	int fakeregion;//0x000083FC - 0x14
 	int skipgameboot;//0x00008400 - 0x18
 	int showmac;//0x00008404 0x1C   //1 show 0 hide
 	int notnupdate;//0x00008408 - 0x20    //1 normal 0 tnupdate
@@ -28,6 +28,23 @@ typedef struct {
 	int fakeindex;//0x00008420 - 0x38
 	int unk;//0x00008424 - 0x3C
 } TNConfig;
+
+typedef enum {
+	FAKE_REGION_DISABLE = 0,
+	FAKE_REGION_JAPAN,
+	FAKE_REGION_AMERICA,
+	FAKE_REGION_EUROPE,
+	FAKE_REGION_KOREA,
+	FAKE_REGION_UK,
+	FAKE_REGION_MEXICO,
+	FAKE_REGION_AU_NZ,
+	FAKE_REGION_EAST,
+	FAKE_REGION_TAIWAN,
+	FAKE_REGION_RUSSIA,
+	FAKE_REGION_CHINA,
+	FAKE_REGION_DEBUGI,
+	FAKE_REGION_DEBUGII
+} FAKE_REGION_TYPE;
 
 typedef struct SceModule2
 {
