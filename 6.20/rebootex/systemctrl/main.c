@@ -235,20 +235,21 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
 }
 
 /* 0x0000031C */
-char *
-get_lib_name(int *lib, u32 nid)
+u32
+find_nid_in_lib(void *buf, u32 nid)
 {
 	int i, cnt;
 	u32 *addr;
+	int *lib = buf;
 
 	cnt = lib[2];
 	for (i = 0; i < cnt; i++) {
 		addr = (u32 *) (i * 8 + lib[1]);
 		if (*addr == nid)
-			return (char *) addr[1];
+			return addr[1];
 	}
 
-	return NULL;
+	return 0;
 }
 
 /* 0x00000364 */
@@ -340,7 +341,7 @@ find_lib_by_name(char *name)
 
 	for (i = 0; i < 27; i++, s += 3) {
 		if (!strcmp(name, *s))
-			return 0x00006888 + i / 12;
+			return (void *) (0x00006888 + i / 12);
 	}
 
 	return NULL;
@@ -594,7 +595,10 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 {
 	SceModule2 *mod;
 	void *lib_addr;
-	int i, ent_sz;
+	int i, j, ent_sz, stub_cnt;
+	void *ent_top;
+	struct SceLibraryEntryTable *entry;
+	u32 *entry_table;
 
 	if (!(mod = (SceModule2 *) sceKernelFindModuleByName(module_name))) {
 		if (!(mod = (SceModule2 *) sceKernelFindModuleByAddress((u32) module_name)))
@@ -602,15 +606,28 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 	}
 
 	if ((lib_addr = find_lib_by_name(lib_name)))
-		lib_name = get_lib_name(lib_addr, nid);
-
+		nid = find_nid_in_lib(lib_addr, nid);
 
 	ent_sz = mod->ent_size;
 	ent_top = mod->ent_top;
 	i = 0;
 
 	while (i < ent_sz) {
-		/* XXX */
+		entry = (void *) (i + ent_top);
+
+		if (entry->libname && !strcmp(entry->libname, lib_name)) {
+			if (entry->stubcount > 0) {
+				stub_cnt =  entry->stubcount;
+				entry_table = entry->entrytable;
+
+				for (j = 0; j < stub_cnt; j++) {
+					if (entry_table[i] == nid)
+						return entry_table[j + stub_cnt + entry->vstubcount];
+				}
+			}
+		}
+
+		i += entry->len * 4;
 	}
 
 	return 0;
