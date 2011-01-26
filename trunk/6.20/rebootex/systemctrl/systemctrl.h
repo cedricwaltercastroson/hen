@@ -171,5 +171,7 @@ extern SceUID sceKernelLoadModuleVSH(const char *path, int flags, SceKernelLMOpt
 
 extern int sceKernelLoadModuleForLoadExec(int apitype, const char *path, int flags, SceKernelLMOption *option);
 
+extern int sceKernelCheckExecFile(void *, int *);
+
 #endif
 
