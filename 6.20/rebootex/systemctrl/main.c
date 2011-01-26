@@ -29,8 +29,8 @@ extern int sub_00001CBC(u32, u32);
 extern void sceKernelCheckExecFile_Patched(void *buf, int *check);
 extern int sub_000012A0(int, int);
 extern void PartitionCheck_Patched(int, int);
-extern int sceKernelCreateThread_Patched(int, int);
-extern int sceKernelStartThread_Patched(int, int, int);
+extern SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
+extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
 extern int sub_0000037C(PSP_Header *hdr);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
@@ -72,6 +72,9 @@ int g_0000828C;
 int g_000083B0;
 int g_000083DC;
 int g_000083D4;
+
+SceUID g_00008298;
+void *g_00008274;
 
 char g_00008428[0x24];
 
@@ -633,9 +636,16 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 	return 0;
 }
 
+/* 0x00000D48 */
 void
-sub_00000D48(u32 a0)
+PatchVLF(u32 a0)
 {
+	u32 fp = sctrlHENFindFunction("VLF_Module", "VlfGui", a0);
+
+	if (fp) {
+		_sw(0x03E00008, fp);
+		_sw(0x00001021, fp + 4);
+	}
 }
 
 void
@@ -727,17 +737,37 @@ sub_000012A0(int a0, int a1)
 }
 
 /* 0x000015E8 */
-int
-sceKernelCreateThread_Patched(int a0, int a1)
+SceUID
+sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt)
 {
-	return 0;
+	SceUID tid;
+
+	tid = sceKernelCreateThread(name, entry, priority, stacksize, attr, opt);
+	if (tid < 0)
+		return tid;
+
+	if (!strcmp(name, "SceModmgrStart")) {
+		g_00008298 = tid;
+		g_00008274 = (SceModule2 *) sceKernelFindModuleByAddress((u32) entry);
+	}
+
+	return tid;
 }
 
 /* 0x0000165C */
 int
-sceKernelStartThread_Patched(int a0, int a1, int a2)
+sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 {
-	return 0;
+	int (*func) (void *, SceSize, void *);
+
+	if (tid == g_00008298) {
+		g_00008298 = -1;
+		if ((g_000083A4 != 0) && (g_00008274 != 0)) {
+			func = (void *) g_000083A4;
+			return func(g_00008274, len, p);
+		}
+	}
+	return sceKernelStartThread(tid, len, p);
 }
 
 void
@@ -881,8 +911,8 @@ PatchSysconfPlugin(u32 text_addr)
 
 		g_verinfo[9] = (ver & 0xF) + 0x41;
 		memcpy((void *) (text_addr + 0x000298AC), g_verinfo, sizeof(g_verinfo));
-		_sw(0x3C020000 | ((text_addr + 0x000298AC) >> 16), text_addr + 0x00018920);
-		_sw(0x34420000 | ((text_addr + 0x000298AC) & 0xFFFF), text_addr + 0x00018924);
+		_sw(0x3C020000 | ((text_addr + 0x000298AC) >> 16), text_addr + 0x00008920);
+		_sw(0x34420000 | ((text_addr + 0x000298AC) & 0xFFFF), text_addr + 0x00008924);
 	}
 
 	if (g_tnconfig.showmac == 0) {
@@ -1056,25 +1086,25 @@ SetSpeed(int cpuspd, int busspd)
 			return;
 
 		_sw(0x03E00008, fp);
-		_sw(0x00011021, fp + 4);
+		_sw(0x00001021, fp + 4);
 
 		fp = findFunctionIn_scePower_Service(0x545A7F3C);
 		_sw(0x03E00008, fp);
-		_sw(0x00011021, fp + 4);
+		_sw(0x00001021, fp + 4);
 
 		/* scePowerSetBusClockFrequency */
 		fp = findFunctionIn_scePower_Service(0xB8D7B3FB);
 		_sw(0x03E00008, fp);
-		_sw(0x00011021, fp + 4);
+		_sw(0x00001021, fp + 4);
 
 		/* scePowerSetCpuClockFrequency */
 		fp = findFunctionIn_scePower_Service(0x843FBF43);
 		_sw(0x03E00008, fp);
-		_sw(0x00011021, fp + 4);
+		_sw(0x00001021, fp + 4);
 
 		fp = findFunctionIn_scePower_Service(0xEBD177D6);
 		_sw(0x03E00008, fp);
-		_sw(0x00011021, fp + 4);
+		_sw(0x00001021, fp + 4);
 
 		ClearCaches();
 		break;
@@ -1390,7 +1420,7 @@ sctrlKernelSetUserLevel(int level)
 	k1 = pspSdkSetK1(0);
 	res = sceKernelGetUserLevel();
 	text_addr = find_text_addr_by_name("sceThreadManager");
-	thstruct = (void *) _lw(text_addr + 0x00019E80);
+	thstruct = (void *) _lw(text_addr + 0x00009E80);
 	thstruct[5] = (level ^ 8) << 28;
 	pspSdkSetK1(k1);
 
