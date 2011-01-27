@@ -173,5 +173,7 @@ extern int sceKernelLoadModuleForLoadExec(int apitype, const char *path, int fla
 
 extern int sceKernelCheckExecFile(void *, int *);
 
+extern int sceKernelGetSystemStatus(void);
+
 #endif
 
