@@ -53,6 +53,8 @@ extern void PatchSceImposeDriver(void);
 extern void PatchSysconfPlugin(u32);
 
 extern int sctrlSEGetConfig(void *);
+extern void sceCtrlReadBufferPositive_Patched(SceCtrlData *, int);
+extern SceUID PatchSceUpdateDL(const char *, int, SceKernelLMOption *);
 
 /* 0x000083E8 */
 TNConfig g_tnconfig;
@@ -94,12 +96,20 @@ void *g_00008274;
 
 char g_00008428[0x24];
 
+int g_00008250;
+int g_00008254;
+int g_000083E4;
+int g_000083EC;
+int g_000083D8;
+
 /* 0x00006A70 */
 wchar_t g_verinfo[] = L"6.20 TN- (HEN)";
 /* 0x00006A90 */
 wchar_t g_macinfo[] = L"00:00:00:00:00:00";
 
-u32 g_scePowerSetClockFrequency_addr; /* 0x000083AC */
+u32 g_scePowerSetClockFrequency_original; /* 0x000083AC */
+u32 g_scePowerGetCpuClockFrequency_original; /* 0x000083B4 */
+u32 g_sceCtrlReadBufferPositive_original; /* 0x000083C4 */
 
 int (*func_00008268)(void); 
 int (*func_000083BC) (int, int, int, int);
@@ -1049,7 +1059,7 @@ PatchRegion(void)
 
 /* 0x000023A4 */
 u32
-findFunctionIn_scePower_Service(u32 nid)
+findScePowerFunction(u32 nid)
 {
 	return sctrlHENFindFunction("scePower_Service", "scePower", nid);
 }
@@ -1060,26 +1070,74 @@ sctrlHENSetSpeed(int cpuspd, int busspd)
 {
 	int (*_scePowerSetClockFrequency)(int, int, int);
 
-	g_scePowerSetClockFrequency_addr = findFunctionIn_scePower_Service(0x545A7F3C);
-	_scePowerSetClockFrequency = (void *) g_scePowerSetClockFrequency_addr;
+	g_scePowerSetClockFrequency_original = findScePowerFunction(0x545A7F3C);
+	_scePowerSetClockFrequency = (void *) g_scePowerSetClockFrequency_original;
 	_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
 }
 
+/* 0x0000240C */
 u32
-sub_0000240C(int a0)
+findScePowerDriverFunction(u32 nid)
 {
-	return 0;
+	return sctrlHENFindFunction("scePower_Service", "scePower_driver", nid);
 }
 
-void
+int
 sub_00002424(void)
 {
+	void (*func2) (int);
+	int (*func) (void) = (void *) findScePowerFunction(0x1E490401);
+
+	if (func())
+		return 0x001E8480;
+
+	if (g_00008250 == 1) {
+		if (g_00008254 != 0) {
+			func2 = (void *) findScePowerDriverFunction(0x90285886);
+			func2(0);
+		}
+		g_00008254 = (g_00008254 < 1);
+		g_00008250 = 0;
+
+		return 0x004C4B40;
+	}
+
+	func2 = (void *) findScePowerDriverFunction(0x733F4B40);
+	func2(1);
+	g_00008250 = 1;
+
+	return 0x00E4E1C0;
 }
 
 /* 0x000024E4 */
 void
 PatchVsh(u32 text_addr)
 {
+	u32 text_addr2;
+
+	if (g_000083EC != 0)
+		g_000083E4 = sceKernelGetSystemTimeLow();
+
+	_sw(0, text_addr + 0x00011A70);
+	_sw(0, text_addr + 0x00011A78);
+	_sw(0, text_addr + 0x00011D84);
+
+	text_addr2 = find_text_addr_by_name("sceVshBridge_Driver");
+
+	g_scePowerGetCpuClockFrequency_original = findScePowerFunction(0xFEE03A2F);
+
+	_sw(MAKE_CALL(sceCtrlReadBufferPositive_Patched), text_addr2 + 0x25C);
+
+	g_sceCtrlReadBufferPositive_original = 
+		sctrlHENFindFunction("sceController_Service", "sceCtrl", 0x1F803938);
+
+	PatchSyscall(g_sceCtrlReadBufferPositive_original, (u32) sceCtrlReadBufferPositive_Patched);
+
+	_sw(MAKE_CALL(PatchSceUpdateDL), text_addr2 + 0x1564);
+	_sw(MAKE_CALL(sub_00001F28), text_addr2 + 0x1A14);
+	g_000083D8 = text_addr2 + 0x5570;
+
+	ClearCaches();
 }
 
 /* 0x00002620 */
@@ -1176,8 +1234,8 @@ SetSpeed(int cpuspd, int busspd)
 	case 0x10A:
 	case 0x12C:
 	case 0x14D:
-		fp = findFunctionIn_scePower_Service(0x737486F2);
-		g_scePowerSetClockFrequency_addr = fp;
+		fp = findScePowerFunction(0x737486F2);
+		g_scePowerSetClockFrequency_original = fp;
 		_scePowerSetClockFrequency = (void *) fp;
 		_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
 
@@ -1187,21 +1245,21 @@ SetSpeed(int cpuspd, int busspd)
 		_sw(0x03E00008, fp);
 		_sw(0x00001021, fp + 4);
 
-		fp = findFunctionIn_scePower_Service(0x545A7F3C);
+		fp = findScePowerFunction(0x545A7F3C);
 		_sw(0x03E00008, fp);
 		_sw(0x00001021, fp + 4);
 
 		/* scePowerSetBusClockFrequency */
-		fp = findFunctionIn_scePower_Service(0xB8D7B3FB);
+		fp = findScePowerFunction(0xB8D7B3FB);
 		_sw(0x03E00008, fp);
 		_sw(0x00001021, fp + 4);
 
 		/* scePowerSetCpuClockFrequency */
-		fp = findFunctionIn_scePower_Service(0x843FBF43);
+		fp = findScePowerFunction(0x843FBF43);
 		_sw(0x03E00008, fp);
 		_sw(0x00001021, fp + 4);
 
-		fp = findFunctionIn_scePower_Service(0xEBD177D6);
+		fp = findScePowerFunction(0xEBD177D6);
 		_sw(0x03E00008, fp);
 		_sw(0x00001021, fp + 4);
 
