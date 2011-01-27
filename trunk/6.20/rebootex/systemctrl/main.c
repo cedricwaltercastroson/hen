@@ -42,16 +42,17 @@ extern int sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, 
 extern void SetSpeed(int, int);
 extern int mallocinit(void);
 
-extern void sub_00001F50(int);
-extern void sub_00001FA4(int);
-extern void sub_00002058(int);
-extern void sub_000020F0(int);
-extern void sub_000024E4(int);
-extern void sub_00002780(int);
-extern void sub_00002D38(int);
-extern void sub_00002DBC(void);
+extern void PatchUpdatePlugin(u32);
+extern void PatchGamePlugin(u32);
+extern void PatchMsvideoMainPlugin(u32);
+extern void PatchSceWlanDriver(u32);
+extern void PatchVsh(u32);
+extern void PatchSceMediaSync(u32);
+extern void PatchSceUmdCacheDriver(u32);
+extern void PatchSceImposeDriver(void);
 extern void PatchSysconfPlugin(u32);
 
+extern int sctrlSEGetConfig(void *);
 
 /* 0x000083E8 */
 TNConfig g_tnconfig;
@@ -618,8 +619,8 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 	struct SceLibraryEntryTable *entry;
 	u32 *entry_table;
 
-	if (!(mod = (SceModule2 *) sceKernelFindModuleByName(module_name))) {
-		if (!(mod = (SceModule2 *) sceKernelFindModuleByAddress((u32) module_name)))
+	if (!(mod = sceKernelFindModuleByName(module_name))) {
+		if (!(mod = sceKernelFindModuleByAddress((u32) module_name)))
 			return 0;
 	}
 
@@ -678,24 +679,24 @@ PatchModules(SceModule2 *mod)
 			__panic();
 		}
 	} else if (!strcmp(mod->modname, "sceUmdCache_driver")) {
-		sub_00002D38(text_addr);
+		PatchSceUmdCacheDriver(text_addr);
 	} else if (!strcmp(mod->modname, "sceMediaSync")) {
-		sub_00002780(text_addr);
+		PatchSceMediaSync(text_addr);
 	} else if (!strcmp(mod->modname, "sceImpose_Driver")) {
-		sub_00002DBC();
+		PatchSceImposeDriver();
 	} else if (!strcmp(mod->modname, "sceWlan_Driver")) {
-		sub_000020F0(text_addr);
+		PatchSceWlanDriver(text_addr);
 	} else if (!strcmp(mod->modname, "vsh_module")) {
-		sub_000024E4(text_addr);
+		PatchVsh(text_addr);
 	} else if (!strcmp(mod->modname, "sysconf_plugin_module")) {
 		PatchSysconfPlugin(text_addr);
 	} else if (!strcmp(mod->modname, "msvideo_main_plugin_module")) {
-		sub_00002058(text_addr);
+		PatchMsvideoMainPlugin(text_addr);
 	} else if (!strcmp(mod->modname, "game_plugin_module")) {
-		sub_00001FA4(text_addr);
+		PatchGamePlugin(text_addr);
 	} else if (g_00008408 == 0 && 
 			!strcmp(mod->modname, "update_plugin_module")) {
-		sub_00001F50(text_addr);
+		PatchUpdatePlugin(text_addr);
 	} else if (!strcmp(mod->modname, "VLF_Module")) {
 		PatchVLF(0x2A245FE6);
 		PatchVLF(0x7B08EAAB);
@@ -934,8 +935,9 @@ sub_00001E1C(char *a0)
 	return 0;
 }
 
+/* 0x00001E74 */
 void
-sub_00001E74(int a0)
+PatchSceLoadExec(u32 text_addr)
 {
 }
 
@@ -945,25 +947,29 @@ sub_00001F28(void)
 	return 0;
 }
 
+/* 0x00001F50 */
 void
-sub_00001F50(int a0)
+PatchUpdatePlugin(u32 text_addr)
 {
 }
 
+/* 0x00001FA4 */
 void
-sub_00001FA4(int a0)
+PatchGamePlugin(u32 text_addr)
 {
 }
 
+/* 0x00002058 */
 void
-sub_00002058(int a0)
+PatchMsvideoMainPlugin(u32 text_addr)
 {
 }
 
+/* 0x000020F0 */
 void
-sub_000020F0(int a0)
+PatchSceWlanDriver(u32 text_addr)
 {
-	_sw(0, a0 + 0x00000CC8);
+	_sw(0, text_addr + 0x00000CC8);
 	ClearCaches();
 }
 
@@ -1070,8 +1076,9 @@ sub_00002424(void)
 {
 }
 
+/* 0x000024E4 */
 void
-sub_000024E4(int a0)
+PatchVsh(u32 text_addr)
 {
 }
 
@@ -1119,7 +1126,7 @@ PatchSceUpdateDL(const char *path, int flags, SceKernelLMOption *option)
 
 	k1 = pspSdkSetK1(0);
 	if(g_tnconfig.notnupdate) {
-		SceModule2 *mod = (SceModule2 *) sceKernelFindModuleByName("SceUpdateDL_Library");
+		SceModule2 *mod = sceKernelFindModuleByName("SceUpdateDL_Library");
 		if(mod) {
 			if(sceKernelFindModuleByName("sceVshNpSignin_Module")) {
 				if(sceKernelFindModuleByName("npsignup_plugin_module")) {
@@ -1134,20 +1141,21 @@ PatchSceUpdateDL(const char *path, int flags, SceKernelLMOption *option)
 	return ret;
 }
 
+/* 0x00002780 */
 void
-sub_00002780(int a0)
+PatchSceMediaSync(u32 text_addr)
 {
 	SceModule2 *loadexec = NULL;
 
 	if(sceKernelInitFileName()) {
 		if(strstr(sceKernelInitFileName(), ".PBP")) {
-			_sw(0x88210000, a0 + 0x960);
-			_sw(0x88210000, a0 + 0x83C);
+			_sw(0x88210000, text_addr + 0x960);
+			_sw(0x88210000, text_addr + 0x83C);
 		}
 	}
 
-	loadexec = (SceModule2 *) sceKernelFindModuleByName("sceLoadExec");
-	sub_00001E74(loadexec->text_addr);
+	loadexec = sceKernelFindModuleByName("sceLoadExec");
+	PatchSceLoadExec(loadexec->text_addr);
 	PatchSceMesgLed();
 	ClearCaches();
 }
@@ -1235,14 +1243,52 @@ vctrlVSHExitVSHMenu(TNConfig *conf)
 	return 0;
 }
 
+/* 0x00002D38 */
 void
-sub_00002D38(int a0)
+PatchSceUmdCacheDriver(u32 text_addr)
 {
+	u32 *i;
+
+	if (sceKernelApplicationType() != 0x200)
+		return;
+	if (sceKernelBootFrom() != 0x40)
+		return;
+	_sw(0x03E00008, text_addr + 0x9C8);
+	_sw(0x24020001, text_addr + 0x9CC);
+	ClearCaches();
+
+	for (i = (u32 *) 0xBC000040; i != (u32 *) 0xBC000080; i++)
+		*i = 0xFFFF;
 }
 
+/* 0x00002DBC */
 void
-sub_00002DBC(void)
+PatchSceImposeDriver(void)
 {
+	SceUID timer;
+	SceModule2 *mod;
+	u32 text_addr;
+
+	sctrlSEGetConfig(&g_tnconfig);
+	PatchRegion();
+	if (g_model == 0)
+		return;
+	if (g_tnconfig.slimcolor == 0)
+		return;
+	timer = sceKernelCreateVTimer("", NULL);
+	if (timer < 0)
+		return;
+	sceKernelStartVTimer(timer);
+	sceKernelSetVTimerHandlerWide(timer, 0, (SceKernelVTimerHandlerWide) 0x004C4B40, 0, sub_00002424, 0);
+
+	if ((mod = sceKernelFindModuleByName("sceUSB_Driver"))) {
+		text_addr = mod->text_addr;
+		_sw(0x03E00008, text_addr + 0x8FE8);
+		_sw(0x00001021, text_addr + 0x8FEC);
+		_sw(0x03E00008, text_addr + 0x8FF0);
+		_sw(0x00001021, text_addr + 0x8FF4);
+		ClearCaches();
+	}
 }
 
 void
