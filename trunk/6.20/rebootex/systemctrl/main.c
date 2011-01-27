@@ -88,7 +88,6 @@ int g_000083B0;
 int g_000083DC;
 int g_000083D4;
 
-int g_00008408; 
 int g_00008244;
 
 SceUID g_00008298;
@@ -99,7 +98,6 @@ char g_00008428[0x24];
 int g_00008250;
 int g_00008254;
 int g_000083E4;
-int g_000083EC;
 int g_000083D8;
 
 /* 0x00006A70 */
@@ -704,7 +702,7 @@ PatchModules(SceModule2 *mod)
 		PatchMsvideoMainPlugin(text_addr);
 	} else if (!strcmp(mod->modname, "game_plugin_module")) {
 		PatchGamePlugin(text_addr);
-	} else if (g_00008408 == 0 && 
+	} else if (g_tnconfig.notnupdate == 0 && 
 			!strcmp(mod->modname, "update_plugin_module")) {
 		PatchUpdatePlugin(text_addr);
 	} else if (!strcmp(mod->modname, "VLF_Module")) {
@@ -961,18 +959,52 @@ sub_00001F28(void)
 void
 PatchUpdatePlugin(u32 text_addr)
 {
+	int ver = sctrlHENGetVersion();
+
+	_sw((ver >> 16) | 0x3C050000, text_addr + 0x0000819C);
+	_sw((ver & 0xFFFF) | 0x34A40000, text_addr + 0x000081A4);
+
+	ClearCaches();
 }
 
 /* 0x00001FA4 */
 void
 PatchGamePlugin(u32 text_addr)
 {
+	_sw(0x03E00008, text_addr + 0x0001EB08);
+	_sw(0x00001021, text_addr + 0x0001EB0C);
+
+	if (g_tnconfig.hidepic) {
+		_sw(0x00601021, text_addr + 0x0001C098);
+		_sw(0x00601021, text_addr + 0x0001C0A4);
+	}
+
+	if (g_tnconfig.skipgameboot) {
+		_sw(MAKE_CALL(0x000181BC), text_addr + 0x00017E5C);
+		_sw(0x24040002, text_addr + 0x00017E60);
+	}
+
+	ClearCaches();
 }
 
 /* 0x00002058 */
 void
 PatchMsvideoMainPlugin(u32 text_addr)
 {
+	_sh(0xFE00, text_addr + 0x0003AB2C);
+	_sh(0xFE00, text_addr + 0x0003ABB4);
+	_sh(0xFE00, text_addr + 0x0003D3AC);
+	_sh(0xFE00, text_addr + 0x0003D608);
+
+	_sh(0xFE00, text_addr + 0x00043B98);
+	_sh(0xFE00, text_addr + 0x00073A84);
+	_sh(0xFE00, text_addr + 0x000880A0);
+
+	_sh(0x4003, text_addr + 0x0003AB2C);
+	_sh(0x4003, text_addr + 0x0003AB2C);
+	_sh(0x4003, text_addr + 0x0003AB2C);
+
+	ClearCaches();
 }
 
 /* 0x000020F0 */
@@ -1115,7 +1147,7 @@ PatchVsh(u32 text_addr)
 {
 	u32 text_addr2;
 
-	if (g_000083EC != 0)
+	if (g_tnconfig.vshcpuspeed != 0)
 		g_000083E4 = sceKernelGetSystemTimeLow();
 
 	_sw(0, text_addr + 0x00011A70);
