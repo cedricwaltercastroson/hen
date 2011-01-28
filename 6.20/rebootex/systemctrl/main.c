@@ -27,7 +27,7 @@ PSP_MAIN_THREAD_ATTR(0);
 
 extern int sub_00001CBC(u32, u32);
 extern int sceKernelCheckExecFile_Patched(void *buf, int *check);
-extern int sub_000012A0(int, int);
+extern int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
 extern void PartitionCheck_Patched(int, int);
 extern SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
 extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
@@ -121,7 +121,7 @@ SceUID g_heapid; /* 0x00008240 */
 
 /* 0x00000000 */
 int
-is_static_elf(void *buf)
+IsStaticElf(void *buf)
 {
 	Elf32_Ehdr *hdr = buf;
 
@@ -247,7 +247,7 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
 		return res;
 
 	if (check[2] >= 0x52) {
-		if (is_static_elf(buf)) {
+		if (IsStaticElf(buf)) {
 			check[8] = 3;
 		}
 		return res;
@@ -263,7 +263,7 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
 
 /* 0x0000031C */
 u32
-find_nid_in_lib(void *buf, u32 nid)
+findNidInLib(void *buf, u32 nid)
 {
 	int i, cnt;
 	u32 *addr;
@@ -356,7 +356,7 @@ PatchSyscall(u32 fp, u32 neufp)
 
 /* 0x00000428 */
 void *
-find_lib_by_name(char *name)
+findLibByName(char *name)
 {
 	int i;
 	char **s;
@@ -446,7 +446,7 @@ PatchModuleMgr(void)
 	_sw(fp, text_addr + 0x000064FC);
 	_sw(fp, text_addr + 0x00006878);
 
-	_sw(MAKE_CALL(sub_000012A0), text_addr + 0x0000842C);
+	_sw(MAKE_CALL(sceKernelLinkLibraryEntries_Patched), text_addr + 0x0000842C);
 	_sw(0, text_addr + 0x00004360);
 	_sw(0, text_addr + 0x000043A8);
 	_sw(0, text_addr + 0x000043C0);
@@ -632,8 +632,8 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 			return 0;
 	}
 
-	if ((lib_addr = find_lib_by_name(lib_name)))
-		nid = find_nid_in_lib(lib_addr, nid);
+	if ((lib_addr = findLibByName(lib_name)))
+		nid = findNidInLib(lib_addr, nid);
 
 	ent_sz = mod->ent_size;
 	ent_top = mod->ent_top;
@@ -800,9 +800,37 @@ module_bootstart(void)
 	return 0;
 }
 
+/* 0x000012A0 */
 int
-sub_000012A0(int a0, int a1)
+sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 {
+	u32 ver;
+	u32 pos;
+	void *lib_addr;
+	char *lib_name;
+
+	/* module_sdk_version */
+	ver = sctrlHENFindFunction(buf, NULL, 0x11B97506);
+	if (ver) {
+		if (*(int *) ver == 0x06020010) { /* 620 */
+			return sceKernelLinkLibraryEntries(buf, size);
+		}
+	}
+
+	pos = 0;
+
+	/* XXX */
+
+	while (pos < size) {
+		lib_name = (char *) _lw(buf + pos);
+		lib_addr = findLibByName(lib_name);
+		if (!strcmp(lib_name, "SysclibForKernel")) {
+		} else if (!strcmp(lib_name, "sceSyscon_driver")) {
+		} else if (!strcmp(lib_name, "scePower_driver")) {
+		} else {
+		}
+	}
+
 	return 0;
 }
 
