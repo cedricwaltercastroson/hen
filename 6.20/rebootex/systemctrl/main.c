@@ -1000,9 +1000,9 @@ PatchMsvideoMainPlugin(u32 text_addr)
 	_sh(0xFE00, text_addr + 0x00073A84);
 	_sh(0xFE00, text_addr + 0x000880A0);
 
-	_sh(0x4003, text_addr + 0x0003AB2C);
-	_sh(0x4003, text_addr + 0x0003AB2C);
-	_sh(0x4003, text_addr + 0x0003AB2C);
+	_sh(0x4003, text_addr + 0x0003D324);
+	_sh(0x4003, text_addr + 0x0003D36C);
+	_sh(0x4003, text_addr + 0x00042C40);
 
 	ClearCaches();
 }
