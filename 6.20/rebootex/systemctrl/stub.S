@@ -17,9 +17,10 @@
 	STUB_FUNC 0x957A966D, sceKernelGetSystemStatus
 	STUB_END
 
-	STUB_START "LoadCoreForKernel", 0x00010000, 0x00040005
+	STUB_START "LoadCoreForKernel", 0x00010000, 0x00050005
 	STUB_FUNC 0x77E8F516, sceKernelFindModuleByUID
 	STUB_FUNC 0xBEF0A05E, sceKernelFindModuleByName
 	STUB_FUNC 0x425C5524, sceKernelFindModuleByAddress
 	STUB_FUNC 0xB0466E46, sceKernelCheckExecFile
+	STUB_FUNC 0xB95FA50D, sceKernelProbeExecutableObject
 	STUB_END
