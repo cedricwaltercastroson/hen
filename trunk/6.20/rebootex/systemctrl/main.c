@@ -101,6 +101,7 @@ int g_00008250;
 int g_00008254;
 int g_000083E4;
 int g_000083D8;
+int g_000083BC;
 
 /* 0x00006A70 */
 wchar_t g_verinfo[] = L"6.20 TN- (HEN)";
@@ -785,7 +786,7 @@ module_bootstart(void)
 
 	ClearCaches();
 
-	g_000083A4 = 0x80000000 | PatchModules;
+	g_000083A4 = 0x80000000 | ((u32) PatchModules);
 	g_00008258 = _lw(0x88FB0008);
 	g_0000825C = _lw(0x88FB000C);
 	g_rebootex_size = _lw(0x88FB0004); /* from launcher: uncompressed rebootex size */
@@ -1066,7 +1067,7 @@ PatchSceLoadExec(u32 text_addr)
 	else
 		p = model;
 
-	sw(MAKE_CALL(0x00002200), text_addr + p[0]);
+	_sw(MAKE_CALL(0x00002200), text_addr + p[0]);
 	_sw(0x3C0188FC, text_addr + p[1]);
 	_sw(0x1000000B, text_addr + p[2]);
 	_sw(0, text_addr + p[3]);
@@ -1932,7 +1933,12 @@ PatchSceKernelStartModule(int a0, int a1)
 	return func(4, a1);
 }
 
-/* 0x000039BC */
+void
+sub_000039BC(char *buf)
+{
+}
+
+/* 0x00003B7C */
 void
 strTrim(char *buf)
 {
@@ -1942,11 +1948,6 @@ strTrim(char *buf)
 		*s = '\0';
 		s--;
 	}
-}
-
-void
-sub_00003B7C(int a0)
-{
 }
 
 int
@@ -2003,7 +2004,7 @@ sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modsta
 		if (ret > 0) {
 			len -= ret;
 			if (active)
-				strTrim(plugin_path);
+				sub_000039BC(plugin_path);
 		} else
 			break;
 	} while (1);
