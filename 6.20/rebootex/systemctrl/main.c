@@ -56,6 +56,8 @@ extern int sctrlSEGetConfig(void *);
 extern void sceCtrlReadBufferPositive_Patched(SceCtrlData *, int);
 extern SceUID PatchSceUpdateDL(const char *, int, SceKernelLMOption *);
 
+extern u32 findScePowerFunction(u32 nid);
+
 /* 0x000083E8 */
 TNConfig g_tnconfig;
 
@@ -811,6 +813,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	struct SceLibraryEntryTable *entry;
 	int i, stubcount, res;
 	struct SceLibraryEntryTable *clib, *syscon, *power;
+	u32 v0, v1; /* temp */
 
 	/* module_sdk_version */
 	ver = sctrlHENFindFunction(buf, NULL, 0x11B97506);
@@ -851,12 +854,44 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	res = sceKernelLinkLibraryEntries(buf, size);
 
 	if (clib) {
+		stubcount = clib->stubcount;
+		for (i = 0; i < stubcount; i++) {
+			v0 = _lw((u32) (clib->entrytable + (i << 2)));
+			v1 = (u32) (clib + 1) + (i << 3);
+
+			if (v0 == 0x909C228B || v0 == 0x18FE80DB) {
+				_sw(0x0A000BA0, v1);
+				_sw(0, v1 + 4);
+				ClearCaches();
+			}
+		}
 	}
 
 	if (syscon) {
+		stubcount = syscon->stubcount;
+		for (i = 0; i < stubcount; i++) {
+			if (_lw((u32) (syscon->entrytable + (i << 2))) == 0xC8439C57) {
+				v0 = find_text_addr_by_name("sceSYSCON_Driver") + 0x2C64;
+				v1 = (u32) (syscon + 1) + (i << 3);
+				_sw((((v0 >> 2) & 0x03FFFFFF) | 0x08000000), v1);
+				_sw(0, v1 + 4);
+				ClearCaches();
+			}
+		}
 	}
 
 	if (power) {
+		stubcount = syscon->stubcount;
+		for (i = 0; i < stubcount; i++) {
+			if (_lw((u32) (power->entrytable + (i << 2))) == 0x737486F2) {
+				if ((v0 = findScePowerFunction(0x737486F2))) {
+					v1 = (u32) (power + 1) + (i << 3);
+					_sw((((v0 >> 2) & 0x03FFFFFF) | 0x08000000), v1);
+					_sw(0, v1 + 4);
+					ClearCaches();
+				}
+			}
+		}
 	}
 
 	return res;
