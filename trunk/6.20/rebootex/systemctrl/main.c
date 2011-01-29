@@ -1933,9 +1933,25 @@ PatchSceKernelStartModule(int a0, int a1)
 	return func(4, a1);
 }
 
+/* 0x000039BC */
 void
-sub_000039BC(char *buf)
+startPlugin(char *path)
 {
+	SceModule2 *mod;
+	SceUID uid = sceKernelLoadModule(path, 0, 0);
+
+	if (uid < 0)
+		return;
+
+	/* for PSP Go */
+	if (g_model == 4) {
+		if (!strncmp(path, "ef0:/", 5)) {
+			mod = sceKernelFindModuleByUID(uid);
+			/* XXX */
+		}
+	}
+
+	sceKernelStartModule(uid, strlen(path) + 1, path, 0, 0);
 }
 
 /* 0x00003B7C */
@@ -2033,7 +2049,7 @@ sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modsta
 		if (ret > 0) {
 			len -= ret;
 			if (active)
-				sub_000039BC(plugin_path);
+				startPlugin(plugin_path);
 		} else
 			break;
 	} while (1);
