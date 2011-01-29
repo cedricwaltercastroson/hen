@@ -1953,7 +1953,36 @@ strTrim(char *buf)
 int
 sub_00003BD4(char *buf, int len, char *path, int *active)
 {
-	return 0;
+	int i, j;
+	char c, *p, *s;
+
+	p = path;
+	for (i = 0, j = 0; i < len; i++) {
+		c = buf[i];
+		if (c >= ' ' || c == '\t') {
+			*p = c;
+			p++;
+			j++;
+		} else {
+			if (j != 0)
+				break;
+		}
+	}
+	strTrim(path);
+	*active = 0;
+
+	if (i > 0) {
+		if ((p = strpbrk(path, " \t"))) {
+			s = p;
+			p++;
+			while (*p < 0)
+				p++;
+			*active = strcmp(p, "1") < 1;
+			*s = 0;
+		}
+	}
+
+	return i;
 }
 
 /* 0x00003CB8 */
