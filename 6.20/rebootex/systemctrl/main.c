@@ -785,7 +785,7 @@ module_bootstart(void)
 
 	ClearCaches();
 
-	g_000083A4 = 0x80000D90;
+	g_000083A4 = 0x80000000 | PatchModules;
 	g_00008258 = _lw(0x88FB0008);
 	g_0000825C = _lw(0x88FB000C);
 	g_rebootex_size = _lw(0x88FB0004); /* from launcher: uncompressed rebootex size */
@@ -1022,7 +1022,7 @@ SystemCtrlForKernel_B86E36D1(void)
 }
 
 int
-sub_00001E1C(char *a0)
+PatchSceChkReg(char *a0)
 {
 	int fakeregion, a1;
 
@@ -1054,11 +1054,38 @@ sub_00001E1C(char *a0)
 void
 PatchSceLoadExec(u32 text_addr)
 {
+	static u32 model[] = 
+	{ 0x00002F28, 0x00002F74, 0x000025A4, 0x000025E8, 0x00001674, 0x000016A8 };
+	static u32 model4[] = 
+	{ 0x00002CD8, 0x00002D24, 0x00002350, 0x00002394, 0x00001674, 0x000016A8 };
+
+	u32 *p;
+
+	if(g_model == 4)
+		p = model4;
+	else
+		p = model;
+
+	sw(MAKE_CALL(0x00002200), text_addr + p[0]);
+	_sw(0x3C0188FC, text_addr + p[1]);
+	_sw(0x1000000B, text_addr + p[2]);
+	_sw(0, text_addr + p[3]);
+	g_000083BC = text_addr;
+	_sw(0x10000008, text_addr + p[4]);
+	_sw(0x00000000 ,text_addr + p[5]);
 }
 
+/* 0x00001F28 */
 int
-sub_00001F28(void)
+Gameboot_Patched(void)
 {
+	int (*func) (void);
+
+	if (g_tnconfig.skipgameboot == 0) {
+		func = (void *) g_000083D8;
+		return func();
+	}
+
 	return 0;
 }
 
@@ -1189,7 +1216,7 @@ PatchRegion(void)
 	u32 orig_addr = sctrlHENFindFunction("sceChkreg", "sceChkreg_driver", 0x59F8491D);
 	if (orig_addr) {
 		if (g_tnconfig.fakeregion) {
-			_sw(MAKE_JMP(sub_00001E1C), orig_addr);
+			_sw(MAKE_JMP(PatchSceChkReg), orig_addr);
 			_sw(0x00000000, orig_addr + 4);
 		}
 	}
@@ -1273,7 +1300,7 @@ PatchVsh(u32 text_addr)
 	PatchSyscall(g_sceCtrlReadBufferPositive_original, (u32) sceCtrlReadBufferPositive_Patched);
 
 	_sw(MAKE_CALL(PatchSceUpdateDL), text_addr2 + 0x1564);
-	_sw(MAKE_CALL(sub_00001F28), text_addr2 + 0x1A14);
+	_sw(MAKE_CALL(Gameboot_Patched), text_addr2 + 0x1A14);
 	g_000083D8 = text_addr2 + 0x5570;
 
 	ClearCaches();
@@ -1905,9 +1932,16 @@ PatchSceKernelStartModule(int a0, int a1)
 	return func(4, a1);
 }
 
+/* 0x000039BC */
 void
-sub_000039BC(char *buf)
+strTrim(char *buf)
 {
+	char *s = buf + strlen(buf);
+
+	while ((*s == ' ' || *s == '\t') && s > buf) {
+		*s = '\0';
+		s--;
+	}
 }
 
 void
@@ -1969,7 +2003,7 @@ sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modsta
 		if (ret > 0) {
 			len -= ret;
 			if (active)
-				sub_000039BC(plugin_path);
+				strTrim(plugin_path);
 		} else
 			break;
 	} while (1);
