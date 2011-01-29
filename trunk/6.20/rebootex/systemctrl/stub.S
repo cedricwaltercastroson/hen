@@ -7,6 +7,9 @@
 	STUB_FUNC 0xB691CB9F, sceKernelLoadModuleForLoadExec
 	STUB_FUNC 0xE3CCC6EA, sceKernelLoadModule
 	STUB_FUNC 0xDF8FFFAB, sceKernelStartModule
+	STUB_FUNC 0xAAFA90C2, sceKernelStopModule
+	STUB_FUNC 0x9CEB18C4, sceKernelUnloadModule
+	STUB_FUNC 0x5352C26C, sceKernelLoadModuleBuffer
 	STUB_END
 
 	STUB_START "SysMemForKernel", 0x00010000, 0x00050005
