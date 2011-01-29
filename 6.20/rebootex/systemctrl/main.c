@@ -356,7 +356,7 @@ PatchSyscall(u32 fp, u32 neufp)
 
 /* 0x00000428 */
 void *
-findLibByName(char *name)
+findLibByName(const char *name)
 {
 	int i;
 	char **s;
@@ -804,10 +804,13 @@ module_bootstart(void)
 int
 sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 {
-	u32 ver;
-	u32 pos;
+	u32 ver, nid, offs;
+	u32 *pnid;
 	void *lib_addr;
-	char *lib_name;
+	const char *lib_name;
+	struct SceLibraryEntryTable *entry;
+	int i, stubcount, res;
+	struct SceLibraryEntryTable *clib, *syscon, *power;
 
 	/* module_sdk_version */
 	ver = sctrlHENFindFunction(buf, NULL, 0x11B97506);
@@ -817,21 +820,46 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 		}
 	}
 
-	pos = 0;
+	offs = 0;
+	clib = syscon = power = NULL;
 
-	/* XXX */
-
-	while (pos < size) {
-		lib_name = (char *) _lw(buf + pos);
+	while (offs < size) {
+		entry = buf + offs;
+		lib_name = entry->libname;
 		lib_addr = findLibByName(lib_name);
+
 		if (!strcmp(lib_name, "SysclibForKernel")) {
+			clib = entry;
 		} else if (!strcmp(lib_name, "sceSyscon_driver")) {
+			syscon = entry;
 		} else if (!strcmp(lib_name, "scePower_driver")) {
-		} else {
+			power = entry;
 		}
+
+		if (lib_addr != NULL) {
+			stubcount = entry->stubcount;
+			for (i = 0; i < stubcount; i++) {
+				pnid = entry->entrytable + (i << 2);
+				if ((nid = findNidInLib(lib_addr, *pnid)))
+					*pnid = nid;
+			}
+		}
+		
+		offs += entry->len << 2;
 	}
 
-	return 0;
+	res = sceKernelLinkLibraryEntries(buf, size);
+
+	if (clib) {
+	}
+
+	if (syscon) {
+	}
+
+	if (power) {
+	}
+
+	return res;
 }
 
 /* 0x000015E8 */

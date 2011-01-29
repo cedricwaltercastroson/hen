@@ -170,6 +170,8 @@ int sceKernelModuleCount(void);
  */
 void sceKernelIcacheClearAll(void);
 
+int sceKernelLinkLibraryEntries(void *, u32);
+
 /*@}*/
 
 #ifdef __cplusplus
