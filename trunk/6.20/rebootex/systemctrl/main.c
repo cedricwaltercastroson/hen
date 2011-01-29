@@ -1967,7 +1967,7 @@ strTrim(char *buf)
 }
 
 int
-sub_00003BD4(char *buf, int len, char *path, int *active)
+parsePluginsConfig(char *buf, int len, char *path, int *active)
 {
 	int i, j;
 	char c, *p, *s;
@@ -2045,7 +2045,7 @@ sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modsta
 	do {
 		memset(plugin_path, 0, 0x40);
 		active = 0;
-		ret = sub_00003BD4(buf, len, plugin_path, &active);
+		ret = parsePluginsConfig(buf, len, plugin_path, &active);
 		if (ret > 0) {
 			len -= ret;
 			if (active)
