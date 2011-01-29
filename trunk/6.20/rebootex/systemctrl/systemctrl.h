@@ -91,19 +91,19 @@ typedef struct {
 	u8		e_data;			// 5
 	u8		e_idver;		// 6
 	u8		e_pad[9];		// 7
-	u16		e_type;			// 16
-	u16		e_machine;		// 18
-	u32		e_version;		// 20
-	u32		e_entry;		// 24
-	u32		e_phoff;		// 28
-	u32		e_shoff;		// 32
-	u32		e_flags;		// 36
-	u16		e_ehsize;		// 40
-	u16		e_phentsize;	// 42
-	u16		e_phnum;		// 44
-	u16		e_shentsize;	// 46
-	u16		e_shnum;		// 48
-	u16		e_shstrndx;		// 50
+	u16		e_type;			// 10
+	u16		e_machine;		// 12
+	u32		e_version;		// 14
+	u32		e_entry;		// 18
+	u32		e_phoff;		// 1C
+	u32		e_shoff;		// 20
+	u32		e_flags;		// 24
+	u16		e_ehsize;		// 28
+	u16		e_phentsize;	// 2A
+	u16		e_phnum;		// 2C
+	u16		e_shentsize;	// 2E
+	u16		e_shnum;		// 30
+	u16		e_shstrndx;		// 32
 } __attribute__((packed)) Elf32_Ehdr;
 
 /* ELF section header */
@@ -111,13 +111,13 @@ typedef struct {
 	u32		sh_name;		// 0
 	u32		sh_type;		// 4
 	u32		sh_flags;		// 8
-	u32		sh_addr;		// 12
-	u32		sh_offset;		// 16
-	u32		sh_size;		// 20
-	u32		sh_link;		// 24
-	u32		sh_info;		// 28
-	u32		sh_addralign;	// 32
-	u32		sh_entsize;		// 36
+	u32		sh_addr;		// C
+	u32		sh_offset;		// 10
+	u32		sh_size;		// 14
+	u32		sh_link;		// 18
+	u32		sh_info;		// 1C
+	u32		sh_addralign;	// 20
+	u32		sh_entsize;		// 24
 } __attribute__((packed)) Elf32_Shdr;
 
 #define ELF_MAGIC	0x464C457FU
