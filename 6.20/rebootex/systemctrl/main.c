@@ -25,7 +25,7 @@ PSP_MAIN_THREAD_ATTR(0);
 #define find_text_addr_by_name(__name) \
 	(u32) _lw((u32) (sceKernelFindModuleByName(__name)) + 108)
 
-extern int sub_00001CBC(u32, u32);
+extern int sceKernelProbeExecutableObject_Patched(void *buf, int *check);
 extern int sceKernelCheckExecFile_Patched(void *buf, int *check);
 extern int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
 extern void PartitionCheck_Patched(int, int);
@@ -34,7 +34,7 @@ extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
 extern int sub_0000037C(PSP_Header *hdr);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
-extern void sub_000016D8(int, int, int, int);
+extern int sub_000016D8(int, int, int, int);
 extern int PatchSceKernelStartModule(int, int);
 extern int sub_00001838(int, int, int, int, int, int, int, int);
 extern int sctrlHENGetVersion(void);
@@ -426,7 +426,7 @@ PatchModuleMgr(void)
 	text_addr = find_text_addr_by_name("sceModuleManager");
 
 	if (g_model == 4)
-		_sw(MAKE_CALL(sub_00001CBC), text_addr + 0x00007C3C);
+		_sw(MAKE_CALL(sceKernelProbeExecutableObject_Patched), text_addr + 0x00007C3C);
 
 	_sw(MAKE_JMP(sceKernelCheckExecFile_Patched), text_addr + 0x00008854);
 
@@ -931,9 +931,10 @@ sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 	return sceKernelStartThread(tid, len, p);
 }
 
-void
+int
 sub_000016D8(int a0, int a1, int a2, int a3)
 {
+	return 0;
 }
 
 int
@@ -961,9 +962,24 @@ PartitionCheck_Patched(int a0, int a1)
 {
 }
 
+/* 0x00001CBC */
 int
-sub_00001CBC(u32 a0, u32 a1)
+sceKernelProbeExecutableObject_Patched(void *buf, int *check)
 {
+	int res;
+	Elf32_Ehdr *hdr;
+
+	res = sceKernelProbeExecutableObject(buf, check);
+
+	if (*(int *) buf != ELF_MAGIC)
+		return res;
+	if (check[2] < 0x52)
+		return res;
+	hdr = buf;
+	if (hdr->e_type != 2)
+		return res;
+	hdr->e_shoff = 3;
+
 	return 0;
 }
 

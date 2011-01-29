@@ -172,6 +172,8 @@ void sceKernelIcacheClearAll(void);
 
 int sceKernelLinkLibraryEntries(void *, u32);
 
+int sceKernelProbeExecutableObject(void *, int *);
+
 /*@}*/
 
 #ifdef __cplusplus
