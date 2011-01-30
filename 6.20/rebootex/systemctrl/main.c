@@ -53,11 +53,16 @@ extern void PatchSceImposeDriver(void);
 extern void PatchSysconfPlugin(u32);
 
 extern int sctrlSEGetConfig(void *);
-extern void sceCtrlReadBufferPositive_Patched(SceCtrlData *, int);
+extern int sceCtrlReadBufferPositive_Patched(SceCtrlData *, int);
 extern SceUID PatchSceUpdateDL(const char *, int, SceKernelLMOption *);
 
 extern u32 findScePowerFunction(u32 nid);
 extern int LoadExecBootStart_Patched(int a0, int a1, int a2, int a3);
+
+static unsigned int size_satelite_bin;
+static unsigned char satelite_bin[];
+
+#include "satelite_bin.inc"
 
 /* 0x000083E8 */
 TNConfig g_tnconfig;
@@ -83,12 +88,16 @@ int g_000083B8;
 int g_000083C8;
 int g_000083D0;
 int g_000083CC;
+SceUID g_000083C0;
 
 int g_000083B0;
 int g_000083DC;
-int g_000083D4;
+unsigned int g_000083D4;
+unsigned int g_000083E0;
 
 int g_00008244;
+int g_00008248;
+int g_0000824C;
 
 SceUID g_SceModmgrStart_tid; /* 0x00008298 */
 SceModule2 *g_SceModmgrStart_module; /* 0x00008274 */
@@ -1441,18 +1450,130 @@ SetSpeed(int cpuspd, int busspd)
 }
 
 /* 0x00002948 */
-void
+int
 sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 {
-	int k1;
-	void (*func) (void *, int);
+	SceKernelLMOption opt = {
+		.size = 0x14,
+		.mpidtext = 5,
+		.mpiddata = 5,
+		.flags = 0,
+		.access = 1,
+	};
+	int k1, res, res2, i;
+	unsigned int hz, now, *pbuttons, buttons, a1, a2;
+	int (*func) (void *, int);
+	unsigned int (*func2) (void);
    
 	func = (void *) g_sceCtrlReadBufferPositive_original;
-	func(pad_data, count);
+	res = func(pad_data, count);
 
 	k1 = pspSdkSetK1(0);
-	/* XXX */
+
+	if (g_000083DC == 0) {
+		if (g_tnconfig.vshcpuspeed != 0 &&
+				g_tnconfig.vshcpuspeed != 222) {
+			func2 = (void *) g_scePowerGetCpuClockFrequency_original;
+			hz = func2();
+			if (hz == 222) {
+				now = sceKernelGetSystemTimeLow();
+				g_000083E0 = now;
+				if (now - g_000083D4 >= 10000000) {
+					SetSpeed(g_tnconfig.vshbusspeed, g_tnconfig.vshcpuspeed);
+				}
+				g_000083D4 = g_000083E0;
+			}
+		}
+	} else {
+		if (g_tnconfig.vshcpuspeed != 0) {
+			now = sceKernelGetSystemTimeLow();
+			g_000083E0 = now;
+			g_000083DC = now;
+			if (now - g_000083E4 >= 10000000) {
+				SetSpeed(g_tnconfig.vshbusspeed, g_tnconfig.vshcpuspeed);
+			}
+			g_000083D4 = g_000083E0;
+		}
+	}
+
+	if (sceKernelFindModuleByName("TNVshMenu")) {
+		if (g_000083B0) {
+			func = (void *) g_000083B0;
+			func(pad_data, count);
+		} else {
+			if (g_000083C0 >= 0) {
+				if (sceKernelStopModule(g_000083C0, 0, 0, 0, 0) >= 0) {
+					sceKernelUnloadModule(g_000083C0);
+				}
+			}
+		}
+	} else {
+		if (g_tnconfig.fastscroll) {
+			if (sceKernelFindModuleByName("music_browser_module")) {
+				a2 = g_00008248;
+				a1 = g_0000824C;
+				pbuttons = &pad_data->Buttons;
+
+				for (i = 0; i < count; i++) {
+					buttons = *pbuttons;
+
+					if (buttons & PSP_CTRL_UP) {
+						if (a2 >= 8) {
+							buttons ^= PSP_CTRL_UP;
+							*pbuttons = buttons;
+							a2 = 7;
+						} else 
+							a2++;
+					} else
+						a2 = 0;
+
+					if (buttons & PSP_CTRL_DOWN) {
+						if (a1 >= 8) {
+							buttons ^= PSP_CTRL_DOWN;
+							*pbuttons = buttons;
+							a1 = 7;
+						} else
+							a1++;
+					} else
+						a1 = 0;
+
+					if (a2 != 0 || a1 != 0) {
+						*pbuttons = (buttons & 
+										(PSP_CTRL_DOWN & PSP_CTRL_UP))
+									^ buttons;
+					}
+
+					pbuttons += 4;
+				} /* for loop */
+
+				g_00008248 = a2;
+				g_0000824C = a1;
+			} /* music_browser_module */
+		} /* fastscroll */
+
+		if (sceKernelFindModuleByName("htmlviewer_plugin_module"))
+			goto out;
+		if (sceKernelFindModuleByName("sceVshOSK_Module"))
+			goto out;
+		if (sceKernelFindModuleByName("camera_plugin_module"))
+			goto out;
+		if (!(pad_data->Buttons & PSP_CTRL_SELECT))
+			goto out;
+
+		/* SELECT button is pressed! */
+		sceKernelSetDdrMemoryProtection((void *) 0x08400000, 0x40, 0xF);
+		res2 = sceKernelLoadModuleBuffer(size_satelite_bin, satelite_bin, 0, &opt);
+		if (res2 >= 0) {
+			g_000083C0 = res2;
+			sceKernelStartModule(res2, 0, 0, 0, 0);
+			pad_data->Buttons &= 0xFFFE;
+		}
+	} /* non-TN-vsh */
+
+out:
 	pspSdkSetK1(k1);
+
+	return res;
 }
 
 /* 0x00002C90 */
