@@ -84,8 +84,8 @@ int g_00008260;
 int g_00008290;
 int g_0000826C;
 
-int g_000083B8;
-int g_000083C8;
+char *g_000083B8;
+void *g_000083C8;
 int g_000083D0;
 int g_000083CC;
 SceUID g_000083C0;
@@ -993,12 +993,12 @@ sceKernelProbeExecutableObject_Patched(void *buf, int *check)
 
 /* 0x00001D50 */
 void
-SystemCtrlForKernel_CE0A654E(int a0, int a1, int a2, int a3)
+sctrlHENLoadModuleOnReboot(char *module_after, void *buf, int size, int flags)
 {
-	g_000083B8 = a0;
-	g_000083C8 = a1;
-	g_000083D0 = a2;
-	g_000083CC = a3;
+	g_000083B8 = module_after;
+	g_000083C8 = buf;
+	g_000083D0 = size;
+	g_000083CC = flags;
 }
 
 /* 0x00001D74 */
@@ -1203,8 +1203,8 @@ LoadExecBootStart_Patched(int a0, int a1, int a2, int a3)
 
 	_sw(g_p2_size, 0x88FB0008);
 	_sw(g_p8_size, 0x88FB000C);
-	_sw(g_000083B8, 0x88FB0010);
-	_sw(g_000083C8, 0x88FB0014);
+	_sw((u32) g_000083B8, 0x88FB0010);
+	_sw((u32) g_000083C8, 0x88FB0014);
 	_sw(g_000083D0, 0x88FB0018);
 	_sw(g_000083CC, 0x88FB001C);
 	_sw(g_model, 0x88FB0000);
