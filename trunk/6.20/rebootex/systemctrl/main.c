@@ -64,8 +64,8 @@ TNConfig g_tnconfig;
 
 int g_model; /* 0x00008270 */
 u32 g_module_start_handler; /* 0x000083A4 */
-int g_00008258;
-int g_0000825C;
+int g_p2_size; /* 0x00008258 */
+int g_p8_size; /* 0x0000825C */
 unsigned int g_rebootex_size; /* 0x00008264 */
 void *g_alloc_addr; /* 0x0000828C */
 
@@ -98,7 +98,7 @@ char g_00008428[0x24];
 int g_00008250;
 int g_00008254;
 int g_000083E4;
-int g_000083D8;
+int g_gameboot_original; /* 0x000083D8 */
 
 /* 0x00006A70 */
 wchar_t g_verinfo[] = L"6.20 TN- (HEN)";
@@ -784,8 +784,8 @@ module_bootstart(void)
 	ClearCaches();
 
 	g_module_start_handler = 0x80000000 | ((u32) PatchModules);
-	g_00008258 = _lw(0x88FB0008);
-	g_0000825C = _lw(0x88FB000C);
+	g_p2_size = _lw(0x88FB0008);
+	g_p8_size = _lw(0x88FB000C);
 	g_rebootex_size = _lw(0x88FB0004); /* from launcher: uncompressed rebootex size */
 
 	partition_id = sceKernelAllocPartitionMemory(1, "", 1, g_rebootex_size, 0);
@@ -999,24 +999,24 @@ SystemCtrlForKernel_B86E36D1(void)
 	int *res, *p;
 	int s1;
 
-	if (g_00008258 == 0)
+	if (g_p2_size == 0)
 		return;
 	
-	if (g_00008258 + g_0000825C >= 0x35)
+	if (g_p2_size + g_p8_size >= 0x35)
 		return;
 
 	func = (void *) 0x88003E2C;
 	res = func(2);
-	s1 = g_00008258 << 20;
+	s1 = g_p2_size << 20;
 	res[2] = s1;
 	p = (int *) res[4];
-	p[5] = (g_0000825C << 21) | 0xFC;
+	p[5] = (g_p8_size << 21) | 0xFC;
 
 	res = func(8);
 	res[1] = s1 + 0x88800000;
-	res[2] = g_0000825C << 20;
+	res[2] = g_p8_size << 20;
 	p = (int *) res[4];
-	p[5] = (g_0000825C << 21) | 0xFC;
+	p[5] = (g_p8_size << 21) | 0xFC;
 }
 
 int
@@ -1083,7 +1083,7 @@ Gameboot_Patched(void)
 	int (*func) (void);
 
 	if (g_tnconfig.skipgameboot == 0) {
-		func = (void *) g_000083D8;
+		func = (void *) g_gameboot_original;
 		return func();
 	}
 
@@ -1191,8 +1191,8 @@ LoadExecBootStart_Patched(int a0, int a1, int a2, int a3)
 	for (; s != (char *) 0x88FB0020; s++)
 		*s = 0;
 
-	_sw(g_00008258, 0x88FB0008);
-	_sw(g_0000825C, 0x88FB000C);
+	_sw(g_p2_size, 0x88FB0008);
+	_sw(g_p8_size, 0x88FB000C);
 	_sw(g_000083B8, 0x88FB0010);
 	_sw(g_000083C8, 0x88FB0014);
 	_sw(g_000083D0, 0x88FB0018);
@@ -1303,7 +1303,7 @@ PatchVsh(u32 text_addr)
 
 	_sw(MAKE_CALL(PatchSceUpdateDL), text_addr2 + 0x1564);
 	_sw(MAKE_CALL(Gameboot_Patched), text_addr2 + 0x1A14);
-	g_000083D8 = text_addr2 + 0x5570;
+	g_gameboot_original = text_addr2 + 0x5570;
 
 	ClearCaches();
 }
@@ -1332,8 +1332,8 @@ sctrlHENSetMemory(int a0, int a1)
 		goto out;
 
 	k1 = pspSdkSetK1(0);
-	g_00008258 = a0;
-	g_0000825C = a1;
+	g_p2_size = a0;
+	g_p8_size = a1;
 	pspSdkSetK1(k1);
 	return 0;
 
