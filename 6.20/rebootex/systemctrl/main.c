@@ -30,7 +30,7 @@ extern int sceKernelCheckExecFile_Patched(void *buf, int *check);
 extern int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
 extern void PartitionCheck_Patched(int, int);
 extern SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
-extern void sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
+extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
 extern int sub_0000037C(PSP_Header *hdr);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
@@ -914,7 +914,7 @@ sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int 
 }
 
 /* 0x0000165C */
-void
+int
 sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 {
 	void (*func) (void *);
@@ -924,11 +924,10 @@ sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 		if (g_module_start_handler && g_SceModmgrStart_module) {
 			func = (void *) g_module_start_handler;
 			func(g_SceModmgrStart_module);
-			return;
 		}
 	}
 
-	sceKernelStartThread(tid, len, p);
+	return sceKernelStartThread(tid, len, p);
 }
 
 int
@@ -1445,6 +1444,15 @@ SetSpeed(int cpuspd, int busspd)
 void
 sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 {
+	int k1;
+	void (*func) (void *, int);
+   
+	func = (void *) g_sceCtrlReadBufferPositive_original;
+	func(pad_data, count);
+
+	k1 = pspSdkSetK1(0);
+	/* XXX */
+	pspSdkSetK1(k1);
 }
 
 /* 0x00002C90 */
