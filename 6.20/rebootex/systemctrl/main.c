@@ -1942,6 +1942,8 @@ startPlugin(char *path)
 {
 	SceModule2 *mod;
 	SceUID uid = sceKernelLoadModule(path, 0, 0);
+	int i, nsegment;
+	char *s, *end, *p;
 
 	if (uid < 0)
 		return;
@@ -1950,7 +1952,26 @@ startPlugin(char *path)
 	if (g_model == 4) {
 		if (!strncmp(path, "ef0:/", 5)) {
 			mod = sceKernelFindModuleByUID(uid);
-			/* XXX */
+			p = (char *) mod;
+			nsegment = mod->nsegment;
+			end = (char *) (mod->segmentaddr[0]);
+
+			for (i = 0; i < nsegment; i++) {
+				p += 4;
+				end += _lw((u32) p + 0x8C);
+			}
+
+			for (s = (char *) (mod->segmentaddr[0]); s < end; s += 4) {
+				if (!strncmp(s, "ms0", 3)) {
+					s[0] = 'e';
+					s[1] = 'f';
+				} else if (!strncmp(s, "fatms", 5)) {
+					/* TN still changes s[0] and s[1], which seems to be buggy */
+					s[3] = 'e';
+					s[4] = 'f';
+				}
+			}
+			ClearCaches();
 		}
 	}
 
