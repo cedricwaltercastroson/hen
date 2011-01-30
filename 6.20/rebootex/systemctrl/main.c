@@ -63,7 +63,7 @@ extern int LoadExecBootStart_Patched(int a0, int a1, int a2, int a3);
 TNConfig g_tnconfig;
 
 int g_model; /* 0x00008270 */
-u32 g_000083A4;
+u32 g_module_start_handler; /* 0x000083A4 */
 int g_00008258;
 int g_0000825C;
 unsigned int g_rebootex_size; /* 0x00008264 */
@@ -90,8 +90,8 @@ int g_000083D4;
 
 int g_00008244;
 
-SceUID g_00008298;
-void *g_00008274;
+SceUID g_current_tid; /* g_current_tid */
+SceModule2 *g_current_module; /* 0x00008274 */
 
 char g_00008428[0x24];
 
@@ -283,9 +283,9 @@ findNidInLib(void *buf, u32 nid)
 u32
 sctrlHENSetStartModuleHandler(u32 a0)
 {
-	u32 prev = g_000083A4;
+	u32 prev = g_module_start_handler;
 
-	g_000083A4 = a0 | 0x80000000U;
+	g_module_start_handler = a0 | 0x80000000U;
 
 	return prev;
 }
@@ -783,7 +783,7 @@ module_bootstart(void)
 
 	ClearCaches();
 
-	g_000083A4 = 0x80000000 | ((u32) PatchModules);
+	g_module_start_handler = 0x80000000 | ((u32) PatchModules);
 	g_00008258 = _lw(0x88FB0008);
 	g_0000825C = _lw(0x88FB000C);
 	g_rebootex_size = _lw(0x88FB0004); /* from launcher: uncompressed rebootex size */
@@ -906,8 +906,8 @@ sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int 
 		return tid;
 
 	if (!strcmp(name, "SceModmgrStart")) {
-		g_00008298 = tid;
-		g_00008274 = (SceModule2 *) sceKernelFindModuleByAddress((u32) entry);
+		g_current_tid = tid;
+		g_current_module = sceKernelFindModuleByAddress((u32) entry);
 	}
 
 	return tid;
@@ -917,13 +917,13 @@ sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int 
 int
 sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 {
-	int (*func) (void *, SceSize, void *);
+	void (*func) (void *);
 
-	if (tid == g_00008298) {
-		g_00008298 = -1;
-		if ((g_000083A4 != 0) && (g_00008274 != 0)) {
-			func = (void *) g_000083A4;
-			return func(g_00008274, len, p);
+	if (tid == g_current_tid) {
+		g_current_tid = -1;
+		if (g_module_start_handler && g_current_module) {
+			func = (void *) g_module_start_handler;
+			func(g_current_module);
 		}
 	}
 	return sceKernelStartThread(tid, len, p);
