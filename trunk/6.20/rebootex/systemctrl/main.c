@@ -57,6 +57,7 @@ extern void sceCtrlReadBufferPositive_Patched(SceCtrlData *, int);
 extern SceUID PatchSceUpdateDL(const char *, int, SceKernelLMOption *);
 
 extern u32 findScePowerFunction(u32 nid);
+extern int LoadExecBootStart_Patched(int a0, int a1, int a2, int a3);
 
 /* 0x000083E8 */
 TNConfig g_tnconfig;
@@ -98,7 +99,6 @@ int g_00008250;
 int g_00008254;
 int g_000083E4;
 int g_000083D8;
-int g_000083BC;
 
 /* 0x00006A70 */
 wchar_t g_verinfo[] = L"6.20 TN- (HEN)";
@@ -110,7 +110,7 @@ u32 g_scePowerGetCpuClockFrequency_original; /* 0x000083B4 */
 u32 g_sceCtrlReadBufferPositive_original; /* 0x000083C4 */
 
 int (*func_00008268)(void); 
-int (*func_000083BC) (int, int, int, int);
+int (*LoadExecBootstart) (int, int, int, int); /* 0x000083BC */
 
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
 int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
@@ -1052,8 +1052,11 @@ PatchSceChkReg(char *a0)
 void
 PatchSceLoadExec(u32 text_addr)
 {
+	/* 0x00006A40 */
 	static u32 model[] = 
 	{ 0x00002F28, 0x00002F74, 0x000025A4, 0x000025E8, 0x00001674, 0x000016A8 };
+
+	/* 0x00006A58 */
 	static u32 model4[] = 
 	{ 0x00002CD8, 0x00002D24, 0x00002350, 0x00002394, 0x00001674, 0x000016A8 };
 
@@ -1064,11 +1067,11 @@ PatchSceLoadExec(u32 text_addr)
 	else
 		p = model;
 
-	_sw(MAKE_CALL(0x00002200), text_addr + p[0]);
+	_sw(MAKE_CALL(LoadExecBootStart_Patched), text_addr + p[0]);
 	_sw(0x3C0188FC, text_addr + p[1]);
 	_sw(0x1000000B, text_addr + p[2]);
 	_sw(0, text_addr + p[3]);
-	g_000083BC = text_addr;
+	LoadExecBootstart = (void *) text_addr;
 	_sw(0x10000008, text_addr + p[4]);
 	_sw(0x00000000 ,text_addr + p[5]);
 }
@@ -1179,8 +1182,9 @@ PatchSysconfPlugin(u32 text_addr)
 	ClearCaches();
 }
 
+/* 0x00002200 */
 int
-sub_00002200(int a0, int a1, int a2, int a3)
+LoadExecBootStart_Patched(int a0, int a1, int a2, int a3)
 {
 	char *s = (char *) 0x88FB0000;
 
@@ -1197,7 +1201,7 @@ sub_00002200(int a0, int a1, int a2, int a3)
 	_sw(g_rebootex_size, 0x88FB0004);
 	memcpy((void *) 0x88FC0000, (void *) g_alloc_addr, g_rebootex_size);
 
-	return func_000083BC(a0, a1, a2, a3);
+	return LoadExecBootstart(a0, a1, a2, a3);
 }
 
 /* 0x00002324 */
