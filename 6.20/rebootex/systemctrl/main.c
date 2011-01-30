@@ -30,7 +30,7 @@ extern int sceKernelCheckExecFile_Patched(void *buf, int *check);
 extern int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
 extern void PartitionCheck_Patched(int, int);
 extern SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
-extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
+extern void sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
 extern int sub_0000037C(PSP_Header *hdr);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
@@ -63,14 +63,14 @@ extern int LoadExecBootStart_Patched(int a0, int a1, int a2, int a3);
 TNConfig g_tnconfig;
 
 int g_model; /* 0x00008270 */
-u32 g_module_start_handler; /* 0x000083A4 */
+int g_module_start_handler; /* 0x000083A4 */
 int g_p2_size; /* 0x00008258 */
 int g_p8_size; /* 0x0000825C */
 unsigned int g_rebootex_size; /* 0x00008264 */
 void *g_alloc_addr; /* 0x0000828C */
 
 int *g_apitype_addr; /* 0x00008288 */
-char **g_filename_addr; /* 0x00008284 */
+char **g_init_filename_addr; /* 0x00008284 */
 int *g_keyconfig_addr; /* 0x0000839C */
 
 int g_0000827C;
@@ -90,8 +90,8 @@ int g_000083D4;
 
 int g_00008244;
 
-SceUID g_current_tid; /* g_current_tid */
-SceModule2 *g_current_module; /* 0x00008274 */
+SceUID g_SceModmgrStart_tid; /* 0x00008298 */
+SceModule2 *g_SceModmgrStart_module; /* 0x00008274 */
 
 char g_00008428[0x24];
 
@@ -430,7 +430,7 @@ PatchModuleMgr(void)
 
 	PartitionCheck = (void *) (text_addr + 0x00007FC0);
 	g_apitype_addr = (void *) (text_addr + 0x00009990);
-	g_filename_addr = (void *) (text_addr + 0x00009994);
+	g_init_filename_addr = (void *) (text_addr + 0x00009994);
 	g_keyconfig_addr = (void *) (text_addr + 0x000099EC);
 
 	_sw(0, text_addr + 0x00000760);
@@ -906,27 +906,29 @@ sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int 
 		return tid;
 
 	if (!strcmp(name, "SceModmgrStart")) {
-		g_current_tid = tid;
-		g_current_module = sceKernelFindModuleByAddress((u32) entry);
+		g_SceModmgrStart_tid = tid;
+		g_SceModmgrStart_module = sceKernelFindModuleByAddress((u32) entry);
 	}
 
 	return tid;
 }
 
 /* 0x0000165C */
-int
+void
 sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 {
 	void (*func) (void *);
 
-	if (tid == g_current_tid) {
-		g_current_tid = -1;
-		if (g_module_start_handler && g_current_module) {
+	if (tid == g_SceModmgrStart_tid) {
+		g_SceModmgrStart_tid = -1;
+		if (g_module_start_handler && g_SceModmgrStart_module) {
 			func = (void *) g_module_start_handler;
-			func(g_current_module);
+			func(g_SceModmgrStart_module);
+			return;
 		}
 	}
-	return sceKernelStartThread(tid, len, p);
+
+	sceKernelStartThread(tid, len, p);
 }
 
 int
@@ -2087,7 +2089,7 @@ sctrlKernelSetInitFileName(char *file)
 {
 	int k1 = pspSdkSetK1(0);
 
-	*g_filename_addr = file;
+	*g_init_filename_addr = file;
 	pspSdkSetK1(k1);
 
 	return NULL;
