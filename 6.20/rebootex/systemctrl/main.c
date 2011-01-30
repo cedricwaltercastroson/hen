@@ -82,9 +82,6 @@ int g_000083B8;
 int g_000083C8;
 int g_000083D0;
 int g_000083CC;
-int g_00008270;
-int g_00008264;
-int g_0000828C;
 
 int g_000083B0;
 int g_000083DC;
@@ -1196,9 +1193,9 @@ sub_00002200(int a0, int a1, int a2, int a3)
 	_sw(g_000083C8, 0x88FB0014);
 	_sw(g_000083D0, 0x88FB0018);
 	_sw(g_000083CC, 0x88FB001C);
-	_sw(g_00008270, 0x88FB0000);
-	_sw(g_00008264, 0x88FB0004);
-	memcpy((void *) 0x88FC0000, (void *) g_0000828C, g_00008264);
+	_sw(g_model, 0x88FB0000);
+	_sw(g_rebootex_size, 0x88FB0004);
+	memcpy((void *) 0x88FC0000, (void *) g_alloc_addr, g_rebootex_size);
 
 	return func_000083BC(a0, a1, a2, a3);
 }
