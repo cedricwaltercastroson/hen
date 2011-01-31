@@ -1480,7 +1480,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 				now = sceKernelGetSystemTimeLow();
 				g_000083E0 = now;
 				if (now - g_000083D4 >= 10000000) {
-					SetSpeed(g_tnconfig.vshbusspeed, g_tnconfig.vshcpuspeed);
+					SetSpeed(g_tnconfig.vshcpuspeed, g_tnconfig.vshbusspeed);
 				}
 				g_000083D4 = g_000083E0;
 			}
@@ -1491,7 +1491,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 			g_000083E0 = now;
 			g_000083DC = now;
 			if (now - g_000083E4 >= 10000000) {
-				SetSpeed(g_tnconfig.vshbusspeed, g_tnconfig.vshcpuspeed);
+				SetSpeed(g_tnconfig.vshcpuspeed, g_tnconfig.vshbusspeed);
 			}
 			g_000083D4 = g_000083E0;
 		}
