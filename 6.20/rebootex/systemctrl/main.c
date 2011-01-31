@@ -31,10 +31,10 @@ extern int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
 extern void PartitionCheck_Patched(int, int);
 extern SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
 extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
-extern int sub_0000037C(PSP_Header *hdr);
+extern int sub_0000037C(PSP_Header *hdr, int a1, int *size);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
-extern int DecompressFakePSP(void *ptr,int a1,int size,int a3);
+extern int DecompressFakePSP(void *ptr, int a1, int *size, int a3);
 extern int PatchSceKernelStartModule(int, int);
 extern int sub_00001838(int, int, int, int, int, int, int, int);
 extern int sctrlHENGetVersion(void);
@@ -300,7 +300,7 @@ sctrlHENSetStartModuleHandler(u32 a0)
 }
 
 int
-sub_0000037C(PSP_Header *hdr)
+sub_0000037C(PSP_Header *hdr, int a1, int *size)
 {
 	char *p, *end;
 	PSP_Header *hdr2;
@@ -941,9 +941,44 @@ sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 
 /* 0x000016D8 */
 int
-DecompressFakePSP(void *ptr,int a1,int size,int a3)
+DecompressFakePSP(void *ptr, int a1, int *size, int a3)
 {
-	return 0;
+	int (*func)();
+	int (*d_func)(void *, int, int *, int);
+	int (*u_func)(int, int);
+	int r;
+
+	if (g_00008260 != 0) {
+		func = (void *) g_00008260;
+		if(func() >= 0)
+			return 0;
+	}
+
+	if (ptr != NULL && size != NULL) {
+		r = _lw((u32) ptr + 0x130);
+		if (r == 0xC6BA41D3 || r == 0x55668D96) {
+			if(_lb((u32) ptr + 0x150) == 0x1F && _lb((u32) ptr + 0x151 == 0x8B)) {
+				r = _lw((u32) ptr + 0xB0);
+				memmove(ptr , ptr + 0x150 , r);
+				*size = r;
+				return 0;
+			}
+		}
+	}
+
+	d_func = (void *) g_0000827C;
+	r = d_func(ptr, a1, size, a3);
+	if (r >= 0)
+		return r;
+
+	if (sub_0000037C(ptr, a1, size) < 0)
+		return r;
+
+	u_func = (void *) g_00008280;
+	u_func(0, 0xBFC00200);
+	d_func(ptr, a1, size, a3);
+
+	return r;
 }
 
 int
