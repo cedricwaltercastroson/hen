@@ -31,7 +31,7 @@ extern int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
 extern void PartitionCheck_Patched(int, int);
 extern SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
 extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
-extern int sub_0000037C(PSP_Header *hdr, int a1, int *size);
+extern int sub_0000037C(PSP_Header *hdr, int a1, int a2);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
 extern int DecompressFakePSP(void *ptr, int a1, int *size, int a3);
@@ -118,7 +118,7 @@ u32 g_scePowerSetClockFrequency_original; /* 0x000083AC */
 u32 g_scePowerGetCpuClockFrequency_original; /* 0x000083B4 */
 u32 g_sceCtrlReadBufferPositive_original; /* 0x000083C4 */
 
-int (*func_00008268)(void); 
+int (*func_00008268)(PSP_Header *hdr, int a1, int a2); 
 int (*LoadExecBootstart) (int, int, int, int); /* 0x000083BC */
 
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
@@ -300,7 +300,7 @@ sctrlHENSetStartModuleHandler(u32 a0)
 }
 
 int
-sub_0000037C(PSP_Header *hdr, int a1, int *size)
+sub_0000037C(PSP_Header *hdr, int a1, int a2)
 {
 	char *p, *end;
 	PSP_Header *hdr2;
@@ -315,7 +315,7 @@ sub_0000037C(PSP_Header *hdr, int a1, int *size)
 		if (hdr2->scheck[0] != 0 &&
 				hdr->reserved2[0] != 0 &&
 				hdr->reserved2[1] != 0)
-			return func_00008268(); /* XXX at most 3 parameters */
+			return func_00008268(hdr, a1, a2); /* XXX at most 3 parameters */
 	}
 
 	return 0;
@@ -971,7 +971,7 @@ DecompressFakePSP(void *ptr, int a1, int *size, int a3)
 	if (r >= 0)
 		return r;
 
-	if (sub_0000037C(ptr, a1, size) < 0)
+	if (sub_0000037C(ptr, a1, a3) < 0)
 		return r;
 
 	u_func = (void *) g_00008280;
