@@ -967,8 +967,7 @@ DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int decompr
 	if (r >= 0)
 		return r;
 
-	r = VerifySignCheck_Patched(buf, size, decompress);
-	if (r < 0)
+	if (VerifySignCheck_Patched(buf, size, decompress) < 0)
 		return r;
 
 	sceMemlmdInitializeScrambleKey(NULL, (void *) 0xBFC00200);
