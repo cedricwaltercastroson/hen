@@ -31,10 +31,10 @@ extern int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
 extern void PartitionCheck_Patched(int, int);
 extern SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
 extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
-extern int sub_0000037C(PSP_Header *hdr, int a1, int a2);
+extern int VerifySignCheck_Patched(void *hdr, int, int);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
-extern int DecompressFakePSP(void *ptr, int a1, int *size, int a3);
+extern int DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int decompress);
 extern int PatchSceKernelStartModule(int, int);
 extern int sub_00001838(int, int, int, int, int, int, int, int);
 extern int sctrlHENGetVersion(void);
@@ -78,8 +78,9 @@ int *g_apitype_addr; /* 0x00008288 */
 char **g_init_filename_addr; /* 0x00008284 */
 int *g_keyconfig_addr; /* 0x0000839C */
 
-int g_0000827C;
-int g_00008280;  
+int (*DecryptExecutable)(void *, unsigned int, void *, unsigned int);  /* 0x0000827C */
+void (*sceMemlmdInitializeScrambleKey)(void *, void *); /* 0x00008280 */
+
 int g_00008260;
 int g_00008290;
 int g_0000826C;
@@ -118,7 +119,7 @@ u32 g_scePowerSetClockFrequency_original; /* 0x000083AC */
 u32 g_scePowerGetCpuClockFrequency_original; /* 0x000083B4 */
 u32 g_sceCtrlReadBufferPositive_original; /* 0x000083C4 */
 
-int (*func_00008268)(PSP_Header *hdr, int a1, int a2); 
+int (*VerifySignCheck)(void *, int, int); /* 0x00008268 */
 int (*LoadExecBootstart) (int, int, int, int); /* 0x000083BC */
 
 int (*ProbeExec1) (void *, int *); /* 0x00008278 */
@@ -299,23 +300,21 @@ sctrlHENSetStartModuleHandler(u32 a0)
 	return prev;
 }
 
+/* 0x0000037C */
 int
-sub_0000037C(PSP_Header *hdr, int a1, int a2)
+VerifySignCheck_Patched(void *buf, int size, int decompress)
 {
-	char *p, *end;
-	PSP_Header *hdr2;
+	int i;
+	PSP_Header *hdr = buf;
 
 	if (hdr->signature != 0x5053507E) /* ~PSP */
 		return 0;
 
-	p = (char *) hdr;
-	end = (char *) &hdr->seg_size[1];
-
-	for (hdr2 = (PSP_Header *) p; p != end; p++) {
-		if (hdr2->scheck[0] != 0 &&
+	for (i = 0; i < 0x58; i++) {
+		if (hdr->scheck[i] != 0 &&
 				hdr->reserved2[0] != 0 &&
 				hdr->reserved2[1] != 0)
-			return func_00008268(hdr, a1, a2); /* XXX at most 3 parameters */
+			return VerifySignCheck(hdr, size, decompress);
 	}
 
 	return 0;
@@ -522,16 +521,16 @@ PatchMemlmd(void)
 	else
 		table = model1;
 
-	fp = MAKE_CALL(sub_0000037C);
+	fp = MAKE_CALL(VerifySignCheck_Patched);
 	_sw(fp, text_addr + table[2]);
 	_sw(fp, text_addr + table[3]);
 
-	fp = MAKE_CALL(DecompressFakePSP);
+	fp = MAKE_CALL(DecryptExecutable_Patched);
 	_sw(fp, text_addr + table[4]);
 
-	func_00008268 = (void *) (text_addr + table[0]);
-	g_0000827C = text_addr + 0x00000134;
-	g_00008280 = text_addr + table[1];
+	VerifySignCheck = (void *) (text_addr + table[0]);
+	DecryptExecutable = (void *) (text_addr + 0x00000134);
+	sceMemlmdInitializeScrambleKey = (void *) (text_addr + table[1]);
 
 	_sw(fp, text_addr + table[5]);
 }
@@ -941,12 +940,11 @@ sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 
 /* 0x000016D8 */
 int
-DecompressFakePSP(void *ptr, int a1, int *size, int a3)
+DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int decompress)
 {
-	int (*func)();
-	int (*d_func)(void *, int, int *, int);
-	int (*u_func)(int, int);
+	int (*func)(void);
 	int r;
+	PSP_Header* hdr = (PSP_Header*) buf;
 
 	if (g_00008260 != 0) {
 		func = (void *) g_00008260;
@@ -954,31 +952,27 @@ DecompressFakePSP(void *ptr, int a1, int *size, int a3)
 			return 0;
 	}
 
-	if (ptr != NULL && size != NULL) {
-		r = _lw((u32) ptr + 0x130);
-		if (r == 0xC6BA41D3 || r == 0x55668D96) {
-			if(_lb((u32) ptr + 0x150) == 0x1F && _lb((u32) ptr + 0x151 == 0x8B)) {
-				r = _lw((u32) ptr + 0xB0);
-				memmove(ptr , ptr + 0x150 , r);
-				*size = r;
+	if (hdr && compressed_size) {
+		if (hdr->oe_tag == 0xC6BA41D3 || hdr->oe_tag == 0x55668D96) { /* M33 */
+			if (buf[0x150] == 0x1F && buf[0x151] == 0x8B) { /* gzip */
+				r = hdr->comp_size;
+				memmove(buf, buf + 0x150, size);
+				*compressed_size = size;
 				return 0;
 			}
 		}
 	}
 
-	d_func = (void *) g_0000827C;
-	r = d_func(ptr, a1, size, a3);
+	r = DecryptExecutable(buf, size, compressed_size, decompress);
 	if (r >= 0)
 		return r;
 
-	if (sub_0000037C(ptr, a1, a3) < 0)
+	r = VerifySignCheck_Patched(buf, size, decompress);
+	if (r < 0)
 		return r;
 
-	u_func = (void *) g_00008280;
-	u_func(0, 0xBFC00200);
-	d_func(ptr, a1, size, a3);
-
-	return r;
+	sceMemlmdInitializeScrambleKey(NULL, (void *) 0xBFC00200);
+	return DecryptExecutable(buf, size, compressed_size, decompress);
 }
 
 int
