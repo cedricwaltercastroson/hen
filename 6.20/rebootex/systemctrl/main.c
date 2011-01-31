@@ -34,7 +34,7 @@ extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
 extern int sub_0000037C(PSP_Header *hdr);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
-extern int sub_000016D8(int, int, int, int);
+extern int DecompressFakePSP(void *ptr,int a1,int size,int a3);
 extern int PatchSceKernelStartModule(int, int);
 extern int sub_00001838(int, int, int, int, int, int, int, int);
 extern int sctrlHENGetVersion(void);
@@ -526,7 +526,7 @@ PatchMemlmd(void)
 	_sw(fp, text_addr + table[2]);
 	_sw(fp, text_addr + table[3]);
 
-	fp = MAKE_CALL(sub_000016D8);
+	fp = MAKE_CALL(DecompressFakePSP);
 	_sw(fp, text_addr + table[4]);
 
 	func_00008268 = (void *) (text_addr + table[0]);
@@ -939,8 +939,9 @@ sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 	return sceKernelStartThread(tid, len, p);
 }
 
+/* 0x000016D8 */
 int
-sub_000016D8(int a0, int a1, int a2, int a3)
+DecompressFakePSP(void *ptr,int a1,int size,int a3)
 {
 	return 0;
 }
