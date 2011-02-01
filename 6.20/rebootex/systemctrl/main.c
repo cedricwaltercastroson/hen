@@ -36,7 +36,7 @@ extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
 extern int DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling);
 extern int PatchSceKernelStartModule(int, int);
-extern int sub_00001838(int, int, int, int, int, int, int, int);
+extern int DecryptPrx_Patched(int, int, int, int, int, int, int, int);
 extern int sctrlHENGetVersion(void);
 extern int sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modstatus, SceKernelSMOption *opt);
 extern void SetSpeed(int, int);
@@ -81,9 +81,10 @@ int *g_keyconfig_addr; /* 0x0000839C */
 int (*DecryptExecutable)(void *, unsigned int, void *, unsigned int);  /* 0x0000827C */
 void (*sceMemlmdInitializeScrambleKey)(void *, void *); /* 0x00008280 */
 
-int g_00008260;
-int g_00008290;
-int g_0000826C;
+int (*DecryptExecutable_HEN)(char *buf, int size, int *compressed_size, int polling); /* 0x00008260 */
+int (*DecryptPrx_HEN) (int a0, int a1, int a2, int a3, int t0, int t1, int t2, int t3); /* 0x00008290 */
+
+int (*DecryptPrx) (int a0, int a1, int a2, int a3, int t0, int t1, int t2, int t3); /* 0x0000826C */
 
 char *g_000083B8;
 void *g_000083C8;
@@ -321,23 +322,23 @@ VerifySignCheck_Patched(void *buf, int size, int polling)
 }
 
 /* 0x000003D4 */
-int
-SystemCtrlForKernel_AC0E84D1(int a0)
+void *
+SystemCtrlForKernel_AC0E84D1(void *func)
 {
-	int prev = g_00008260;
+	void *prev = DecryptExecutable_HEN;
 
-	g_00008260 = a0;
+	DecryptExecutable_HEN = func;
 
 	return prev;
 }
 
 /* 0x000003E4 */
-int
-SystemCtrlForKernel_1F3037FB(int a0)
+void *
+SystemCtrlForKernel_1F3037FB(void *func)
 {
-	int prev = g_00008290;
+	void *prev = DecryptPrx_HEN;
 
-	g_00008290 = a0;
+	DecryptPrx_HEN = func;
 
 	return prev;
 }
@@ -570,10 +571,10 @@ PatchSceMesgLed(void)
 		return;
 	}
 
-	fp = MAKE_CALL(sub_00001838);
+	fp = MAKE_CALL(DecryptPrx_Patched);
 	_sw(fp, text_addr + 0x00001908);
 	_sw(fp, text_addr + p[0]);
-	g_0000826C = text_addr + 0xE0;
+	DecryptPrx = (void *) (text_addr + 0xE0);
 	_sw(fp, text_addr + p[1]);
 	_sw(fp, text_addr + p[2]);
 	_sw(fp, text_addr + p[3]);
@@ -942,13 +943,11 @@ sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 int
 DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling)
 {
-	int (*func)(void);
 	int r;
 	PSP_Header* hdr = (PSP_Header*) buf;
 
-	if (g_00008260 != 0) {
-		func = (void *) g_00008260;
-		if(func() >= 0)
+	if (DecryptExecutable_HEN) {
+		if (DecryptExecutable_HEN(buf, size, compressed_size, polling) >= 0)
 			return 0;
 	}
 
@@ -974,9 +973,19 @@ DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling
 	return DecryptExecutable(buf, size, compressed_size, polling);
 }
 
+/* 0x00001838 */
 int
-sub_00001838(int a0, int a1, int a2, int a3, int t0, int t1, int t2, int t3)
+DecryptPrx_Patched(int a0, int a1, int a2, int a3, int t0, int t1, int t2, int t3)
 {
+	int r;
+
+	if (DecryptPrx_HEN) {
+		if (DecryptPrx_HEN(a0, a1, a2, a3, t0, t1, t2, t3) >= 0)
+			return 0;
+	}
+
+	/* XXX */
+
 	return 0;
 }
 
