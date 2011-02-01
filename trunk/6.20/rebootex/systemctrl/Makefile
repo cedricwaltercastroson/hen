@@ -17,8 +17,8 @@ USE_KERNEL_LIBS = 1
 all: sysctrl_bin.inc
 
 sysctrl_bin.inc: systemctrl.prx
-	psp-packer systemctrl.prx sysctrl_packed.prx
-	$(PSPDEV)/bin/bin2c sysctrl_packed.prx sysctrl_bin.inc sysctrl_bin
+	psp-packer systemctrl.prx sysctrl.psp
+	bin2c sysctrl.psp sysctrl_bin.inc sysctrl_bin
 
 LIBDIR =
 LIBS = 
