@@ -944,9 +944,8 @@ DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling
 	if (hdr && compressed_size) {
 		if (hdr->oe_tag == 0xC6BA41D3 || hdr->oe_tag == 0x55668D96) { /* M33 */
 			if (buf[0x150] == 0x1F && buf[0x151] == 0x8B) { /* gzip */
-				r = hdr->comp_size;
-				memmove(buf, buf + 0x150, size);
-				*compressed_size = size;
+				memmove(buf, buf + 0x150, hdr->comp_size);
+				*compressed_size = hdr->comp_size;
 				return 0;
 			}
 		}
