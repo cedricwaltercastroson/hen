@@ -36,7 +36,7 @@ extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
 extern int DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling);
 extern int PatchSceKernelStartModule(int, int);
-extern int DecryptPrx_Patched(int, int, int, int, int, int, int, int);
+extern int DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3);
 extern int sctrlHENGetVersion(void);
 extern int sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modstatus, SceKernelSMOption *opt);
 extern void SetSpeed(int, int);
@@ -82,9 +82,8 @@ int (*DecryptExecutable)(void *, unsigned int, void *, unsigned int);  /* 0x0000
 void (*sceMemlmdInitializeScrambleKey)(void *, void *); /* 0x00008280 */
 
 int (*DecryptExecutable_HEN)(char *buf, int size, int *compressed_size, int polling); /* 0x00008260 */
-int (*DecryptPrx_HEN) (int a0, int a1, int a2, int a3, int t0, int t1, int t2, int t3); /* 0x00008290 */
-
-int (*DecryptPrx) (int a0, int a1, int a2, int a3, int t0, int t1, int t2, int t3); /* 0x0000826C */
+int (*DecryptPrx_HEN) (int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3); /* 0x00008290 */
+int (*DecryptPrx) (int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3); /* 0x0000826C */
 
 char *g_000083B8;
 void *g_000083C8;
@@ -975,18 +974,40 @@ DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling
 
 /* 0x00001838 */
 int
-DecryptPrx_Patched(int a0, int a1, int a2, int a3, int t0, int t1, int t2, int t3)
+DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3)
 {
 	int r;
+	PSP_Header* hdr = (PSP_Header*) buf;
 
 	if (DecryptPrx_HEN) {
-		if (DecryptPrx_HEN(a0, a1, a2, a3, t0, t1, t2, t3) >= 0)
+		if (DecryptPrx_HEN(a0, a1, a2, buf, size, compressed_size, polling, t3) >= 0)
 			return 0;
 	}
 
-	/* XXX */
+	if (a0 != 0 && buf && compressed_size) {
+		switch (hdr->oe_tag) {
+		case 0x28796DAA:
+		case 0x7316308C:
+		case 0x3EAD0AEE:
+		case 0x8555ABF2:
+			break;
+		default:
+			goto decrypt;
+		}
 
-	return 0;
+		memmove(buf, buf + 0x150, hdr->comp_size);
+		*compressed_size = hdr->comp_size;
+		return 0;
+	}
+
+decrypt:
+	r = DecryptPrx(a0, a1, a2, buf, size, compressed_size, polling, t3);
+	if (r >= 0)
+		return r;
+	if (VerifySignCheck_Patched(buf, size, polling) < 0)
+		return r;
+
+	return DecryptPrx(a0, a1, a2, buf, size, compressed_size, polling, t3);
 }
 
 /* 0x00001A34 */
