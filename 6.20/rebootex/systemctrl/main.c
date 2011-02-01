@@ -660,9 +660,9 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 
 /* 0x00000D48 */
 void
-PatchVLF(u32 a0)
+PatchVLF(u32 nid)
 {
-	u32 fp = sctrlHENFindFunction("VLF_Module", "VlfGui", a0);
+	u32 fp = sctrlHENFindFunction("VLF_Module", "VlfGui", nid);
 
 	if (fp) {
 		_sw(0x03E00008, fp);
