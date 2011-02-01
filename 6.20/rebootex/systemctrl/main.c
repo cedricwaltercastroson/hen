@@ -46,6 +46,7 @@ extern void PatchUpdatePlugin(u32);
 extern void PatchGamePlugin(u32);
 extern void PatchMsvideoMainPlugin(u32);
 extern void PatchSceWlanDriver(u32);
+extern void PatchScePowerService(u32);
 extern void PatchVsh(u32);
 extern void PatchSceMediaSync(u32);
 extern void PatchSceUmdCacheDriver(u32);
@@ -56,7 +57,7 @@ extern int sctrlSEGetConfig(void *);
 extern int sceCtrlReadBufferPositive_Patched(SceCtrlData *, int);
 extern SceUID PatchSceUpdateDL(const char *, int, SceKernelLMOption *);
 
-extern u32 findScePowerFunction(u32 nid);
+extern u32 FindScePowerFunction(u32 nid);
 extern int LoadExecBootStart_Patched(int a0, int a1, int a2, int a3);
 
 static unsigned int size_satelite_bin;
@@ -68,11 +69,11 @@ static unsigned char satelite_bin[];
 TNConfig g_tnconfig;
 
 int g_model; /* 0x00008270 */
-int g_module_start_handler; /* 0x000083A4 */
+void (*ModuleStartHandler) (void *); /* 0x000083A4 */
 int g_p2_size; /* 0x00008258 */
 int g_p8_size; /* 0x0000825C */
 unsigned int g_rebootex_size; /* 0x00008264 */
-void *g_alloc_addr; /* 0x0000828C */
+void *g_rebootex_buf; /* 0x0000828C */
 
 int *g_apitype_addr; /* 0x00008288 */
 char **g_init_filename_addr; /* 0x00008284 */
@@ -85,35 +86,24 @@ int (*DecryptExecutable_HEN)(char *buf, int size, int *compressed_size, int poll
 int (*DecryptPrx_HEN) (int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3); /* 0x00008290 */
 int (*DecryptPrx) (int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3); /* 0x0000826C */
 
-char *g_000083B8;
-void *g_000083C8;
-int g_000083D0;
-int g_000083CC;
-SceUID g_000083C0;
+char *g_reboot_module; /* 0x000083B8 */
+void *g_reboot_module_buf; /* 0x000083C8 */
+int g_reboot_module_size; /* g_reboot_module_size */
+int g_reboot_module_flags; /* g_reboot_module_flags */
+SceUID g_satelite_mod_id; /* 0x000083C0 */
 
-int g_000083B0;
-int g_000083DC;
+int (*VshMenuCtrl) (SceCtrlData *, int); /* 0x000083B0 */
+
+/* 4 timestamps */
+unsigned int g_000083DC;
 unsigned int g_000083D4;
 unsigned int g_000083E0;
-
-int g_00008244;
-int g_00008248;
-int g_0000824C;
+unsigned int g_000083E4;
 
 SceUID g_SceModmgrStart_tid; /* 0x00008298 */
 SceModule2 *g_SceModmgrStart_module; /* 0x00008274 */
 
-char g_00008428[0x24];
-
-int g_00008250;
-int g_00008254;
-int g_000083E4;
-int g_gameboot_original; /* 0x000083D8 */
-
-/* 0x00006A70 */
-wchar_t g_verinfo[] = L"6.20 TN- (HEN)";
-/* 0x00006A90 */
-wchar_t g_macinfo[] = L"00:00:00:00:00:00";
+int (*GameBoot) (void); /* 0x000083D8 */
 
 u32 g_scePowerSetClockFrequency_original; /* 0x000083AC */
 u32 g_scePowerGetCpuClockFrequency_original; /* 0x000083B4 */
@@ -273,7 +263,7 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
 
 /* 0x0000031C */
 u32
-findNidInLib(void *buf, u32 nid)
+FindNidInLib(void *buf, u32 nid)
 {
 	int i, cnt;
 	u32 *addr;
@@ -290,12 +280,12 @@ findNidInLib(void *buf, u32 nid)
 }
 
 /* 0x00000364 */
-u32
-sctrlHENSetStartModuleHandler(u32 a0)
+void *
+sctrlHENSetStartModuleHandler(void *handler)
 {
-	u32 prev = g_module_start_handler;
+	void *prev = ModuleStartHandler;
 
-	g_module_start_handler = a0 | 0x80000000U;
+	ModuleStartHandler = (void *) ((u32) handler | 0x80000000);
 
 	return prev;
 }
@@ -364,7 +354,7 @@ PatchSyscall(u32 fp, u32 neufp)
 
 /* 0x00000428 */
 void *
-findLibByName(const char *name)
+FindLibByName(const char *name)
 {
 	int i;
 	char **s;
@@ -640,8 +630,8 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 			return 0;
 	}
 
-	if ((lib_addr = findLibByName(lib_name)))
-		nid = findNidInLib(lib_addr, nid);
+	if ((lib_addr = FindLibByName(lib_name)))
+		nid = FindNidInLib(lib_addr, nid);
 
 	ent_sz = mod->ent_size;
 	ent_top = mod->ent_top;
@@ -684,6 +674,8 @@ PatchVLF(u32 a0)
 void
 PatchModules(SceModule2 *mod)
 {
+	static int g_00008244 = 0;
+
 	u32 text_addr;
 
 #define __panic() do { *(int *) 0 = 0; } while (1)
@@ -702,6 +694,8 @@ PatchModules(SceModule2 *mod)
 		PatchSceImposeDriver();
 	} else if (!strcmp(mod->modname, "sceWlan_Driver")) {
 		PatchSceWlanDriver(text_addr);
+	} else if (!strcmp(mod->modname, "scePower_Service")) {
+		PatchScePowerService(text_addr);
 	} else if (!strcmp(mod->modname, "vsh_module")) {
 		PatchVsh(text_addr);
 	} else if (!strcmp(mod->modname, "sysconf_plugin_module")) {
@@ -791,16 +785,16 @@ module_bootstart(void)
 
 	ClearCaches();
 
-	g_module_start_handler = 0x80000000 | ((u32) PatchModules);
+	ModuleStartHandler = (void *) (0x80000000 | ((u32) PatchModules));
 	g_p2_size = _lw(0x88FB0008);
 	g_p8_size = _lw(0x88FB000C);
 	g_rebootex_size = _lw(0x88FB0004); /* from launcher: uncompressed rebootex size */
 
 	partition_id = sceKernelAllocPartitionMemory(1, "", 1, g_rebootex_size, 0);
 	if (partition_id >= 0) {
-		g_alloc_addr = sceKernelGetBlockHeadAddr(partition_id);
-		memset(g_alloc_addr, 0, g_rebootex_size);
-		memcpy(g_alloc_addr, (void *) 0x88FC0000, g_rebootex_size);
+		g_rebootex_buf = sceKernelGetBlockHeadAddr(partition_id);
+		memset(g_rebootex_buf, 0, g_rebootex_size);
+		memcpy(g_rebootex_buf, (void *) 0x88FC0000, g_rebootex_size);
 	}
 
 	ClearCaches();
@@ -835,7 +829,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	while (offs < size) {
 		entry = buf + offs;
 		lib_name = entry->libname;
-		lib_addr = findLibByName(lib_name);
+		lib_addr = FindLibByName(lib_name);
 
 		if (!strcmp(lib_name, "SysclibForKernel")) {
 			clib = entry;
@@ -849,7 +843,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 			stubcount = entry->stubcount;
 			for (i = 0; i < stubcount; i++) {
 				pnid = entry->entrytable + (i << 2);
-				if ((nid = findNidInLib(lib_addr, *pnid)))
+				if ((nid = FindNidInLib(lib_addr, *pnid)))
 					*pnid = nid;
 			}
 		}
@@ -890,7 +884,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 		stubcount = syscon->stubcount;
 		for (i = 0; i < stubcount; i++) {
 			if (_lw((u32) (power->entrytable + (i << 2))) == 0x737486F2) {
-				if ((v0 = findScePowerFunction(0x737486F2))) {
+				if ((v0 = FindScePowerFunction(0x737486F2))) {
 					v1 = (u32) (power + 1) + (i << 3);
 					_sw((((v0 >> 2) & 0x03FFFFFF) | 0x08000000), v1);
 					_sw(0, v1 + 4);
@@ -925,13 +919,10 @@ sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int 
 int
 sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 {
-	void (*func) (void *);
-
 	if (tid == g_SceModmgrStart_tid) {
 		g_SceModmgrStart_tid = -1;
-		if (g_module_start_handler && g_SceModmgrStart_module) {
-			func = (void *) g_module_start_handler;
-			func(g_SceModmgrStart_module);
+		if (ModuleStartHandler && g_SceModmgrStart_module) {
+			ModuleStartHandler(g_SceModmgrStart_module);
 		}
 	}
 
@@ -1091,10 +1082,10 @@ sceKernelProbeExecutableObject_Patched(void *buf, int *check)
 void
 sctrlHENLoadModuleOnReboot(char *module_after, void *buf, int size, int flags)
 {
-	g_000083B8 = module_after;
-	g_000083C8 = buf;
-	g_000083D0 = size;
-	g_000083CC = flags;
+	g_reboot_module = module_after;
+	g_reboot_module_buf = buf;
+	g_reboot_module_size = size;
+	g_reboot_module_flags = flags;
 }
 
 /* 0x00001D74 */
@@ -1186,11 +1177,8 @@ PatchSceLoadExec(u32 text_addr)
 int
 Gameboot_Patched(void)
 {
-	int (*func) (void);
-
 	if (g_tnconfig.skipgameboot == 0) {
-		func = (void *) g_gameboot_original;
-		return func();
+		return GameBoot();
 	}
 
 	return 0;
@@ -1250,16 +1238,17 @@ PatchMsvideoMainPlugin(u32 text_addr)
 
 /* 0x000020F0 */
 void
-PatchSceWlanDriver(u32 text_addr)
+PatchScePowerService(u32 text_addr)
 {
 	_sw(0, text_addr + 0x00000CC8);
 	ClearCaches();
 }
 
+/* 0x000020FC */
 void
-sub_000020FC(int a0)
+PatchSceWlanDriver(u32 text_addr)
 {
-	_sw(0, a0 + 0x00002690);
+	_sw(0, text_addr + 0x00002690);
 	ClearCaches();
 }
 
@@ -1267,6 +1256,11 @@ sub_000020FC(int a0)
 void
 PatchSysconfPlugin(u32 text_addr)
 {
+	/* 0x00006A70 */
+	static wchar_t g_verinfo[] = L"6.20 TN- (HEN)";
+	/* 0x00006A90 */
+	static wchar_t g_macinfo[] = L"00:00:00:00:00:00";
+
 	if (g_tnconfig.nospoofversion == 0) {
 		int ver = sctrlHENGetVersion();
 
@@ -1299,13 +1293,13 @@ LoadExecBootStart_Patched(int a0, int a1, int a2, int a3)
 
 	_sw(g_p2_size, 0x88FB0008);
 	_sw(g_p8_size, 0x88FB000C);
-	_sw((u32) g_000083B8, 0x88FB0010);
-	_sw((u32) g_000083C8, 0x88FB0014);
-	_sw(g_000083D0, 0x88FB0018);
-	_sw(g_000083CC, 0x88FB001C);
+	_sw((u32) g_reboot_module, 0x88FB0010);
+	_sw((u32) g_reboot_module_buf, 0x88FB0014);
+	_sw(g_reboot_module_size, 0x88FB0018);
+	_sw(g_reboot_module_flags, 0x88FB001C);
 	_sw(g_model, 0x88FB0000);
 	_sw(g_rebootex_size, 0x88FB0004);
-	memcpy((void *) 0x88FC0000, (void *) g_alloc_addr, g_rebootex_size);
+	memcpy((void *) 0x88FC0000, (void *) g_rebootex_buf, g_rebootex_size);
 
 	return LoadExecBootstart(a0, a1, a2, a3);
 }
@@ -1333,7 +1327,7 @@ PatchRegion(void)
 
 /* 0x000023A4 */
 u32
-findScePowerFunction(u32 nid)
+FindScePowerFunction(u32 nid)
 {
 	return sctrlHENFindFunction("scePower_Service", "scePower", nid);
 }
@@ -1344,30 +1338,34 @@ sctrlHENSetSpeed(int cpuspd, int busspd)
 {
 	int (*_scePowerSetClockFrequency)(int, int, int);
 
-	g_scePowerSetClockFrequency_original = findScePowerFunction(0x545A7F3C);
+	g_scePowerSetClockFrequency_original = FindScePowerFunction(0x545A7F3C);
 	_scePowerSetClockFrequency = (void *) g_scePowerSetClockFrequency_original;
 	_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
 }
 
 /* 0x0000240C */
 u32
-findScePowerDriverFunction(u32 nid)
+FindScePowerDriverFunction(u32 nid)
 {
 	return sctrlHENFindFunction("scePower_Service", "scePower_driver", nid);
 }
 
+/* 0x00002424 */
 int
-sub_00002424(void)
+UsbChargingHandler(void)
 {
+	static int g_00008250;
+	static int g_00008254;
+
 	void (*func2) (int);
-	int (*func) (void) = (void *) findScePowerFunction(0x1E490401);
+	int (*func) (void) = (void *) FindScePowerFunction(0x1E490401); /* scePowerIsBatteryCharging */
 
 	if (func())
 		return 0x001E8480;
 
 	if (g_00008250 == 1) {
 		if (g_00008254 != 0) {
-			func2 = (void *) findScePowerDriverFunction(0x90285886);
+			func2 = (void *) FindScePowerDriverFunction(0x90285886); /* scePowerBatteryDisableUsbCharging */
 			func2(0);
 		}
 		g_00008254 = (g_00008254 < 1);
@@ -1376,7 +1374,7 @@ sub_00002424(void)
 		return 0x004C4B40;
 	}
 
-	func2 = (void *) findScePowerDriverFunction(0x733F4B40);
+	func2 = (void *) FindScePowerDriverFunction(0x733F4B40);
 	func2(1);
 	g_00008250 = 1;
 
@@ -1398,7 +1396,7 @@ PatchVsh(u32 text_addr)
 
 	text_addr2 = find_text_addr_by_name("sceVshBridge_Driver");
 
-	g_scePowerGetCpuClockFrequency_original = findScePowerFunction(0xFEE03A2F);
+	g_scePowerGetCpuClockFrequency_original = FindScePowerFunction(0xFEE03A2F);
 
 	_sw(MAKE_CALL(sceCtrlReadBufferPositive_Patched), text_addr2 + 0x25C);
 
@@ -1409,18 +1407,18 @@ PatchVsh(u32 text_addr)
 
 	_sw(MAKE_CALL(PatchSceUpdateDL), text_addr2 + 0x1564);
 	_sw(MAKE_CALL(Gameboot_Patched), text_addr2 + 0x1A14);
-	g_gameboot_original = text_addr2 + 0x5570;
+	GameBoot = (void *) (text_addr2 + 0x5570);
 
 	ClearCaches();
 }
 
 /* 0x00002620 */
 int
-vctrlVSHRegisterVshMenu(int a0)
+vctrlVSHRegisterVshMenu(void *ctrl)
 {
 	int k1 = pspSdkSetK1(0);
 
-	g_000083B0 = a0 | 0x80000000;
+	VshMenuCtrl = (void *) ((u32) ctrl | 0x80000000);
 	pspSdkSetK1(k1);
 
 	return 0;
@@ -1508,7 +1506,7 @@ SetSpeed(int cpuspd, int busspd)
 	case 0x10A:
 	case 0x12C:
 	case 0x14D:
-		fp = findScePowerFunction(0x737486F2);
+		fp = FindScePowerFunction(0x737486F2);
 		g_scePowerSetClockFrequency_original = fp;
 		_scePowerSetClockFrequency = (void *) fp;
 		_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
@@ -1519,21 +1517,21 @@ SetSpeed(int cpuspd, int busspd)
 		_sw(0x03E00008, fp);
 		_sw(0x00001021, fp + 4);
 
-		fp = findScePowerFunction(0x545A7F3C);
+		fp = FindScePowerFunction(0x545A7F3C);
 		_sw(0x03E00008, fp);
 		_sw(0x00001021, fp + 4);
 
 		/* scePowerSetBusClockFrequency */
-		fp = findScePowerFunction(0xB8D7B3FB);
+		fp = FindScePowerFunction(0xB8D7B3FB);
 		_sw(0x03E00008, fp);
 		_sw(0x00001021, fp + 4);
 
 		/* scePowerSetCpuClockFrequency */
-		fp = findScePowerFunction(0x843FBF43);
+		fp = FindScePowerFunction(0x843FBF43);
 		_sw(0x03E00008, fp);
 		_sw(0x00001021, fp + 4);
 
-		fp = findScePowerFunction(0xEBD177D6);
+		fp = FindScePowerFunction(0xEBD177D6);
 		_sw(0x03E00008, fp);
 		_sw(0x00001021, fp + 4);
 
@@ -1549,6 +1547,9 @@ SetSpeed(int cpuspd, int busspd)
 int
 sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 {
+	static int g_00008248;
+	static int g_0000824C;
+
 	SceKernelLMOption opt = {
 		.size = 0x14,
 		.mpidtext = 5,
@@ -1593,13 +1594,12 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 	}
 
 	if (sceKernelFindModuleByName("TNVshMenu")) {
-		if (g_000083B0) {
-			func = (void *) g_000083B0;
-			func(pad_data, count);
+		if (VshMenuCtrl) {
+			VshMenuCtrl(pad_data, count);
 		} else {
-			if (g_000083C0 >= 0) {
-				if (sceKernelStopModule(g_000083C0, 0, 0, 0, 0) >= 0) {
-					sceKernelUnloadModule(g_000083C0);
+			if (g_satelite_mod_id >= 0) {
+				if (sceKernelStopModule(g_satelite_mod_id, 0, 0, 0, 0) >= 0) {
+					sceKernelUnloadModule(g_satelite_mod_id);
 				}
 			}
 		}
@@ -1660,7 +1660,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 		sceKernelSetDdrMemoryProtection((void *) 0x08400000, 0x40, 0xF);
 		res2 = sceKernelLoadModuleBuffer(size_satelite_bin, satelite_bin, 0, &opt);
 		if (res2 >= 0) {
-			g_000083C0 = res2;
+			g_satelite_mod_id = res2;
 			sceKernelStartModule(res2, 0, 0, 0, 0);
 			pad_data->Buttons &= 0xFFFE;
 		}
@@ -1679,7 +1679,7 @@ vctrlVSHExitVSHMenu(TNConfig *conf)
 	int k1 = pspSdkSetK1(0);
 	int cpuspeed = g_tnconfig.vshcpuspeed;
 
-	g_000083B0 = 0;
+	VshMenuCtrl = NULL;
 	memcpy(&g_tnconfig, conf, sizeof(TNConfig));
 
 	if (g_000083DC == 0) {
@@ -1732,7 +1732,7 @@ PatchSceImposeDriver(void)
 	if (timer < 0)
 		return;
 	sceKernelStartVTimer(timer);
-	sceKernelSetVTimerHandlerWide(timer, 0, (SceKernelVTimerHandlerWide) 0x004C4B40, 0, sub_00002424, 0);
+	sceKernelSetVTimerHandlerWide(timer, 0, (SceKernelVTimerHandlerWide) 0x004C4B40, 0, UsbChargingHandler, 0);
 
 	if ((mod = sceKernelFindModuleByName("sceUSB_Driver"))) {
 		text_addr = mod->text_addr;
@@ -1747,7 +1747,7 @@ PatchSceImposeDriver(void)
 void
 sub_00002EB0(int a0, int a1, int a2)
 {
-	/* XXX */
+	/* un-used routine */
 }
 
 /* 0x00002FDC */
@@ -2152,6 +2152,8 @@ sctrlKernelExitVSH(struct SceKernelLoadExecVSHParam *param)
 int
 PatchSceKernelStartModule(int a0, int a1)
 {
+	static char g_00008428[0x24];
+
 	int (*func) (int, u32) = (void *) a0;
 
 	memset(g_00008428, 0, 0x24);
@@ -2164,7 +2166,7 @@ PatchSceKernelStartModule(int a0, int a1)
 
 /* 0x000039BC */
 void
-startPlugin(char *path)
+StartPlugin(char *path)
 {
 	SceModule2 *mod;
 	SceUID uid = sceKernelLoadModule(path, 0, 0);
@@ -2206,7 +2208,7 @@ startPlugin(char *path)
 
 /* 0x00003B7C */
 void
-strTrim(char *buf)
+StrTrim(char *buf)
 {
 	char *s = buf + strlen(buf);
 
@@ -2217,7 +2219,7 @@ strTrim(char *buf)
 }
 
 int
-parsePluginsConfig(char *buf, int len, char *path, int *active)
+ParsePluginsConfig(char *buf, int len, char *path, int *active)
 {
 	int i, j;
 	char c, *p, *s;
@@ -2234,7 +2236,7 @@ parsePluginsConfig(char *buf, int len, char *path, int *active)
 				break;
 		}
 	}
-	strTrim(path);
+	StrTrim(path);
 	*active = 0;
 
 	if (i > 0) {
@@ -2295,11 +2297,11 @@ sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modsta
 	do {
 		memset(plugin_path, 0, 0x40);
 		active = 0;
-		ret = parsePluginsConfig(buf, len, plugin_path, &active);
+		ret = ParsePluginsConfig(buf, len, plugin_path, &active);
 		if (ret > 0) {
 			len -= ret;
 			if (active)
-				startPlugin(plugin_path);
+				StartPlugin(plugin_path);
 		} else
 			break;
 	} while (1);
