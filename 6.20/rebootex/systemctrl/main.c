@@ -34,7 +34,7 @@ extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
 extern int VerifySignCheck_Patched(void *hdr, int, int);
 extern int sceIoMkDir_Patched(char *dir, SceMode mode);
 extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
-extern int DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int decompress);
+extern int DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling);
 extern int PatchSceKernelStartModule(int, int);
 extern int sub_00001838(int, int, int, int, int, int, int, int);
 extern int sctrlHENGetVersion(void);
@@ -302,7 +302,7 @@ sctrlHENSetStartModuleHandler(u32 a0)
 
 /* 0x0000037C */
 int
-VerifySignCheck_Patched(void *buf, int size, int decompress)
+VerifySignCheck_Patched(void *buf, int size, int polling)
 {
 	int i;
 	PSP_Header *hdr = buf;
@@ -314,7 +314,7 @@ VerifySignCheck_Patched(void *buf, int size, int decompress)
 		if (hdr->scheck[i] != 0 &&
 				hdr->reserved2[0] != 0 &&
 				hdr->reserved2[1] != 0)
-			return VerifySignCheck(hdr, size, decompress);
+			return VerifySignCheck(hdr, size, polling);
 	}
 
 	return 0;
@@ -940,7 +940,7 @@ sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 
 /* 0x000016D8 */
 int
-DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int decompress)
+DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling)
 {
 	int (*func)(void);
 	int r;
@@ -963,15 +963,15 @@ DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int decompr
 		}
 	}
 
-	r = DecryptExecutable(buf, size, compressed_size, decompress);
+	r = DecryptExecutable(buf, size, compressed_size, polling);
 	if (r >= 0)
 		return r;
 
-	if (VerifySignCheck_Patched(buf, size, decompress) < 0)
+	if (VerifySignCheck_Patched(buf, size, polling) < 0)
 		return r;
 
 	sceMemlmdInitializeScrambleKey(NULL, (void *) 0xBFC00200);
-	return DecryptExecutable(buf, size, compressed_size, decompress);
+	return DecryptExecutable(buf, size, compressed_size, polling);
 }
 
 int
