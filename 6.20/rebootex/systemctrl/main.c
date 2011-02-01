@@ -859,7 +859,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 			v0 = _lw((u32) (clib->entrytable + (i << 2)));
 			v1 = (u32) (clib + 1) + (i << 3);
 
-			if (v0 == 0x909C228B || v0 == 0x18FE80DB) {
+			if (v0 == 0x909C228B || v0 == 0x18FE80DB) { /* setjmp and longjmp */
 				_sw(0x0A000BA0, v1);
 				_sw(0, v1 + 4);
 				ClearCaches();
@@ -870,7 +870,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	if (syscon) {
 		stubcount = syscon->stubcount;
 		for (i = 0; i < stubcount; i++) {
-			if (_lw((u32) (syscon->entrytable + (i << 2))) == 0xC8439C57) {
+			if (_lw((u32) (syscon->entrytable + (i << 2))) == 0xC8439C57) { /* sceSysconPowerStandby */
 				v0 = find_text_addr_by_name("sceSYSCON_Driver") + 0x2C64;
 				v1 = (u32) (syscon + 1) + (i << 3);
 				_sw((((v0 >> 2) & 0x03FFFFFF) | 0x08000000), v1);
@@ -883,7 +883,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	if (power) {
 		stubcount = syscon->stubcount;
 		for (i = 0; i < stubcount; i++) {
-			if (_lw((u32) (power->entrytable + (i << 2))) == 0x737486F2) {
+			if (_lw((u32) (power->entrytable + (i << 2))) == 0x737486F2) { /* scePowerSetClockFrequency */
 				if ((v0 = FindScePowerFunction(0x737486F2))) {
 					v1 = (u32) (power + 1) + (i << 3);
 					_sw((((v0 >> 2) & 0x03FFFFFF) | 0x08000000), v1);
@@ -1314,7 +1314,7 @@ SetConfig(TNConfig *config)
 void
 PatchRegion(void)
 {
-	u32 orig_addr = sctrlHENFindFunction("sceChkreg", "sceChkreg_driver", 0x59F8491D);
+	u32 orig_addr = sctrlHENFindFunction("sceChkreg", "sceChkreg_driver", 0x59F8491D); /* sceChkregGetPsCode */
 	if (orig_addr) {
 		if (g_tnconfig.fakeregion) {
 			_sw(MAKE_JMP(PatchSceChkReg), orig_addr);
@@ -1337,7 +1337,7 @@ sctrlHENSetSpeed(int cpuspd, int busspd)
 {
 	int (*_scePowerSetClockFrequency)(int, int, int);
 
-	g_scePowerSetClockFrequency_original = FindScePowerFunction(0x545A7F3C);
+	g_scePowerSetClockFrequency_original = FindScePowerFunction(0x545A7F3C); /* scePowerSetClockFrequency */
 	_scePowerSetClockFrequency = (void *) g_scePowerSetClockFrequency_original;
 	_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
 }
@@ -1395,7 +1395,7 @@ PatchVsh(u32 text_addr)
 
 	text_addr2 = find_text_addr_by_name("sceVshBridge_Driver");
 
-	g_scePowerGetCpuClockFrequency_original = FindScePowerFunction(0xFEE03A2F);
+	g_scePowerGetCpuClockFrequency_original = FindScePowerFunction(0xFEE03A2F); /* scePowerGetCpuClockFrequency */
 
 	_sw(MAKE_CALL(sceCtrlReadBufferPositive_Patched), text_addr2 + 0x25C);
 
