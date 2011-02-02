@@ -380,7 +380,9 @@ nidtable_t *
 FindLibNidTable(const char *name)
 {
 	/* 0x00004EC0 */
-	static nidentry_t SysMemForKernel_table[] = {};
+	static nidentry_t SysMemForKernel_table[] = {
+		{0x1C1FBFE7, 0xC6A782DA},
+	};
 	static nidentry_t KDebugForKernel_table[] = {};
 	static nidentry_t LoadCoreForKernel_table[] = {};
 	static nidentry_t ExceptionManagerForKernel_table[] = {};
