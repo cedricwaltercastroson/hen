@@ -27,7 +27,7 @@ int (*sceBootLfatOpen)(char *);
 int (*sceBootLfatClose)(void);
 int (*sceBootDecryptPSP)(void *, void *);
 
-int (*sceDecryptPSP)(void *, unsigned int, void *);
+int (*sceDecryptPSP)(void *, unsigned int, int *);
 int (*sceKernelCheckExecFile)(unsigned char *, unsigned int);
 
 int has_hen_prx;
@@ -153,20 +153,52 @@ sceBootLfatClose_Patched(void)
 	return sceBootLfatClose();
 }
 
-int
-secDecryptPSP_Patched(void *a0, unsigned int a1, void *a2)
+typedef struct
 {
-	unsigned int len;
+	u32		signature;  // 0
+	u16		attribute; // 4  modinfo
+	u16		comp_attribute; // 6
+	u8		module_ver_lo;	// 8
+	u8		module_ver_hi;	// 9
+	char	modname[28]; // 0A
+	u8		version; // 26
+	u8		nsegments; // 27
+	int		elf_size; // 28
+	int		psp_size; // 2C
+	u32		entry;	// 30
+	u32		modinfo_offset; // 34
+	int		bss_size; // 38
+	u16		seg_align[4]; // 3C
+	u32		seg_address[4]; // 44
+	int		seg_size[4]; // 54
+	u32		reserved[5]; // 64
+	u32		devkitversion; // 78
+	u32		decrypt_mode; // 7C 
+	u8		key_data0[0x30]; // 80
+	int		comp_size; // B0
+	int		_80;	// B4
+	int		reserved2[2];	// B8
+	u8		key_data1[0x10]; // C0
+	u32		tag; // D0
+	u8		scheck[0x58]; // D4
+	u32		key_data2; // 12C
+	u32		oe_tag; // 130
+	u8		key_data3[0x1C]; // 134
+} __attribute__((packed)) PSP_Header;
 
-	/* a0 is beginning of systemctrl. offset 304 is 0xB301AEBAU */
-	if (_lw(a0 + 304) == 0xB301AEBAU) {
-		len = _lw(a0 + 176);
-		__memcpy(a0, a0 + 336, len);
-		_sw(len, a2);
+int
+secDecryptPSP_Patched(void *buf, unsigned int a1, int *compressed_size)
+{
+	PSP_Header *hdr = (PSP_Header *) buf;
+
+	/* M33 tag or psp-packer tag */
+	if (hdr->oe_tag == 0xB301AEBA || hdr->oe_tag == 0x55668D96) {
+		__memcpy(buf, buf + 0x150, hdr->comp_size);
+		*compressed_size = hdr->comp_size;
 		return 0;
 	}
 
-	return sceDecryptPSP(a0, a1, a2);
+	return sceDecryptPSP(buf, a1, compressed_size);
 }
 
 int
@@ -190,7 +222,7 @@ PatchLoadCore(void *a0, void *a1, void *a2,
 	unsigned int fp;
 
 	fp = MAKE_CALL(secDecryptPSP_Patched);
-	_sw(fp, text_addr + 13792); /* 0x41A4 mask call to sceDecryptPSP*/
+	_sw(fp, text_addr + 13792); /* 0x41A4 mask call to sceDecryptPSP */
 	_sw(fp, text_addr + 23852); /* 0x68F0 mask call to sceDecryptPSP */
 
 	fp = MAKE_CALL(sceKernelCheckExecFile_Patched);

@@ -934,7 +934,7 @@ int
 DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling)
 {
 	int r;
-	PSP_Header* hdr = (PSP_Header*) buf;
+	PSP_Header* hdr = (PSP_Header *) buf;
 
 	if (DecryptExecutable_HEN) {
 		if (DecryptExecutable_HEN(buf, size, compressed_size, polling) >= 0)
