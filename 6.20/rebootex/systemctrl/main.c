@@ -283,7 +283,9 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
 	return 0;
 }
 
-/* 0x0000031C */
+/* 0x0000031C
+ * translate old nid to new nid
+ */
 u32
 FindNidInLib(nidtable_t *p, u32 nid)
 {
@@ -641,7 +643,7 @@ u32
 sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 {
 	SceModule2 *mod;
-	void *lib_addr;
+	nidtable_t *lib_addr;
 	int i, j, ent_sz, stub_cnt;
 	void *ent_top;
 	struct SceLibraryEntryTable *entry;
@@ -830,7 +832,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 {
 	u32 ver, nid, offs;
 	u32 *pnid;
-	void *lib_addr;
+	nidtable_t *lib_addr;
 	const char *lib_name;
 	struct SceLibraryEntryTable *entry;
 	int i, stubcount, res;
