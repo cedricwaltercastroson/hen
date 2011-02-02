@@ -287,7 +287,7 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
  * translate old nid to new nid
  */
 u32
-FindNidInLib(nidtable_t *p, u32 nid)
+TranslateNid(nidtable_t *p, u32 nid)
 {
 	int i, cnt;
 	nidentry_t *nids;
@@ -377,10 +377,67 @@ PatchSyscall(u32 fp, u32 neufp)
 
 /* 0x00000428 */
 nidtable_t *
-FindLibByName(const char *name)
+FindLibNidTable(const char *name)
 {
-	/* XXX */
-	static nidtable_t nidtable[27] = {}; /* 0x00006888 */
+	/* 0x00004EC0 */
+	static nidentry_t SysMemForKernel_table[] = {};
+	static nidentry_t KDebugForKernel_table[] = {};
+	static nidentry_t LoadCoreForKernel_table[] = {};
+	static nidentry_t ExceptionManagerForKernel_table[] = {};
+	static nidentry_t InterruptManagerForKernel_table[] = {};
+	static nidentry_t IoFileMgrForKernel_table[] = {};
+	static nidentry_t ModuleMgrForKernel_table[] = {};
+	static nidentry_t LoadExecForKernel_table[] = {};
+	static nidentry_t sceDdr_driver_table[] = {};
+	static nidentry_t sceDmacplus_driver_table[] = {};
+	static nidentry_t sceGpio_driver_table[] = {};
+	static nidentry_t sceSysreg_driver_table[] = {};
+	static nidentry_t sceSyscon_driver_table[] = {};
+	static nidentry_t sceDisplay_driver_table[] = {};
+	static nidentry_t sceDve_driver_table[] = {};
+	static nidentry_t sceGe_driver_table[] = {};
+	static nidentry_t sceCtrl_driver_table[] = {};
+	static nidentry_t sceUmd_table[] = {};
+	static nidentry_t sceHprm_driver_table[] = {};
+	static nidentry_t scePower_driver_table[] = {};
+	static nidentry_t sceImpose_driver_table[] = {};
+	static nidentry_t sceRtc_driver_table[] = {};
+	static nidentry_t sceReg_driver_table[] = {};
+	static nidentry_t memlmd_table[] = {};
+	static nidentry_t sceMesgLed_driver_table[] = {};
+	static nidentry_t sceClockgen_driver_table[] = {};
+	static nidentry_t sceCodec_driver_table[] = {};
+
+	/* 0x00006888 */
+	static nidtable_t nidtable[] = {
+		{"SysMemForKernel", SysMemForKernel_table, 0x60},
+		{"KDebugForKernel", KDebugForKernel_table, 0x1A},
+		{"LoadCoreForKernel", LoadCoreForKernel_table, 0x27},
+		{"ExceptionManagerForKernel", ExceptionManagerForKernel_table, 0x7},
+		{"InterruptManagerForKernel", InterruptManagerForKernel_table, 0x24},
+		{"IoFileMgrForKernel", IoFileMgrForKernel_table, 0xA},
+		{"ModuleMgrForKernel", ModuleMgrForKernel_table, 0x30},
+		{"LoadExecForKernel", LoadExecForKernel_table, 0x14},
+		{"sceDdr_driver", sceDdr_driver_table, 0xD},
+		{"sceDmacplus_driver", sceDmacplus_driver_table, 0x0},
+		{"sceGpio_driver", sceGpio_driver_table, 0xB},
+		{"sceSysreg_driver", sceSysreg_driver_table, 0x36},
+		{"sceSyscon_driver", sceSyscon_driver_table, 0x6B},
+		{"sceDisplay_driver", sceDisplay_driver_table, 0x28},
+		{"sceDve_driver", sceDve_driver_table, 0x15},
+		{"sceGe_driver", sceGe_driver_table, 0x22},
+		{"sceCtrl_driver", sceCtrl_driver_table, 0x22},
+		{"sceUmd", sceUmd_table, 0x21},
+		{"sceHprm_driver", sceHprm_driver_table, 0x18},
+		{"scePower_driver", scePower_driver_table, 0x50},
+		{"sceImpose_driver", sceImpose_driver_table, 0x18},
+		{"sceRtc_driver", sceRtc_driver_table, 0x29},
+		{"sceReg_driver", sceReg_driver_table, 0x15},
+		{"memlmd", memlmd_table, 0x3},
+		{"sceMesgLed_driver", sceMesgLed_driver_table, 0x1},
+		{"sceClockgen_driver", sceClockgen_driver_table, 0x1},
+		{"sceCodec_driver", sceCodec_driver_table, 0x1},
+	};
 
 	int i;
 	nidtable_t *p = nidtable;
@@ -388,7 +445,7 @@ FindLibByName(const char *name)
 	if (name == NULL)
 		return NULL;
 
-	for (i = 0; i < 27; i++) {
+	for (i = 0; i < sizeof(nidtable) / sizeof(nidtable_t); i++) {
 		if (!strcmp(name, p->name))
 			return p;
 	}
@@ -643,7 +700,7 @@ u32
 sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 {
 	SceModule2 *mod;
-	nidtable_t *lib_addr;
+	nidtable_t *nidtbl;
 	int i, j, ent_sz, stub_cnt;
 	void *ent_top;
 	struct SceLibraryEntryTable *entry;
@@ -654,8 +711,8 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 			return 0;
 	}
 
-	if ((lib_addr = FindLibByName(lib_name)))
-		nid = FindNidInLib(lib_addr, nid);
+	if ((nidtbl = FindLibNidTable(lib_name)))
+		nid = TranslateNid(nidtbl, nid);
 
 	ent_sz = mod->ent_size;
 	ent_top = mod->ent_top;
@@ -832,7 +889,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 {
 	u32 ver, nid, offs;
 	u32 *pnid;
-	nidtable_t *lib_addr;
+	nidtable_t *nidtbl;
 	const char *lib_name;
 	struct SceLibraryEntryTable *entry;
 	int i, stubcount, res;
@@ -853,7 +910,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	while (offs < size) {
 		entry = buf + offs;
 		lib_name = entry->libname;
-		lib_addr = FindLibByName(lib_name);
+		nidtbl = FindLibNidTable(lib_name);
 
 		if (!strcmp(lib_name, "SysclibForKernel")) {
 			clib = entry;
@@ -863,11 +920,11 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 			power = entry;
 		}
 
-		if (lib_addr != NULL) {
+		if (nidtbl != NULL) {
 			stubcount = entry->stubcount;
 			for (i = 0; i < stubcount; i++) {
 				pnid = entry->entrytable + (i << 2);
-				if ((nid = FindNidInLib(lib_addr, *pnid)))
+				if ((nid = TranslateNid(nidtbl, *pnid)))
 					*pnid = nid;
 			}
 		}
