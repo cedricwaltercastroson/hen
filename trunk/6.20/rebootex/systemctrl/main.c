@@ -13,6 +13,17 @@
 
 #include "systemctrl.h"
 
+typedef struct {
+	u32 oldnid;
+	u32 newnid;
+} nidentry_t;
+
+typedef struct {
+	char *name;
+	nidentry_t *nids;
+	int cnt;
+} nidtable_t;
+
 PSP_MODULE_INFO("SystemControl", 0x3007, 1, 1);
 PSP_MAIN_THREAD_ATTR(0);
 
@@ -140,14 +151,17 @@ PatchExec2(void *buf, int *check)
 	if (index < 0)
 		index += 3;
 
-	addr = (u32) (buf + index);
-	if (addr < 0x88800001U)
+	addr = (u32) buf + index;
+	if (addr + 0x77C00000 < 0x00400001) /* same as addr < 0x88800001U */
 		return 0;
 
-	addr = _lw(addr);
-	check[22] = addr & 0xFFFF;
+	addr = index / 4;
+	addr <<= 2;
+	addr += (u32) buf;
 
-	return addr;
+	check[22] = _lh(addr);
+
+	return _lw(addr);
 }
 
 /* 0x00000090 */
@@ -161,9 +175,17 @@ PatchExec1(void *buf, int *check)
 
 	i = check[2];
 	if (i >= 0x120) {
-		if (i != 0x120 && i != 0x141 && i != 0x142 &&
-				i != 0x143 && i != 0x140)
+		switch (i) {
+		case 0x120:
+		case 0x141:
+		case 0x142:
+		case 0x143:
+		case 0x140:
+			break;
+
+		default:
 			return -1;
+		}
 
 		if (check[4] == 0) {
 			if (check[17] == 0)
@@ -263,17 +285,16 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
 
 /* 0x0000031C */
 u32
-FindNidInLib(void *buf, u32 nid)
+FindNidInLib(nidtable_t *p, u32 nid)
 {
 	int i, cnt;
-	u32 *addr;
-	int *lib = buf;
+	nidentry_t *nids;
 
-	cnt = lib[2];
-	for (i = 0; i < cnt; i++) {
-		addr = (u32 *) (i * 8 + lib[1]);
-		if (*addr == nid)
-			return addr[1];
+	cnt = p->cnt;
+	nids = p->nids;
+	for (i = 0; i < cnt; i++, nids++) {
+		if (nids->oldnid == nid)
+			return nids->newnid;
 	}
 
 	return 0;
@@ -353,20 +374,21 @@ PatchSyscall(u32 fp, u32 neufp)
 }
 
 /* 0x00000428 */
-void *
+nidtable_t *
 FindLibByName(const char *name)
 {
+	/* XXX */
+	static nidtable_t nidtable[27] = {}; /* 0x00006888 */
+
 	int i;
-	char **s;
+	nidtable_t *p = nidtable;
 
 	if (name == NULL)
 		return NULL;
 
-	s = (char **) 0x00006888;
-
-	for (i = 0; i < 27; i++, s += 3) {
-		if (!strcmp(name, *s))
-			return (void *) (0x00006888 + i / 12);
+	for (i = 0; i < 27; i++) {
+		if (!strcmp(name, p->name))
+			return p;
 	}
 
 	return NULL;
