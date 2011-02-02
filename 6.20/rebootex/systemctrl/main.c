@@ -411,7 +411,7 @@ FindLibNidTable(const char *name)
 	static nidentry_t sceCodec_driver_table[] = {};
 
 	/* 0x00006888 */
-	static nidtable_t nidtable[] = {
+	static nidtable_t nidtables[] = {
 		{"SysMemForKernel", SysMemForKernel_table, 0x60},
 		{"KDebugForKernel", KDebugForKernel_table, 0x1A},
 		{"LoadCoreForKernel", LoadCoreForKernel_table, 0x27},
@@ -442,12 +442,12 @@ FindLibNidTable(const char *name)
 	};
 
 	int i;
-	nidtable_t *p = nidtable;
+	nidtable_t *p = nidtables;
 
 	if (name == NULL)
 		return NULL;
 
-	for (i = 0; i < sizeof(nidtable) / sizeof(nidtable_t); i++) {
+	for (i = 0; i < sizeof(nidtables) / sizeof(nidtable_t); i++) {
 		if (!strcmp(name, p->name))
 			return p;
 	}
