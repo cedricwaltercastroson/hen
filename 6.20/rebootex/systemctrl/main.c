@@ -99,8 +99,9 @@ int (*DecryptPrx) (int a0, int a1, int a2, char *buf, int size, int *compressed_
 
 char *g_reboot_module; /* 0x000083B8 */
 void *g_reboot_module_buf; /* 0x000083C8 */
-int g_reboot_module_size; /* g_reboot_module_size */
-int g_reboot_module_flags; /* g_reboot_module_flags */
+int g_reboot_module_size; /* 0x000083D0 */
+int g_reboot_module_flags; /* 0x000083CC */
+
 SceUID g_satelite_mod_id; /* 0x000083C0 */
 
 int (*VshMenuCtrl) (SceCtrlData *, int); /* 0x000083B0 */
