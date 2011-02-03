@@ -480,27 +480,27 @@ PatchModuleMgr(void)
 	if (g_model == 4)
 		_sw(MAKE_CALL(sceKernelProbeExecutableObject_Patched), text_addr + 0x00007C3C);
 
-	_sw(MAKE_JMP(sceKernelCheckExecFile_Patched), text_addr + 0x00008854);
+	_sw(MAKE_JMP(sceKernelCheckExecFile_Patched), text_addr + 0x00008854); /* mask sceKernelCheckExecFile */
 
 	PartitionCheck = (void *) (text_addr + 0x00007FC0);
 	g_apitype_addr = (void *) (text_addr + 0x00009990);
 	g_init_filename_addr = (void *) (text_addr + 0x00009994);
 	g_keyconfig_addr = (void *) (text_addr + 0x000099EC);
 
-	_sw(0, text_addr + 0x00000760);
+	_sw(0, text_addr + 0x00000760); /* sceIoIoctl in sceKernelLoadModule */
 	_sw(0x24020000, text_addr + 0x000007C0); /* addiu v0, $zr, 0	*/
-	_sw(0, text_addr + 0x000030B0);
-	_sw(0, text_addr + 0x0000310C);
-	_sw(0x10000009, text_addr + 0x00003138); /* beq $zr, $zr, 0x9 ??? */
-	_sw(0, text_addr + 0x00003444);
-	_sw(0, text_addr + 0x0000349C);
-	_sw(0x10000010, text_addr + 0x000034C8); /* beq $zr, $zr, 0x10 ??? */
+	_sw(0, text_addr + 0x000030B0); /* somewhere in sceKernelLoadModuleVSH */
+	_sw(0, text_addr + 0x0000310C); /* somewhere in sceKernelLoadModuleVSH */
+	_sw(0x10000009, text_addr + 0x00003138); /* somewhere in sceKernelLoadModuleVSH */
+	_sw(0, text_addr + 0x00003444); /* somewhere in sceKernelLoadModule */
+	_sw(0, text_addr + 0x0000349C); /* somewhere in sceKernelLoadModule */
+	_sw(0x10000010, text_addr + 0x000034C8); /* somewhere in sceKernelLoadModule */
 
 	fp = MAKE_CALL(PartitionCheck_Patched);
 	_sw(fp, text_addr + 0x000064FC);
 	_sw(fp, text_addr + 0x00006878);
 
-	_sw(MAKE_CALL(sceKernelLinkLibraryEntries_Patched), text_addr + 0x0000842C);
+	_sw(MAKE_CALL(sceKernelLinkLibraryEntries_Patched), text_addr + 0x0000842C); /* mask sceKernelLinkLibraryEntries */
 	_sw(0, text_addr + 0x00004360);
 	_sw(0, text_addr + 0x000043A8);
 	_sw(0, text_addr + 0x000043C0);
@@ -590,7 +590,7 @@ PatchSceMesgLed(void)
 	/* 0x000069DC */
 	static u32 model1[] = {0x00001ECC, 0x00003D10, 0x0000415C, 0x00001F5C};
 	/* 0x000069EC */
-	static u32 model23[] = {0x00001F5C, 0x000041F0, 0x00004684, 0x00001FEC};
+	static u32 model23[] = {0x00001F5C, 0x000041F0, 0x00004684, 0x00001FEC}; /* XXX TN bug? 41F4 or 41F0 ? */
 	/* 0x000069FC */
 	static u32 model4[] = {0x00001FEC, 0x00004674, 0x00004B50, 0x0000207C};
 
@@ -680,14 +680,17 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 	void *ent_top;
 	struct SceLibraryEntryTable *entry;
 	u32 *entry_table;
+	u32 tmp;
 
 	if (!(mod = sceKernelFindModuleByName(module_name))) {
 		if (!(mod = sceKernelFindModuleByAddress((u32) module_name)))
 			return 0;
 	}
 
-	if ((nidtbl = FindLibNidTable(lib_name)))
-		nid = TranslateNid(nidtbl, nid);
+	if ((nidtbl = FindLibNidTable(lib_name))) {
+		if ((tmp = TranslateNid(nidtbl, nid)))
+			nid = tmp;
+	}
 
 	ent_sz = mod->ent_size;
 	ent_top = mod->ent_top;
@@ -767,7 +770,7 @@ PatchModules(SceModule2 *mod)
 		PatchVLF(0x2A245FE6);
 		PatchVLF(0x7B08EAAB);
 		PatchVLF(0x22050FC0);
-		PatchVLF(0x158EE61A);
+		PatchVLF(0x158BE61A);
 		PatchVLF(0xD495179F);
 		ClearCaches();
 	}
@@ -796,7 +799,7 @@ PatchLoadCore(void)
 	_sw(fp, text_addr + 0x000015C8);
 	_sw(fp, text_addr + 0x00004A18);
 
-	_sw(text_addr + 0x00008B58, text_addr + 0x00008B74);
+	_sw(_lw(text_addr + 0x00008B58), text_addr + 0x00008B74);
 	_sw(MAKE_CALL(ProbeExec1_Patched), text_addr + 0x000046A4);
 	_sw(MAKE_CALL(ProbeExec2_Patched), text_addr + 0x00004878);
 	_sw(0x3C090000, text_addr + 0x000040A4);
