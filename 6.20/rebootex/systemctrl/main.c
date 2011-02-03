@@ -376,41 +376,13 @@ PatchSyscall(u32 fp, u32 neufp)
 	} while (vectors != end);
 }
 
+/* 0x00004EC0 */
+#include "nidtables.inc"
+
 /* 0x00000428 */
 nidtable_t *
 FindLibNidTable(const char *name)
 {
-	/* 0x00004EC0 */
-	static nidentry_t SysMemForKernel_table[] = {
-		{0x1C1FBFE7, 0xC6A782DA},
-	};
-	static nidentry_t KDebugForKernel_table[] = {};
-	static nidentry_t LoadCoreForKernel_table[] = {};
-	static nidentry_t ExceptionManagerForKernel_table[] = {};
-	static nidentry_t InterruptManagerForKernel_table[] = {};
-	static nidentry_t IoFileMgrForKernel_table[] = {};
-	static nidentry_t ModuleMgrForKernel_table[] = {};
-	static nidentry_t LoadExecForKernel_table[] = {};
-	static nidentry_t sceDdr_driver_table[] = {};
-	static nidentry_t sceDmacplus_driver_table[] = {};
-	static nidentry_t sceGpio_driver_table[] = {};
-	static nidentry_t sceSysreg_driver_table[] = {};
-	static nidentry_t sceSyscon_driver_table[] = {};
-	static nidentry_t sceDisplay_driver_table[] = {};
-	static nidentry_t sceDve_driver_table[] = {};
-	static nidentry_t sceGe_driver_table[] = {};
-	static nidentry_t sceCtrl_driver_table[] = {};
-	static nidentry_t sceUmd_table[] = {};
-	static nidentry_t sceHprm_driver_table[] = {};
-	static nidentry_t scePower_driver_table[] = {};
-	static nidentry_t sceImpose_driver_table[] = {};
-	static nidentry_t sceRtc_driver_table[] = {};
-	static nidentry_t sceReg_driver_table[] = {};
-	static nidentry_t memlmd_table[] = {};
-	static nidentry_t sceMesgLed_driver_table[] = {};
-	static nidentry_t sceClockgen_driver_table[] = {};
-	static nidentry_t sceCodec_driver_table[] = {};
-
 	/* 0x00006888 */
 	static nidtable_t nidtables[] = {
 		{"SysMemForKernel", SysMemForKernel_table, 0x60},
