@@ -874,7 +874,6 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	struct SceLibraryEntryTable *entry;
 	int i, stubcount, res;
 	struct SceLibraryEntryTable *clib, *syscon, *power;
-	u32 v0, v1; /* temp */
 
 	/* module_sdk_version */
 	ver = sctrlHENFindFunction(buf, NULL, 0x11B97506);
@@ -917,12 +916,17 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	if (clib) {
 		stubcount = clib->stubcount;
 		for (i = 0; i < stubcount; i++) {
-			v0 = _lw((u32) (clib->entrytable + (i << 2)));
-			v1 = (u32) (clib + 1) + (i << 3);
+			nid = _lw((u32) (clib->entrytable + (i << 2)));
 
-			if (v0 == 0x909C228B || v0 == 0x18FE80DB) { /* setjmp and longjmp */
-				_sw(0x0A000BA0, v1);
-				_sw(0, v1 + 4);
+			if (nid == 0x909C228B || nid == 0x18FE80DB) { /* setjmp and longjmp */
+				u32 addr = (u32) (clib + 1) + (i << 3);
+
+				if (nid == 0x909C228B)
+					_sw(0x0A000BA0, addr);
+				else
+					_sw(0x0A000BAF, addr);
+
+				_sw(0, addr + 4);
 				ClearCaches();
 			}
 		}
@@ -931,11 +935,14 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	if (syscon) {
 		stubcount = syscon->stubcount;
 		for (i = 0; i < stubcount; i++) {
-			if (_lw((u32) (syscon->entrytable + (i << 2))) == 0xC8439C57) { /* sceSysconPowerStandby */
-				v0 = find_text_addr_by_name("sceSYSCON_Driver") + 0x2C64;
-				v1 = (u32) (syscon + 1) + (i << 3);
-				_sw((((v0 >> 2) & 0x03FFFFFF) | 0x08000000), v1);
-				_sw(0, v1 + 4);
+			nid = _lw((u32) (syscon->entrytable + (i << 2)));
+
+			if (nid == 0xC8439C57) { /* sceSysconPowerStandby */
+				u32 addr = (u32) (syscon + 1) + (i << 3);
+				u32 func = find_text_addr_by_name("sceSYSCON_Driver") + 0x2C64;
+
+				_sw((((func >> 2) & 0x03FFFFFF) | 0x08000000), addr);
+				_sw(0, addr + 4);
 				ClearCaches();
 			}
 		}
@@ -944,11 +951,16 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	if (power) {
 		stubcount = syscon->stubcount;
 		for (i = 0; i < stubcount; i++) {
-			if (_lw((u32) (power->entrytable + (i << 2))) == 0x737486F2) { /* scePowerSetClockFrequency */
-				if ((v0 = FindScePowerFunction(0x737486F2))) {
-					v1 = (u32) (power + 1) + (i << 3);
-					_sw((((v0 >> 2) & 0x03FFFFFF) | 0x08000000), v1);
-					_sw(0, v1 + 4);
+			nid = _lw((u32) (power->entrytable + (i << 2)));
+
+			if (nid == 0x737486F2) { /* scePowerSetClockFrequency */
+				u32 func = FindScePowerFunction(0x737486F2);
+
+				if (func) {
+					u32 addr = (u32) (power + 1) + (i << 3);
+
+					_sw((((func >> 2) & 0x03FFFFFF) | 0x08000000), addr);
+					_sw(0, addr + 4);
 					ClearCaches();
 				}
 			}
