@@ -1058,9 +1058,11 @@ DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_
 			goto decrypt;
 		}
 
-		memmove(buf, buf + 0x150, hdr->comp_size);
-		*compressed_size = hdr->comp_size;
-		return 0;
+		if (buf[0x150] == 0x1F && buf[0x151] == 0x8B) { /* gzip */
+			memmove(buf, buf + 0x150, hdr->comp_size);
+			*compressed_size = hdr->comp_size;
+			return 0;
+		}
 	}
 
 decrypt:
