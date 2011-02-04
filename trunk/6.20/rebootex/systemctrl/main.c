@@ -288,16 +288,17 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
  * translate old nid to new nid
  */
 u32
-TranslateNid(nidtable_t *p, u32 nid)
+TranslateNid(nidtable_t *t, u32 nid)
 {
 	int i, cnt;
 	nidentry_t *nids;
 
-	cnt = p->cnt;
-	nids = p->nids;
-	for (i = 0; i < cnt; i++, nids++) {
-		if (nids->oldnid == nid)
-			return nids->newnid;
+	cnt = t->cnt;
+	nids = t->nids;
+
+	for (i = 0; i < cnt; i++) {
+		if (nids[i].oldnid == nid)
+			return nids[i].newnid;
 	}
 
 	return 0;
@@ -384,45 +385,46 @@ nidtable_t *
 FindLibNidTable(const char *name)
 {
 	/* 0x00006888 */
+#define NID_TABLE(__n) {#__n, __n##_##table, sizeof(__n##_##table)/sizeof(nidentry_t)}
+
 	static nidtable_t nidtables[] = {
-		{"SysMemForKernel", SysMemForKernel_table, 0x60},
-		{"KDebugForKernel", KDebugForKernel_table, 0x1A},
-		{"LoadCoreForKernel", LoadCoreForKernel_table, 0x27},
-		{"ExceptionManagerForKernel", ExceptionManagerForKernel_table, 0x7},
-		{"InterruptManagerForKernel", InterruptManagerForKernel_table, 0x24},
-		{"IoFileMgrForKernel", IoFileMgrForKernel_table, 0xA},
-		{"ModuleMgrForKernel", ModuleMgrForKernel_table, 0x30},
-		{"LoadExecForKernel", LoadExecForKernel_table, 0x14},
-		{"sceDdr_driver", sceDdr_driver_table, 0xD},
-		{"sceDmacplus_driver", sceDmacplus_driver_table, 0x0},
-		{"sceGpio_driver", sceGpio_driver_table, 0xB},
-		{"sceSysreg_driver", sceSysreg_driver_table, 0x36},
-		{"sceSyscon_driver", sceSyscon_driver_table, 0x6B},
-		{"sceDisplay_driver", sceDisplay_driver_table, 0x28},
-		{"sceDve_driver", sceDve_driver_table, 0x15},
-		{"sceGe_driver", sceGe_driver_table, 0x22},
-		{"sceCtrl_driver", sceCtrl_driver_table, 0x22},
-		{"sceUmd", sceUmd_table, 0x21},
-		{"sceHprm_driver", sceHprm_driver_table, 0x18},
-		{"scePower_driver", scePower_driver_table, 0x50},
-		{"sceImpose_driver", sceImpose_driver_table, 0x18},
-		{"sceRtc_driver", sceRtc_driver_table, 0x29},
-		{"sceReg_driver", sceReg_driver_table, 0x15},
-		{"memlmd", memlmd_table, 0x3},
-		{"sceMesgLed_driver", sceMesgLed_driver_table, 0x1},
-		{"sceClockgen_driver", sceClockgen_driver_table, 0x1},
-		{"sceCodec_driver", sceCodec_driver_table, 0x1},
+		NID_TABLE(SysMemForKernel),
+		NID_TABLE(KDebugForKernel),
+		NID_TABLE(LoadCoreForKernel),
+		NID_TABLE(ExceptionManagerForKernel),
+		NID_TABLE(InterruptManagerForKernel),
+		NID_TABLE(IoFileMgrForKernel),
+		NID_TABLE(ModuleMgrForKernel),
+		NID_TABLE(LoadExecForKernel),
+		NID_TABLE(sceDdr_driver),
+		NID_TABLE(sceDmacplus_driver),
+		NID_TABLE(sceGpio_driver),
+		NID_TABLE(sceSysreg_driver),
+		NID_TABLE(sceSyscon_driver),
+		NID_TABLE(sceDisplay_driver),
+		NID_TABLE(sceDve_driver),
+		NID_TABLE(sceGe_driver),
+		NID_TABLE(sceCtrl_driver),
+		NID_TABLE(sceUmd),
+		NID_TABLE(sceHprm_driver),
+		NID_TABLE(scePower_driver),
+		NID_TABLE(sceImpose_driver),
+		NID_TABLE(sceRtc_driver),
+		NID_TABLE(sceReg_driver),
+		NID_TABLE(memlmd),
+		NID_TABLE(sceMesgLed_driver),
+		NID_TABLE(sceClockgen_driver),
+		NID_TABLE(sceCodec_driver),
 	};
 
 	int i;
-	nidtable_t *p = nidtables;
 
 	if (name == NULL)
 		return NULL;
 
 	for (i = 0; i < sizeof(nidtables) / sizeof(nidtable_t); i++) {
-		if (!strcmp(name, p->name))
-			return p;
+		if (!strcmp(name, nidtables[i].name))
+			return &nidtables[i];
 	}
 
 	return NULL;
