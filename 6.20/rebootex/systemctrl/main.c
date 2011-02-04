@@ -115,7 +115,7 @@ unsigned int g_000083E4;
 SceUID g_SceModmgrStart_tid; /* 0x00008298 */
 SceModule2 *g_SceModmgrStart_module; /* 0x00008274 */
 
-int (*GameBoot) (void); /* 0x000083D8 */
+int (*sceDisplaySetHoldMode) (int); /* 0x000083D8 */
 
 u32 g_scePowerSetClockFrequency_original; /* 0x000083AC */
 u32 g_scePowerGetCpuClockFrequency_original; /* 0x000083B4 */
@@ -1097,11 +1097,10 @@ PartitionCheck_Patched(void *buf, int *check)
 	u16 attr;
 	SceUID fd;
 	SceOff pos;
-	Elf32_Ehdr *hdr;
 
 	fd = _lw((u32) buf + 0x18);
-	sceIoLseek(fd, check, 0, 0, 1);
-	pos = sceIoLseek(fd, check, 0, 0, 0);
+	pos = sceIoLseek(fd, check, 0, 0, 1);
+	sceIoLseek(fd, check, 0, 0, 0);
 	if (sceIoRead(fd, readbuf, 0x100) < 0x100)
 		goto out;
 
@@ -1112,8 +1111,7 @@ PartitionCheck_Patched(void *buf, int *check)
 			goto out;
 
 		sceIoLseek(fd, readbuf, readbuf[8] + check[19], 0, 0);
-		hdr = (Elf32_Ehdr *) readbuf;
-		if (hdr->e_magic != ELF_MAGIC || hdr->e_type != 2)
+		if (!IsStaticElf(readbuf))
 			check[4] = readbuf[8] - readbuf[7];
 	} else if (readbuf[0] == ELF_MAGIC) {
 		sceIoLseek(fd, readbuf, check[19], 0, 0);
@@ -1124,7 +1122,7 @@ PartitionCheck_Patched(void *buf, int *check)
 	if (IsStaticElf(readbuf))
 		check[17] = 0;
 	else
-		check[17] = attr & 0x1000;
+		check[17] = !!(attr & 0x1000);
 
 out:
 	sceIoLseek(fd, readbuf, pos, 0, 0);
@@ -1147,7 +1145,7 @@ sceKernelProbeExecutableObject_Patched(void *buf, int *check)
 	hdr = buf;
 	if (hdr->e_type != 2)
 		return res;
-	hdr->e_shoff = 3;
+	check[8] = 3;
 
 	return 0;
 }
@@ -1168,7 +1166,6 @@ SystemCtrlForKernel_B86E36D1(void)
 {
 	int *(*func)(int);
 	int *res, *p;
-	int s1;
 
 	if (g_p2_size == 0)
 		return;
@@ -1177,19 +1174,21 @@ SystemCtrlForKernel_B86E36D1(void)
 		return;
 
 	func = (void *) 0x88003E2C;
+
 	res = func(2);
-	s1 = g_p2_size << 20;
-	res[2] = s1;
 	p = (int *) res[4];
-	p[5] = (g_p8_size << 21) | 0xFC;
+	res[2] = g_p2_size << 20;
+	p[5] = (g_p2_size << 21) | 0xFC;
 
 	res = func(8);
-	res[1] = s1 + 0x88800000;
-	res[2] = g_p8_size << 20;
 	p = (int *) res[4];
+
+	res[1] = (g_p2_size << 20) + 0x88800000;
+	res[2] = g_p8_size << 20;
 	p[5] = (g_p8_size << 21) | 0xFC;
 }
 
+/* 0x00001E1C */
 int
 PatchSceChkReg(char *a0)
 {
@@ -1200,10 +1199,10 @@ PatchSceChkReg(char *a0)
 
 	fakeregion = g_tnconfig.fakeregion;
 
-	if (fakeregion < 0xC) {
+	if (fakeregion >= 0xC)
 		fakeregion += 2;
+	else
 		fakeregion += 0xFFF5;
-	}
 
 	a1 = fakeregion & 0xFF;
 	fakeregion = a1 ^ 2;
@@ -1244,16 +1243,15 @@ PatchSceLoadExec(u32 text_addr)
 	_sw(0, text_addr + p[3]);
 	LoadExecBootstart = (void *) text_addr;
 	_sw(0x10000008, text_addr + p[4]);
-	_sw(0x00000000 ,text_addr + p[5]);
+	_sw(0, text_addr + p[5]);
 }
 
 /* 0x00001F28 */
 int
-Gameboot_Patched(void)
+sceDisplaySetHoldMode_Patched(int a0)
 {
-	if (g_tnconfig.skipgameboot == 0) {
-		return GameBoot();
-	}
+	if (!g_tnconfig.skipgameboot)
+		return sceDisplaySetHoldMode(a0);
 
 	return 0;
 }
@@ -1283,7 +1281,7 @@ PatchGamePlugin(u32 text_addr)
 	}
 
 	if (g_tnconfig.skipgameboot) {
-		_sw(MAKE_CALL(0x000181BC), text_addr + 0x00017E5C);
+		_sw(MAKE_CALL(text_addr + 0x000181BC), text_addr + 0x00017E5C);
 		_sw(0x24040002, text_addr + 0x00017E60);
 	}
 
@@ -1480,8 +1478,8 @@ PatchVsh(u32 text_addr)
 	PatchSyscall(g_sceCtrlReadBufferPositive_original, (u32) sceCtrlReadBufferPositive_Patched);
 
 	_sw(MAKE_CALL(PatchSceUpdateDL), text_addr2 + 0x1564);
-	_sw(MAKE_CALL(Gameboot_Patched), text_addr2 + 0x1A14);
-	GameBoot = (void *) (text_addr2 + 0x5570);
+	_sw(MAKE_CALL(sceDisplaySetHoldMode_Patched), text_addr2 + 0x1A14);
+	sceDisplaySetHoldMode = (void *) (text_addr2 + 0x5570);
 
 	ClearCaches();
 }
