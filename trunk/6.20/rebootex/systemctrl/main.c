@@ -107,19 +107,19 @@ SceUID g_satelite_mod_id; /* 0x000083C0 */
 int (*VshMenuCtrl) (SceCtrlData *, int); /* 0x000083B0 */
 
 /* 4 timestamps */
-unsigned int g_000083DC;
-unsigned int g_000083D4;
-unsigned int g_000083E0;
-unsigned int g_000083E4;
+unsigned int g_timestamp_1; /* 0x000083D4 */
+unsigned int g_timestamp_2; /* 0x000083DC */
+unsigned int g_timestamp_3; /* 0x000083E0 */
+unsigned int g_timestamp_4; /* 0x000083E4 */
 
 SceUID g_SceModmgrStart_tid; /* 0x00008298 */
 SceModule2 *g_SceModmgrStart_module; /* 0x00008274 */
 
 int (*sceDisplaySetHoldMode) (int); /* 0x000083D8 */
 
-u32 g_scePowerSetClockFrequency_original; /* 0x000083AC */
-u32 g_scePowerGetCpuClockFrequency_original; /* 0x000083B4 */
-u32 g_sceCtrlReadBufferPositive_original; /* 0x000083C4 */
+int (*g_scePowerSetClockFrequency) (int, int, int); /* 0x000083AC */
+int (*g_scePowerGetCpuClockFrequency) (void); /* 0x000083B4 */
+int (*g_sceCtrlReadBufferPositive) (SceCtrlData *, int); /* 0x000083C4 */
 
 int (*VerifySignCheck)(void *, int, int); /* 0x00008268 */
 int (*LoadExecBootstart) (int, int, int, int); /* 0x000083BC */
@@ -305,6 +305,7 @@ TranslateNid(nidtable_t *t, u32 nid)
 }
 
 /* 0x00000364 */
+/* SystemCtrlForUser_1C90BECB SystemCtrlForKernel_1C90BECB */
 void *
 sctrlHENSetStartModuleHandler(void *handler)
 {
@@ -358,6 +359,7 @@ SystemCtrlForKernel_1F3037FB(void *func)
 }
 
 /* 0x000003F4 */
+/* SystemCtrlForKernel_826668E9 */
 void
 PatchSyscall(u32 fp, u32 neufp)
 {
@@ -1151,6 +1153,7 @@ sceKernelProbeExecutableObject_Patched(void *buf, int *check)
 }
 
 /* 0x00001D50 */
+/* SystemCtrlForKernel_CE0A654E */
 void
 sctrlHENLoadModuleOnReboot(char *module_after, void *buf, int size, int flags)
 {
@@ -1358,10 +1361,7 @@ PatchSysconfPlugin(u32 text_addr)
 int
 LoadExecBootStart_Patched(int a0, int a1, int a2, int a3)
 {
-	char *s = (char *) 0x88FB0000;
-
-	for (; s != (char *) 0x88FB0020; s++)
-		*s = 0;
+	memset((void *) 0x88FB0000, 0, 0x20);
 
 	_sw(g_p2_size, 0x88FB0008);
 	_sw(g_p8_size, 0x88FB000C);
@@ -1377,6 +1377,7 @@ LoadExecBootStart_Patched(int a0, int a1, int a2, int a3)
 }
 
 /* 0x00002324 */
+/* SystemCtrlForKernel_2F157BAF */
 void
 SetConfig(TNConfig *config)
 {
@@ -1391,7 +1392,7 @@ PatchRegion(void)
 	if (orig_addr) {
 		if (g_tnconfig.fakeregion) {
 			_sw(MAKE_JMP(PatchSceChkReg), orig_addr);
-			_sw(0x00000000, orig_addr + 4);
+			_sw(0, orig_addr + 4);
 		}
 	}
 	ClearCaches();
@@ -1405,14 +1406,12 @@ FindScePowerFunction(u32 nid)
 }
 
 /* 0x000023BC */
-void
+/* SystemCtrlForKernel_CC9ADCF8 */
+int
 sctrlHENSetSpeed(int cpuspd, int busspd)
 {
-	int (*_scePowerSetClockFrequency)(int, int, int);
-
-	g_scePowerSetClockFrequency_original = FindScePowerFunction(0x545A7F3C); /* scePowerSetClockFrequency */
-	_scePowerSetClockFrequency = (void *) g_scePowerSetClockFrequency_original;
-	_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
+	g_scePowerSetClockFrequency = (void *) FindScePowerFunction(0x545A7F3C); /* scePowerSetClockFrequency */
+	return g_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
 }
 
 /* 0x0000240C */
@@ -1426,29 +1425,30 @@ FindScePowerDriverFunction(u32 nid)
 int
 UsbChargingHandler(void)
 {
-	static int g_00008250;
-	static int g_00008254;
+	static int usbcharging_enabled = 0; /* 0x00008250 */
+	static int g_00008254 = 0;
 
-	void (*func2) (int);
-	int (*func) (void) = (void *) FindScePowerFunction(0x1E490401); /* scePowerIsBatteryCharging */
+	void (*_scePowerBatteryDisableUsbCharging) (int);
+	void (*_scePowerBatteryEnableUsbCharging) (int);
+	int (*_scePowerIsBatteryCharging) (void) = (void *) FindScePowerFunction(0x1E490401); /* scePowerIsBatteryCharging */
 
-	if (func())
+	if (_scePowerIsBatteryCharging())
 		return 0x001E8480;
 
-	if (g_00008250 == 1) {
+	if (usbcharging_enabled == 1) {
 		if (g_00008254 != 0) {
-			func2 = (void *) FindScePowerDriverFunction(0x90285886); /* scePowerBatteryDisableUsbCharging */
-			func2(0);
+			_scePowerBatteryDisableUsbCharging = (void *) FindScePowerDriverFunction(0x90285886); /* scePowerBatteryDisableUsbCharging */
+			_scePowerBatteryDisableUsbCharging(0);
 		}
 		g_00008254 = (g_00008254 < 1);
-		g_00008250 = 0;
+		usbcharging_enabled = 0;
 
 		return 0x004C4B40;
 	}
 
-	func2 = (void *) FindScePowerDriverFunction(0x733F4B40);
-	func2(1);
-	g_00008250 = 1;
+	_scePowerBatteryEnableUsbCharging = (void *) FindScePowerDriverFunction(0x733F973B); /* scePowerBatteryEnableUsbCharging */
+	_scePowerBatteryEnableUsbCharging(1);
+	usbcharging_enabled = 1;
 
 	return 0x00E4E1C0;
 }
@@ -1460,7 +1460,7 @@ PatchVsh(u32 text_addr)
 	u32 text_addr2;
 
 	if (g_tnconfig.vshcpuspeed != 0)
-		g_000083E4 = sceKernelGetSystemTimeLow();
+		g_timestamp_4 = sceKernelGetSystemTimeLow();
 
 	_sw(0, text_addr + 0x00011A70);
 	_sw(0, text_addr + 0x00011A78);
@@ -1468,14 +1468,13 @@ PatchVsh(u32 text_addr)
 
 	text_addr2 = find_text_addr_by_name("sceVshBridge_Driver");
 
-	g_scePowerGetCpuClockFrequency_original = FindScePowerFunction(0xFEE03A2F); /* scePowerGetCpuClockFrequency */
+	g_scePowerGetCpuClockFrequency = (void *) FindScePowerFunction(0xFEE03A2F); /* scePowerGetCpuClockFrequency */
 
 	_sw(MAKE_CALL(sceCtrlReadBufferPositive_Patched), text_addr2 + 0x25C);
 
-	g_sceCtrlReadBufferPositive_original = 
-		sctrlHENFindFunction("sceController_Service", "sceCtrl", 0x1F803938);
+	g_sceCtrlReadBufferPositive = (void *) sctrlHENFindFunction("sceController_Service", "sceCtrl", 0x1F803938); /* sceCtrlReadBufferPositive */
 
-	PatchSyscall(g_sceCtrlReadBufferPositive_original, (u32) sceCtrlReadBufferPositive_Patched);
+	PatchSyscall((u32) g_sceCtrlReadBufferPositive, (u32) sceCtrlReadBufferPositive_Patched);
 
 	_sw(MAKE_CALL(PatchSceUpdateDL), text_addr2 + 0x1564);
 	_sw(MAKE_CALL(sceDisplaySetHoldMode_Patched), text_addr2 + 0x1A14);
@@ -1567,7 +1566,6 @@ void
 SetSpeed(int cpuspd, int busspd)
 {
 	u32 fp;
-	int (*_scePowerSetClockFrequency)(int, int, int);
 
 	switch (cpuspd) {
 	case 0x14:
@@ -1579,9 +1577,8 @@ SetSpeed(int cpuspd, int busspd)
 	case 0x12C:
 	case 0x14D:
 		fp = FindScePowerFunction(0x737486F2);
-		g_scePowerSetClockFrequency_original = fp;
-		_scePowerSetClockFrequency = (void *) fp;
-		_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
+		g_scePowerSetClockFrequency = (void *) fp;
+		g_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
 
 		if (sceKernelApplicationType() == 0x100)
 			return;
@@ -1630,38 +1627,33 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 		.access = 1,
 	};
 	int k1, res, res2, i;
-	unsigned int hz, now, *pbuttons, buttons, a1, a2;
-	int (*func) (void *, int);
-	unsigned int (*func2) (void);
+	unsigned int now, *pbuttons, buttons, a1, a2;
    
-	func = (void *) g_sceCtrlReadBufferPositive_original;
-	res = func(pad_data, count);
+	res = g_sceCtrlReadBufferPositive(pad_data, count);
 
 	k1 = pspSdkSetK1(0);
 
-	if (g_000083DC == 0) {
+	if (g_timestamp_2 == 0) {
 		if (g_tnconfig.vshcpuspeed != 0 &&
 				g_tnconfig.vshcpuspeed != 222) {
-			func2 = (void *) g_scePowerGetCpuClockFrequency_original;
-			hz = func2();
-			if (hz == 222) {
+			if (g_scePowerGetCpuClockFrequency() == 222) {
 				now = sceKernelGetSystemTimeLow();
-				g_000083E0 = now;
-				if (now - g_000083D4 >= 10000000) {
+				g_timestamp_3 = now;
+				if (now - g_timestamp_1 >= 10000000) {
 					SetSpeed(g_tnconfig.vshcpuspeed, g_tnconfig.vshbusspeed);
 				}
-				g_000083D4 = g_000083E0;
+				g_timestamp_1 = g_timestamp_3;
 			}
 		}
 	} else {
 		if (g_tnconfig.vshcpuspeed != 0) {
 			now = sceKernelGetSystemTimeLow();
-			g_000083E0 = now;
-			g_000083DC = now;
-			if (now - g_000083E4 >= 10000000) {
+			g_timestamp_3 = now;
+			g_timestamp_2 = now;
+			if (now - g_timestamp_4 >= 10000000) {
 				SetSpeed(g_tnconfig.vshcpuspeed, g_tnconfig.vshbusspeed);
 			}
-			g_000083D4 = g_000083E0;
+			g_timestamp_1 = g_timestamp_3;
 		}
 	}
 
@@ -1754,11 +1746,11 @@ vctrlVSHExitVSHMenu(TNConfig *conf)
 	VshMenuCtrl = NULL;
 	memcpy(&g_tnconfig, conf, sizeof(TNConfig));
 
-	if (g_000083DC == 0) {
+	if (g_timestamp_2 == 0) {
 		if (cpuspeed != g_tnconfig.vshcpuspeed) {
 			if (g_tnconfig.vshcpuspeed != 0) {
 				SetSpeed(g_tnconfig.vshcpuspeed, g_tnconfig.vshbusspeed);
-				g_000083D4 = sceKernelGetSystemTimeLow();
+				g_timestamp_1 = sceKernelGetSystemTimeLow();
 			}
 		}
 	}
