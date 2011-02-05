@@ -1640,7 +1640,7 @@ int sceKernelSetVTimerHandler(SceUID uid, SceKernelSysClock *time, SceKernelVTim
  *
  * @return 0 on success, < 0 on error
  */
-int sceKernelSetVTimerHandlerWide(SceUID uid, SceInt64 time, SceKernelVTimerHandlerWide handler, int unk1, void *common, int unk2);
+int sceKernelSetVTimerHandlerWide(SceUID uid, int unk1, SceInt64 time, SceKernelVTimerHandlerWide handler, void *common, int unk2);
 
 /**
  * Cancel the timer handler
