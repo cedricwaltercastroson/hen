@@ -1205,7 +1205,7 @@ PatchSceChkReg(char *a0)
 	if (fakeregion >= 0xC)
 		fakeregion += 2;
 	else
-		fakeregion += 0xFFF5;
+		fakeregion -= 11;
 
 	a1 = fakeregion & 0xFF;
 	fakeregion = a1 ^ 2;
@@ -2431,7 +2431,7 @@ sctrlKernelSetInitKeyConfig(int key)
 
 /* 0x00003F04 */
 /* SystemCtrlForUser_128112C3 SystemCtrlForKernel_128112C3 */
-char *
+int
 sctrlKernelSetInitFileName(char *file)
 {
 	int k1 = pspSdkSetK1(0);
@@ -2439,7 +2439,7 @@ sctrlKernelSetInitFileName(char *file)
 	*g_init_filename_addr = file;
 	pspSdkSetK1(k1);
 
-	return NULL;
+	return 0;
 }
 
 /* 0x00003F44 */
