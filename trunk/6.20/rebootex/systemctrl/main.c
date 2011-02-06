@@ -2146,6 +2146,7 @@ sctrlHENFindDriver(char* drvname)
 }
 
 /* 0x000036C4 */
+/* SystemCtrlForUser_577AF198 SystemCtrlForKernel_577AF198 */
 int
 sctrlKernelLoadExecVSHDisc(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
@@ -2159,81 +2160,87 @@ sctrlKernelLoadExecVSHDisc(const char *file, struct SceKernelLoadExecVSHParam *p
 }
 
 /* 0x00003720 */
+/* SystemCtrlForUser_94FE5E4B SystemCtrlForKernel_94FE5E4B */
 int
 sctrlKernelLoadExecVSHDiscUpdater(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	int res;
+	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	res = sceKernelLoadExecVSHDiscUpdater(file, param);
+	ret = sceKernelLoadExecVSHDiscUpdater(file, param);
 	pspSdkSetK1(k1);
 
-	return res;
+	return ret;
 }
 
 /* 0x0000377C */
+/* SystemCtrlForUser_75643FCA SystemCtrlForKernel_75643FCA */
 int
 sctrlKernelLoadExecVSHMs1(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	int res;
+	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	res = sceKernelLoadExecVSHMs1(file, param);
+	ret = sceKernelLoadExecVSHMs1(file, param);
 	pspSdkSetK1(k1);
 
-	return res;
+	return ret;
 }
 
 /* 0x000037D8 */
+/* SystemCtrlForUser_ABA7F1B0 SystemCtrlForKernel_ABA7F1B0 */
 int
 sctrlKernelLoadExecVSHMs2(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	int res;
+	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	res = sceKernelLoadExecVSHMs2(file, param);
+	ret = sceKernelLoadExecVSHMs2(file, param);
 	pspSdkSetK1(k1);
 
-	return res;
+	return ret;
 }
 
 /* 0x00003834 */
+/* SystemCtrlForUser_7B369596 SystemCtrlForKernel_7B369596 */
 int
 sctrlKernelLoadExecVSHMs3(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	int res;
+	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	res = sceKernelLoadExecVSHMs3(file, param);
+	ret = sceKernelLoadExecVSHMs3(file, param);
 	pspSdkSetK1(k1);
 
-	return res;
+	return ret;
 }
 
 /* 0x00003890 */
+/* SystemCtrlForUser_D690750F SystemCtrlForKernel_D690750F */
 int
 sctrlKernelLoadExecVSHMs4(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
-	int res;
+	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	res = sceKernelLoadExecVSHMs4(file, param);
+	ret = sceKernelLoadExecVSHMs4(file, param);
 	pspSdkSetK1(k1);
 
-	return res;
+	return ret;
 }
 
 /* 0x000038EC */
+/* SystemCtrlForUser_2794CCF4 SystemCtrlForKernel_2794CCF4 */
 int
 sctrlKernelExitVSH(struct SceKernelLoadExecVSHParam *param)
 {
-	int res;
+	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	res = sceKernelExitVSHVSH(param);
+	ret = sceKernelExitVSHVSH(param);
 	pspSdkSetK1(k1);
 
-	return res;
+	return ret;
 }
 
 /* 0x00003938 */
@@ -2257,11 +2264,11 @@ void
 StartPlugin(char *path)
 {
 	SceModule2 *mod;
-	SceUID uid = sceKernelLoadModule(path, 0, 0);
+	SceUID uid;
 	int i, nsegment;
 	char *s, *end, *p;
 
-	if (uid < 0)
+	if ((uid = sceKernelLoadModule(path, 0, 0)) < 0)
 		return;
 
 	/* for PSP Go */
@@ -2306,6 +2313,7 @@ StrTrim(char *buf)
 	}
 }
 
+/* 0x00003BD4 */
 int
 ParsePluginsConfig(char *buf, int len, char *path, int *active)
 {
@@ -2407,20 +2415,22 @@ out:
 }
 
 /* 0x00003EA8 */
+/* SystemCtrlForUser_CB76B778 SystemCtrlForKernel_CB76B778 */
 int
 sctrlKernelSetInitKeyConfig(int key)
 {
-	int res;
+	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	res = sceKernelApplicationType();
+	ret = sceKernelApplicationType();
 	*g_keyconfig_addr = key;
 	pspSdkSetK1(k1);
 
-	return res;
+	return ret;
 }
 
 /* 0x00003F04 */
+/* SystemCtrlForUser_128112C3 SystemCtrlForKernel_128112C3 */
 char *
 sctrlKernelSetInitFileName(char *file)
 {
@@ -2433,17 +2443,18 @@ sctrlKernelSetInitFileName(char *file)
 }
 
 /* 0x00003F44 */
+/* SystemCtrlForUser_8D5BE1F0 SystemCtrlForKernel_8D5BE1F0 */
 int
 sctrlKernelSetInitApitype(int apitype)
 {
-	int res;
+	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	res = sceKernelInitApitype();
+	ret = sceKernelInitApitype();
 	*g_apitype_addr = apitype;
 	pspSdkSetK1(k1);
 
-	return res;
+	return ret;
 }
 
 /* 0x00003FA0 pspSdkSetK1 */
