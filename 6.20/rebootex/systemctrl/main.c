@@ -1899,7 +1899,7 @@ sctrlSESetConfigEx(TNConfig *config, int size)
 	SceUID fd;
 
 	k1 = pspSdkSetK1(0);
-	if((fd = sceIoOpen("flashfat1:/config.tn", 0x602, 0x1FF)) < 0) {
+	if((fd = sceIoOpen("flashfat1:/config.tn", 0x602, 0777)) < 0) {
 		pspSdkSetK1(k1);
 		return -1;
 	}
