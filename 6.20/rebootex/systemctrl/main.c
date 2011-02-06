@@ -24,7 +24,7 @@ typedef struct {
 	int cnt;
 } nidtable_t;
 
-PSP_MODULE_INFO("SystemControl", 0x3007, 1, 1);
+PSP_MODULE_INFO("SystemControl", 0x3007, 2, 5);
 PSP_MAIN_THREAD_ATTR(0);
 
 #define MAKE_CALL(__f) \
