@@ -2377,7 +2377,7 @@ sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modsta
 	}
 
 	if (fd < 0) {
-		fd = sceIoOpen(apptype == 0x100 ? 
+		fd = sceIoOpen(apptype == PSP_INIT_KEYCONFIG_VSH ? 
 				"ef0:/seplugins/vsh.txt" : "ef0:/seplugins/game.txt", 
 				1, 0);
 		if (fd < 0)
