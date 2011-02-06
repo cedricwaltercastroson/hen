@@ -59,6 +59,21 @@ int sceKernelModuleCount(void);
  */
 SceUID sceKernelLoadModuleBuffer(SceSize bufsize, void *buf, int flags, SceKernelLMOption *option);
 
+/**
+  * Copied from M33 SDK
+  *
+  * Load a module with the VSH apitype.
+  * 
+  * @param path - The path to the module to load.
+  * @param flags - Unused, always 0 .
+  * @param option  - Pointer to a mod_param_t structure. Can be NULL.
+  *
+  * @returns The UID of the loaded module on success, otherwise one of ::PspKernelErrorCodes.
+  */
+extern SceUID sceKernelLoadModuleVSH(const char *path, int flags, SceKernelLMOption *option);
+
+extern int sceKernelLoadModuleForLoadExec(int apitype, const char *path, int flags, SceKernelLMOption *option);
+
 /*@}*/
 
 #ifdef __cplusplus

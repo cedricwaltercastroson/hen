@@ -174,6 +174,9 @@ int sceKernelLinkLibraryEntries(void *, u32);
 
 int sceKernelProbeExecutableObject(void *, int *);
 
+extern int sceKernelCheckExecFile(void *, int *);
+
+
 /*@}*/
 
 #ifdef __cplusplus
