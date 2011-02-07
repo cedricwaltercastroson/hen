@@ -11,7 +11,7 @@
 
 #include "systemctrl.h"
 
-SceUID g_heapid; /* 0x00008240 */
+SceUID g_heapid = -1; /* 0x00008240 */
 
 /* 0x00002FDC */
 int

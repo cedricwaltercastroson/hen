@@ -60,7 +60,7 @@ static unsigned char satelite_bin[];
 #include "satelite_bin.inc"
 
 /* 0x000083E8 */
-TNConfig g_tnconfig;
+TNConfig g_tnconfig = { 0 };
 
 int g_model; /* 0x00008270 */
 void (*ModuleStartHandler) (void *); /* 0x000083A4 */
@@ -118,9 +118,7 @@ IsStaticElf(void *buf)
 {
 	Elf32_Ehdr *hdr = buf;
 
-	if (hdr->e_magic != ELF_MAGIC)
-		return 0;
-	return hdr->e_type == 2;
+	return ((hdr->e_magic == ELF_MAGIC) && (hdr->e_type) == 2);
 }
 
 /* 0x00000038 */
@@ -157,17 +155,8 @@ PatchExec1(void *buf, int *check)
 
 	i = check[2];
 	if (i >= 0x120) {
-		switch (i) {
-		case 0x120:
-		case 0x141:
-		case 0x142:
-		case 0x143:
-		case 0x140:
-			break;
-
-		default:
+		if (i != 0x120 && i != 0x141 && i != 0x142 && i != 0x143 && i != 0x140)
 			return -1;
-		}
 
 		if (check[4] == 0) {
 			if (check[17] == 0)
@@ -458,11 +447,10 @@ PatchIoFileMgr(void)
 
 	text_addr = find_text_addr_by_name("sceIOFileManager");
 
-	PatchSyscall(text_addr + 0x00001AAC, (u32) sceIoAssign_Patched);
+	PatchSyscall(text_addr + 0x00001AAC, sceIoAssign_Patched);
 
-	/* InitForKernel_7233B5BC() == PSP_INIT_KEYCONFIG_VSH */
 	if (sceKernelApplicationType() == PSP_INIT_KEYCONFIG_VSH)
-		PatchSyscall(text_addr + 0x00004260, (u32) sceIoMkDir_Patched);
+		PatchSyscall(text_addr + 0x00004260, sceIoMkDir_Patched);
 }
 
 /* 0x00000878 */
@@ -1290,7 +1278,7 @@ PatchVsh(u32 text_addr)
 
 	g_sceCtrlReadBufferPositive = (void *) sctrlHENFindFunction("sceController_Service", "sceCtrl", 0x1F803938); /* sceCtrlReadBufferPositive */
 
-	PatchSyscall((u32) g_sceCtrlReadBufferPositive, (u32) sceCtrlReadBufferPositive_Patched);
+	PatchSyscall((u32) g_sceCtrlReadBufferPositive, sceCtrlReadBufferPositive_Patched);
 
 	_sw(MAKE_CALL(PatchSceUpdateDL), text_addr2 + 0x1564);
 	_sw(MAKE_CALL(sceDisplaySetHoldMode_Patched), text_addr2 + 0x1A14);
