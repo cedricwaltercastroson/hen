@@ -127,7 +127,7 @@ typedef struct {
 
 /* 0x000003F4 */
 /* SystemCtrlForKernel_826668E9 */
-extern void PatchSyscall(u32 fp, u32 neufp);
+extern void PatchSyscall(u32 fp, void *func);
 
 /* 0x000003D4 */
 extern void *SystemCtrlForKernel_AC0E84D1(void *func);
