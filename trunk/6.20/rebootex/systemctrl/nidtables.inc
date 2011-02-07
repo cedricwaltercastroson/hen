@@ -1,6 +1,8 @@
 #ifndef _NID_TABLE
 #define _NID_TABLE
 
+#define NID_TABLE(__n) {#__n, __n##_##table, sizeof(__n##_##table)/sizeof(nidentry_t)}
+
 nidentry_t SysMemForKernel_table[] = {
 	{ 0x1C1FBFE7, 0xC6A782DA }, 
 	{ 0x002BA296, 0x6FDEF86F }, 
