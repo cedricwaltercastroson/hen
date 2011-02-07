@@ -360,7 +360,7 @@ SystemCtrlForKernel_1F3037FB(void *func)
 
 /* 0x000003F4 */
 /* SystemCtrlForKernel_826668E9 */
-void
+void __attribute__ ((noinline))
 PatchSyscall(u32 fp, u32 neufp)
 {
 	u32 sr;
