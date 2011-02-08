@@ -105,6 +105,7 @@ typedef struct SceLibraryEntryTable {
 	/** Pointer to the entry table; an array of NIDs followed by
 	    pointers to functions and variables. */
 	void *				entrytable;
+	u32					unk1;
 } SceLibraryEntryTable;
 
 /** Specifies a library and a set of imports from that library.  Use the len

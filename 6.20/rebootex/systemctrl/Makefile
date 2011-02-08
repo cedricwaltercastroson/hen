@@ -19,6 +19,7 @@ all: sysctrl_bin.inc
 sysctrl_bin.inc: systemctrl.prx
 	psp-packer systemctrl.prx sysctrl.psp
 	bin2c sysctrl.psp sysctrl_bin.inc sysctrl_bin
+	cp sysctrl_bin.inc ..
 
 LIBDIR =
 LIBS = 
