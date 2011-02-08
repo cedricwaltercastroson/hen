@@ -644,7 +644,7 @@ PatchModules(SceModule2 *mod)
 			return;
 		if (sceKernelApplicationType() == PSP_INIT_KEYCONFIG_GAME)
 			SetSpeed(g_tnconfig.umdisocpuspeed, g_tnconfig.umdisobusspeed);
-		g_00008244 = 0x00010000;
+		g_00008244 = 1;
 	}
 }
 
@@ -781,7 +781,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 			nid = _lw((u32) (clib->entrytable + (i << 2)));
 
 			if (nid == 0x909C228B || nid == 0x18FE80DB) { /* setjmp and longjmp */
-				u32 addr = (u32) (clib + 1) + (i << 3);
+				u32 addr = clib->unk1 + (i << 3);
 
 				if (nid == 0x909C228B)
 					_sw(0x0A000BA0, addr);
@@ -800,7 +800,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 			nid = _lw((u32) (syscon->entrytable + (i << 2)));
 
 			if (nid == 0xC8439C57) { /* sceSysconPowerStandby */
-				u32 addr = (u32) (syscon + 1) + (i << 3);
+				u32 addr = syscon->unk1 + (i << 3);
 				u32 func = find_text_addr_by_name("sceSYSCON_Driver") + 0x2C64;
 
 				_sw((((func >> 2) & 0x03FFFFFF) | 0x08000000), addr);
@@ -819,7 +819,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 				u32 func = FindScePowerFunction(0x737486F2);
 
 				if (func) {
-					u32 addr = (u32) (power + 1) + (i << 3);
+					u32 addr = power->unk1 + (i << 3);
 
 					_sw((((func >> 2) & 0x03FFFFFF) | 0x08000000), addr);
 					_sw(0, addr + 4);
@@ -910,13 +910,8 @@ DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_
 	}
 
 	if (a0 != 0 && buf && compressed_size) {
-		switch (hdr->oe_tag) {
-		case 0x28796DAA:
-		case 0x7316308C:
-		case 0x3EAD0AEE:
-		case 0x8555ABF2:
-			break;
-		default:
+		if (hdr->oe_tag != 0x28796DAA && hdr->oe_tag != 0x7316308C
+				&& hdr->oe_tag != 0x3EAD0AEE && hdr->oe_tag !=0x8555ABF2)
 			goto decrypt;
 		}
 
@@ -1014,12 +1009,12 @@ sceKernelProbeExecutableObject_Patched(void *buf, int *check)
 
 /* 0x00001E1C */
 int
-PatchSceChkReg(char *a0)
+PatchSceChkReg(char *pscode)
 {
-	int fakeregion, a1;
+	int fakeregion;
 
-	a0[0] = 1;
-	a0[1] = 0;
+	pscode[0] = 1;
+	pscode[1] = 0;
 
 	fakeregion = g_tnconfig.fakeregion;
 
@@ -1028,16 +1023,14 @@ PatchSceChkReg(char *a0)
 	else
 		fakeregion -= 11;
 
-	a1 = fakeregion & 0xFF;
-	fakeregion = a1 ^ 2;
-	if (fakeregion == 0)
-		a1 = 3;
-	a0[6] = 1;
-	a0[4] = 1;
-	a0[2] = a1;
-	a0[7] = 0;
-	a0[3] = 0;
-	a0[5] = 0;
+	if (fakeregion == 2)
+		fakeregion = 3;
+	pscode[6] = 1;
+	pscode[4] = 1;
+	pscode[2] = fakeregion;
+	pscode[7] = 0;
+	pscode[3] = 0;
+	pscode[5] = 0;
 
 	return 0;
 }
