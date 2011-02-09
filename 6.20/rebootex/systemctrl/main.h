@@ -5,6 +5,27 @@
 
 #include "systemctrl.h"
 
+#define MAKE_CALL(__f) \
+	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
+
+#define MAKE_JMP(__f) \
+	(((((u32)__f) & 0x0FFFFFFC) >> 2) | 0x08000000)
+
+#define REDIRECT_FUNCTION(__a, __f) do {\
+	_sw(0x08000000 | ((((u32) __f) >> 2) & 0x03FFFFFF), __a);\
+	_sw(0, __a + 4);\
+} while (0)
+
+#define MAKE_DUMMY_FUNCTION0(__a) do {\
+	_sw(0x03E00008, __a);\
+	_sw(0x00001021, __a + 4);\
+} while (0)
+
+#define MAKE_DUMMY_FUNCTION1(__a) do {\
+	_sw(0x03E00008, __a);\
+	_sw(0x24020001, __a + 4);\
+} while (0)
+
 
 /* 0x000083E8 */
 extern TNConfig g_tnconfig;
