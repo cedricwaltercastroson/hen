@@ -110,6 +110,7 @@ int (*PartitionCheck) (void *, void *); /* 0x00008294 */
 int
 IsStaticElf(void *buf)
 {
+	ASM_FUNC_TAG();
 	Elf32_Ehdr *hdr = buf;
 
 	return ((hdr->e_magic == ELF_MAGIC) && (hdr->e_type) == 2);
@@ -119,6 +120,7 @@ IsStaticElf(void *buf)
 int
 PatchExec2(void *buf, int *check)
 {
+	ASM_FUNC_TAG();
 	int index = check[19];
 	u32 addr;
 
@@ -142,6 +144,7 @@ PatchExec2(void *buf, int *check)
 int
 PatchExec1(void *buf, int *check)
 {
+	ASM_FUNC_TAG();
 	int i;
 
 	if (_lw((u32) buf) != ELF_MAGIC)
@@ -178,6 +181,7 @@ PatchExec1(void *buf, int *check)
 int
 ProbeExec1_Patched(void *buf, int *check)
 {
+	ASM_FUNC_TAG();
 	int r;
 	u16 attr, realattr;
 	u16 *check2;
@@ -205,6 +209,7 @@ ProbeExec1_Patched(void *buf, int *check)
 char *
 GetStrTab(void *buf)
 {
+	ASM_FUNC_TAG();
 	Elf32_Ehdr *hdr = (Elf32_Ehdr *) buf;
 	int i;
 	u8 *p;
@@ -230,6 +235,7 @@ GetStrTab(void *buf)
 int
 PatchExec3(void *buf, int *check, int is_plain, int res)
 {
+	ASM_FUNC_TAG();
 	if (!is_plain)
 		return res;
 
@@ -254,6 +260,7 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
 u32
 TranslateNid(nidtable_t *t, u32 nid)
 {
+	ASM_FUNC_TAG();
 	int i, cnt;
 	nidentry_t *nids;
 
@@ -272,6 +279,7 @@ TranslateNid(nidtable_t *t, u32 nid)
 int
 VerifySignCheck_Patched(void *buf, int size, int polling)
 {
+	ASM_FUNC_TAG();
 	int i;
 	PSP_Header *hdr = buf;
 
@@ -295,6 +303,7 @@ VerifySignCheck_Patched(void *buf, int size, int polling)
 nidtable_t *
 FindLibNidTable(const char *name)
 {
+	ASM_FUNC_TAG();
 	/* 0x00006888 */
 	static nidtable_t nidtables[] = {
 		NID_TABLE(SysMemForKernel),
@@ -343,6 +352,7 @@ FindLibNidTable(const char *name)
 int
 ProbeExec2_Patched(char *buf, int *check)
 {
+	ASM_FUNC_TAG();
 	Elf32_Ehdr *hdr;
 	int ret;
 
@@ -383,6 +393,7 @@ ProbeExec2_Patched(char *buf, int *check)
 void
 PatchModuleMgr(void)
 {
+	ASM_FUNC_TAG();
 	u32 text_addr;
 	u32 fp;
 
@@ -424,6 +435,7 @@ PatchModuleMgr(void)
 void
 PatchInterruptMgr(void)
 {
+	ASM_FUNC_TAG();
 	u32 text_addr;
 
 	text_addr = find_text_addr_by_name("sceInterruptManager");
@@ -451,6 +463,7 @@ PatchIoFileMgr(void)
 void
 PatchMemlmd(void)
 {
+	ASM_FUNC_TAG();
 	/* 0x00006A0C */
 	static u32 model0[] = {
 		0x00000F10, 0x00001158, 0x000010D8, 0x0000112C,
@@ -492,6 +505,7 @@ PatchMemlmd(void)
 void
 PatchSceMesgLed(void)
 {
+	ASM_FUNC_TAG();
 	/* 0x000069CC */
 	static u32 model0[] = {0x00001E3C, 0x00003808, 0x00003B4C, 0x00001ECC};
 	/* 0x000069DC */
@@ -536,6 +550,7 @@ PatchSceMesgLed(void)
 int
 sceIoMkDir_Patched(char *dir, SceMode mode)
 {
+	ASM_FUNC_TAG();
 	int k1 = pspSdkSetK1(0);
 
 	if (!strcmp(dir, "ms0:/PSP/GAME")) {
@@ -553,6 +568,7 @@ int
 sceIoAssign_Patched(const char *dev1, const char *dev2, const char *dev3,
 		int mode, void *unk1, long unk2)
 {
+	ASM_FUNC_TAG();
 	int k1 = pspSdkSetK1(0);
 
 	if (mode == IOASSIGN_RDWR) {
@@ -571,6 +587,7 @@ sceIoAssign_Patched(const char *dev1, const char *dev2, const char *dev3,
 void
 ClearCaches(void)
 {
+	ASM_FUNC_TAG();
 	sceKernelIcacheInvalidateAll();
 	sceKernelDcacheWritebackInvalidateAll();
 }
@@ -579,6 +596,7 @@ ClearCaches(void)
 void
 PatchVLF(u32 nid)
 {
+	ASM_FUNC_TAG();
 	u32 fp = sctrlHENFindFunction("VLF_Module", "VlfGui", nid);
 
 	if (fp) {
@@ -590,6 +608,7 @@ PatchVLF(u32 nid)
 void
 PatchModules(SceModule2 *mod)
 {
+	ASM_FUNC_TAG();
 	static int g_00008244 = 0;
 
 	u32 text_addr;
@@ -645,6 +664,7 @@ PatchModules(SceModule2 *mod)
 void
 PatchLoadCore(void)
 {
+	ASM_FUNC_TAG();
 	u32 text_addr;
 	u32 fp;
 
@@ -689,6 +709,7 @@ PatchLoadCore(void)
 int
 module_bootstart(void)
 {
+	ASM_FUNC_TAG();
 	SceUID partition_id;
 
 	g_model = _lw(0x88FB0000);
@@ -722,6 +743,7 @@ module_bootstart(void)
 int
 sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 {
+	ASM_FUNC_TAG();
 	u32 ver, nid, offs;
 	u32 *pnid;
 	nidtable_t *nidtbl;
@@ -827,6 +849,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 SceUID
 sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt)
 {
+	ASM_FUNC_TAG();
 	SceUID tid;
 
 	tid = sceKernelCreateThread(name, entry, priority, stacksize, attr, opt);
@@ -845,6 +868,7 @@ sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int 
 int
 sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 {
+	ASM_FUNC_TAG();
 	if (tid == g_SceModmgrStart_tid) {
 		g_SceModmgrStart_tid = -1;
 		if (ModuleStartHandler && g_SceModmgrStart_module) {
@@ -859,6 +883,7 @@ sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 int
 DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling)
 {
+	ASM_FUNC_TAG();
 	int r;
 	PSP_Header* hdr = (PSP_Header *) buf;
 
@@ -892,6 +917,7 @@ DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling
 int
 DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3)
 {
+	ASM_FUNC_TAG();
 	int r;
 	PSP_Header* hdr = (PSP_Header*) buf;
 
@@ -926,6 +952,7 @@ decrypt:
 int
 sceKernelCheckExecFile_Patched(void *buf, int *check)
 {
+	ASM_FUNC_TAG();
 	int ret = PatchExec1(buf, check);
 
 	if (ret == 0)
@@ -939,6 +966,7 @@ sceKernelCheckExecFile_Patched(void *buf, int *check)
 int
 PartitionCheck_Patched(void *buf, int *check)
 {
+	ASM_FUNC_TAG();
 	static int readbuf[64]; /* 0x0000829C */
 
 	u16 attr;
@@ -980,6 +1008,7 @@ out:
 int
 sceKernelProbeExecutableObject_Patched(void *buf, int *check)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	Elf32_Ehdr *hdr;
 
@@ -1001,6 +1030,7 @@ sceKernelProbeExecutableObject_Patched(void *buf, int *check)
 int
 PatchSceChkReg(char *pscode)
 {
+	ASM_FUNC_TAG();
 	int fakeregion;
 
 	pscode[0] = 1;
@@ -1029,6 +1059,7 @@ PatchSceChkReg(char *pscode)
 void
 PatchSceLoadExec(u32 text_addr)
 {
+	ASM_FUNC_TAG();
 	/* 0x00006A40 */
 	static u32 model[] = 
 	{ 0x00002F28, 0x00002F74, 0x000025A4, 0x000025E8, 0x00001674, 0x000016A8 };
@@ -1057,6 +1088,7 @@ PatchSceLoadExec(u32 text_addr)
 int
 sceDisplaySetHoldMode_Patched(int a0)
 {
+	ASM_FUNC_TAG();
 	if (!g_tnconfig.skipgameboot)
 		return sceDisplaySetHoldMode(a0);
 
@@ -1067,6 +1099,7 @@ sceDisplaySetHoldMode_Patched(int a0)
 void
 PatchUpdatePlugin(u32 text_addr)
 {
+	ASM_FUNC_TAG();
 	int ver = sctrlHENGetVersion();
 
 	_sw((ver >> 16) | 0x3C050000, text_addr + 0x0000819C);
@@ -1079,6 +1112,7 @@ PatchUpdatePlugin(u32 text_addr)
 void
 PatchGamePlugin(u32 text_addr)
 {
+	ASM_FUNC_TAG();
 	MAKE_DUMMY_FUNCTION0(text_addr + 0x0001EB08);
 
 	if (g_tnconfig.hidepic) {
@@ -1098,6 +1132,7 @@ PatchGamePlugin(u32 text_addr)
 void
 PatchMsvideoMainPlugin(u32 text_addr)
 {
+	ASM_FUNC_TAG();
 	_sh(0xFE00, text_addr + 0x0003AB2C);
 	_sh(0xFE00, text_addr + 0x0003ABB4);
 	_sh(0xFE00, text_addr + 0x0003D3AC);
@@ -1118,6 +1153,7 @@ PatchMsvideoMainPlugin(u32 text_addr)
 void
 PatchScePowerService(u32 text_addr)
 {
+	ASM_FUNC_TAG();
 	_sw(0, text_addr + 0x00000CC8);
 	ClearCaches();
 }
@@ -1126,6 +1162,7 @@ PatchScePowerService(u32 text_addr)
 void
 PatchSceWlanDriver(u32 text_addr)
 {
+	ASM_FUNC_TAG();
 	_sw(0, text_addr + 0x00002690);
 	ClearCaches();
 }
@@ -1134,6 +1171,7 @@ PatchSceWlanDriver(u32 text_addr)
 void
 PatchSysconfPlugin(u32 text_addr)
 {
+	ASM_FUNC_TAG();
 	/* 0x00006A70 */
 	static wchar_t g_verinfo[] = L"6.20 TN- (HEN)";
 	/* 0x00006A90 */
@@ -1164,6 +1202,7 @@ PatchSysconfPlugin(u32 text_addr)
 int
 LoadExecBootStart_Patched(int a0, int a1, int a2, int a3)
 {
+	ASM_FUNC_TAG();
 	memset((void *) 0x88FB0000, 0, 0x20);
 
 	_sw(g_p2_size, 0x88FB0008);
@@ -1183,6 +1222,7 @@ LoadExecBootStart_Patched(int a0, int a1, int a2, int a3)
 void
 PatchRegion(void)
 {
+	ASM_FUNC_TAG();
 	u32 orig_addr = sctrlHENFindFunction("sceChkreg", "sceChkreg_driver", 0x59F8491D); /* sceChkregGetPsCode */
 	if (orig_addr) {
 		if (g_tnconfig.fakeregion) {
@@ -1196,6 +1236,7 @@ PatchRegion(void)
 u32
 FindScePowerFunction(u32 nid)
 {
+	ASM_FUNC_TAG();
 	return sctrlHENFindFunction("scePower_Service", "scePower", nid);
 }
 
@@ -1203,6 +1244,7 @@ FindScePowerFunction(u32 nid)
 u32
 FindScePowerDriverFunction(u32 nid)
 {
+	ASM_FUNC_TAG();
 	return sctrlHENFindFunction("scePower_Service", "scePower_driver", nid);
 }
 
@@ -1210,6 +1252,7 @@ FindScePowerDriverFunction(u32 nid)
 int
 UsbChargingHandler(void)
 {
+	ASM_FUNC_TAG();
 	static int usbcharging_enabled = 0; /* 0x00008250 */
 	static int g_00008254 = 0;
 
@@ -1242,6 +1285,7 @@ UsbChargingHandler(void)
 void
 PatchVsh(u32 text_addr)
 {
+	ASM_FUNC_TAG();
 	u32 text_addr2;
 
 	if (g_tnconfig.vshcpuspeed != 0)
@@ -1272,6 +1316,7 @@ PatchVsh(u32 text_addr)
 SceUID 
 PatchSceUpdateDL(const char *path, int flags, SceKernelLMOption *option)
 {
+	ASM_FUNC_TAG();
 	u32 ret, k1;
 
 	if ((ret = sceKernelLoadModuleVSH(path, flags, option)) < 0)
@@ -1299,6 +1344,7 @@ PatchSceUpdateDL(const char *path, int flags, SceKernelLMOption *option)
 void
 PatchSceMediaSync(u32 text_addr)
 {
+	ASM_FUNC_TAG();
 	SceModule2 *loadexec;
 	char *fname;
 
@@ -1321,6 +1367,7 @@ PatchSceMediaSync(u32 text_addr)
 int
 sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 {
+	ASM_FUNC_TAG();
 	static int g_00008248;
 	static int g_0000824C;
 
@@ -1446,6 +1493,7 @@ out:
 void
 PatchSceUmdCacheDriver(u32 text_addr)
 {
+	ASM_FUNC_TAG();
 	u32 *i;
 
 	if (sceKernelApplicationType() != PSP_INIT_KEYCONFIG_GAME)
@@ -1463,6 +1511,7 @@ PatchSceUmdCacheDriver(u32 text_addr)
 void
 PatchSceImposeDriver(void)
 {
+	ASM_FUNC_TAG();
 	SceUID timer;
 	SceModule2 *mod;
 	u32 text_addr;
@@ -1490,6 +1539,7 @@ PatchSceImposeDriver(void)
 void
 sub_00002EB0(int a0, int a1, int a2)
 {
+	ASM_FUNC_TAG();
 	/* un-used routine */
 }
 
@@ -1497,6 +1547,7 @@ sub_00002EB0(int a0, int a1, int a2)
 int
 PatchSceKernelStartModule(int a0, int a1)
 {
+	ASM_FUNC_TAG();
 	static char g_00008428[0x24];
 
 	int (*func) (int, u32) = (void *) a0;
@@ -1513,6 +1564,7 @@ PatchSceKernelStartModule(int a0, int a1)
 void
 StartPlugin(char *path)
 {
+	ASM_FUNC_TAG();
 	SceModule2 *mod;
 	SceUID uid;
 	int i, nsegment;
@@ -1555,6 +1607,7 @@ StartPlugin(char *path)
 void
 StrTrim(char *buf)
 {
+	ASM_FUNC_TAG();
 	char *s = buf + strlen(buf);
 
 	while ((*s == ' ' || *s == '\t') && s > buf) {
@@ -1567,6 +1620,7 @@ StrTrim(char *buf)
 int
 ParsePluginsConfig(char *buf, int len, char *path, int *active)
 {
+	ASM_FUNC_TAG();
 	int i, j;
 	char c, *p, *s;
 
@@ -1603,6 +1657,7 @@ ParsePluginsConfig(char *buf, int len, char *path, int *active)
 int
 sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modstatus, SceKernelSMOption *opt)
 {
+	ASM_FUNC_TAG();
 	char *buf;
 	char plugin_path[0x40];
 	int fd, apptype, fpl, active, len, ret;

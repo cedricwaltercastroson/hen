@@ -18,6 +18,7 @@
 SceUID
 kuKernelLoadModule(const char *path, int flags, SceKernelLMOption *option)
 {
+	ASM_FUNC_TAG();
 	int k1;
 	SceUID ret;
 
@@ -34,6 +35,7 @@ kuKernelLoadModule(const char *path, int flags, SceKernelLMOption *option)
 SceUID
 kuKernelLoadModuleWithApitype2(int apitype, const char *path, int flags, SceKernelLMOption *option)
 {
+	ASM_FUNC_TAG();
 	SceUID ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -49,6 +51,7 @@ kuKernelLoadModuleWithApitype2(int apitype, const char *path, int flags, SceKern
 int
 kuKernelInitApitype(void)
 {
+	ASM_FUNC_TAG();
 	return sceKernelInitApitype();
 }
 
@@ -57,6 +60,7 @@ kuKernelInitApitype(void)
 int
 kuKernelInitFileName(char *fname)
 {
+	ASM_FUNC_TAG();
 	char *file;
 	int k1 = pspSdkSetK1(0);
 
@@ -72,6 +76,7 @@ kuKernelInitFileName(char *fname)
 int
 kuKernelBootFrom(void)
 {
+	ASM_FUNC_TAG();
 	return sceKernelBootFrom();
 }
 
@@ -80,6 +85,7 @@ kuKernelBootFrom(void)
 int
 kuKernelInitKeyConfig(void)
 {
+	ASM_FUNC_TAG();
 	return sceKernelApplicationType();
 }
 
@@ -88,6 +94,7 @@ kuKernelInitKeyConfig(void)
 int
 kuKernelGetUserLevel(void)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -102,6 +109,7 @@ kuKernelGetUserLevel(void)
 int
 kuKernelSetDdrMemoryProtection(void *addr, int size, int prot)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -116,6 +124,7 @@ kuKernelSetDdrMemoryProtection(void *addr, int size, int prot)
 int
 kuKernelGetModel(void)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 

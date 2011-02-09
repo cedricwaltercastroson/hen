@@ -10,6 +10,8 @@
 #include "psploadexec_kernel.h"
 #include "pspmodulemgr_kernel.h"
 
+#define ASM_FUNC_TAG() Kprintf(__FUNCTION__)
+
 typedef struct {
 	int magic;//offset 0x000083E8 - 0x00    // 0x47434E54 == "TNCG" 
 	int vshcpuspeed; //0x000083EC - 0x04

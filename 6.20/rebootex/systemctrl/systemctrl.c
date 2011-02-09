@@ -20,6 +20,7 @@
 void
 PatchSyscall(u32 fp, void *func)
 {
+	ASM_FUNC_TAG();
 	u32 sr;
 	u32 *vectors, *end;
 
@@ -38,6 +39,7 @@ PatchSyscall(u32 fp, void *func)
 void *
 SystemCtrlForKernel_AC0E84D1(void *func)
 {
+	ASM_FUNC_TAG();
 	void *prev = DecryptExecutable_HEN;
 
 	DecryptExecutable_HEN = func;
@@ -49,6 +51,7 @@ SystemCtrlForKernel_AC0E84D1(void *func)
 void *
 SystemCtrlForKernel_1F3037FB(void *func)
 {
+	ASM_FUNC_TAG();
 	void *prev = DecryptPrx_HEN;
 
 	DecryptPrx_HEN = func;
@@ -61,6 +64,7 @@ SystemCtrlForKernel_1F3037FB(void *func)
 void *
 sctrlHENSetStartModuleHandler(void *handler)
 {
+	ASM_FUNC_TAG();
 	void *prev = ModuleStartHandler;
 
 	ModuleStartHandler = (void *) ((u32) handler | 0x80000000);
@@ -73,6 +77,7 @@ sctrlHENSetStartModuleHandler(void *handler)
 int
 sctrlSEGetConfigEx(void *buf, SceSize size)
 {
+	ASM_FUNC_TAG();
 	int ret = -1;
 	int k1;
 	SceUID fd;
@@ -93,6 +98,7 @@ sctrlSEGetConfigEx(void *buf, SceSize size)
 int
 sctrlSEGetConfig(void *buf)
 {
+	ASM_FUNC_TAG();
 	return sctrlSEGetConfigEx(buf, 0x40);
 }
 
@@ -101,6 +107,7 @@ sctrlSEGetConfig(void *buf)
 int
 sctrlSESetConfigEx(TNConfig *config, int size)
 {
+	ASM_FUNC_TAG();
 	int ret = 0;
 	u32 k1;
 	SceUID fd;
@@ -126,6 +133,7 @@ sctrlSESetConfigEx(TNConfig *config, int size)
 int
 sctrlSESetConfig(TNConfig *config)
 {
+	ASM_FUNC_TAG();
 	return sctrlSESetConfigEx(config, 0x40);
 }
 
@@ -135,6 +143,7 @@ sctrlSESetConfig(TNConfig *config)
 int
 sctrlHENIsSE(void)
 {
+	ASM_FUNC_TAG();
 	return 1;
 }
 
@@ -143,6 +152,7 @@ sctrlHENIsSE(void)
 int
 sctrlHENIsDevhook(void)
 {
+	ASM_FUNC_TAG();
 	return 0x0; /* not dummy routine */
 }
 
@@ -151,6 +161,7 @@ sctrlHENIsDevhook(void)
 int
 sctrlHENGetVersion(void)
 {
+	ASM_FUNC_TAG();
 	return 0x00001000;
 }
 
@@ -159,6 +170,7 @@ sctrlHENGetVersion(void)
 int
 sctrlSEGetVersion(void)
 {
+	ASM_FUNC_TAG();
 	return 0x00020000;
 }
 
@@ -167,6 +179,7 @@ sctrlSEGetVersion(void)
 int
 sctrlKernelSetDevkitVersion(int ver)
 {
+	ASM_FUNC_TAG();
 	u32 k1;
 	int ret;
 
@@ -184,6 +197,7 @@ sctrlKernelSetDevkitVersion(int ver)
 int
 sctrlKernelSetUserLevel(int level)
 {
+	ASM_FUNC_TAG();
 	int ret, k1;
 	u32 text_addr, *thstruct;
 
@@ -202,6 +216,7 @@ sctrlKernelSetUserLevel(int level)
 int
 sctrlKernelLoadExecVSHWithApitype(int apitype, const char *file, struct SceKernelLoadExecVSHParam *param)
 {
+	ASM_FUNC_TAG();
 	int k1, ret;
 	u32 text_addr;
 	int (*_sceKernelLoadExecVSHWithApitype)(int, const char *, void *);
@@ -224,6 +239,7 @@ sctrlKernelLoadExecVSHWithApitype(int apitype, const char *file, struct SceKerne
 PspIoDrv *
 sctrlHENFindDriver(char* drvname)
 {
+	ASM_FUNC_TAG();
 	u32 text_addr, k1, ret;
 	u32 (*iomgr_find_driver)(char *);
 	PspIoDrv *drv = NULL;
@@ -244,6 +260,7 @@ sctrlHENFindDriver(char* drvname)
 int
 sctrlKernelLoadExecVSHDisc(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -258,6 +275,7 @@ sctrlKernelLoadExecVSHDisc(const char *file, struct SceKernelLoadExecVSHParam *p
 int
 sctrlKernelLoadExecVSHDiscUpdater(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -272,6 +290,7 @@ sctrlKernelLoadExecVSHDiscUpdater(const char *file, struct SceKernelLoadExecVSHP
 int
 sctrlKernelLoadExecVSHMs1(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -286,6 +305,7 @@ sctrlKernelLoadExecVSHMs1(const char *file, struct SceKernelLoadExecVSHParam *pa
 int
 sctrlKernelLoadExecVSHMs2(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -300,6 +320,7 @@ sctrlKernelLoadExecVSHMs2(const char *file, struct SceKernelLoadExecVSHParam *pa
 int
 sctrlKernelLoadExecVSHMs3(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -314,6 +335,7 @@ sctrlKernelLoadExecVSHMs3(const char *file, struct SceKernelLoadExecVSHParam *pa
 int
 sctrlKernelLoadExecVSHMs4(const char *file, struct SceKernelLoadExecVSHParam *param)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -328,6 +350,7 @@ sctrlKernelLoadExecVSHMs4(const char *file, struct SceKernelLoadExecVSHParam *pa
 int
 sctrlKernelExitVSH(struct SceKernelLoadExecVSHParam *param)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -343,6 +366,7 @@ sctrlKernelExitVSH(struct SceKernelLoadExecVSHParam *param)
 u32
 sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 {
+	ASM_FUNC_TAG();
 	SceModule2 *mod;
 	nidtable_t *nidtbl;
 	int i, j, ent_sz, stub_cnt;
@@ -391,6 +415,7 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 void
 sctrlHENLoadModuleOnReboot(char *module_after, void *buf, int size, int flags)
 {
+	ASM_FUNC_TAG();
 	g_reboot_module = module_after;
 	g_reboot_module_buf = buf;
 	g_reboot_module_size = size;
@@ -401,6 +426,7 @@ sctrlHENLoadModuleOnReboot(char *module_after, void *buf, int size, int flags)
 void
 SystemCtrlForKernel_B86E36D1(void)
 {
+	ASM_FUNC_TAG();
 	int *(*func)(int);
 	int *ret, *p;
 
@@ -430,6 +456,7 @@ SystemCtrlForKernel_B86E36D1(void)
 void
 SetConfig(TNConfig *config)
 {
+	ASM_FUNC_TAG();
 	memcpy(&g_tnconfig, config, sizeof(TNConfig));
 }
 
@@ -438,6 +465,7 @@ SetConfig(TNConfig *config)
 int
 sctrlHENSetSpeed(int cpuspd, int busspd)
 {
+	ASM_FUNC_TAG();
 	g_scePowerSetClockFrequency = (void *) FindScePowerFunction(0x545A7F3C); /* scePowerSetClockFrequency */
 	return g_scePowerSetClockFrequency(cpuspd, cpuspd, busspd);
 }
@@ -447,6 +475,7 @@ sctrlHENSetSpeed(int cpuspd, int busspd)
 int
 sctrlHENSetMemory(int p2, int p8)
 {
+	ASM_FUNC_TAG();
 	int k1;
 
 	if (!p2 || ((p2 + p8) >= 0x35))
@@ -465,6 +494,7 @@ sctrlHENSetMemory(int p2, int p8)
 void
 SetSpeed(int cpuspd, int busspd)
 {
+	ASM_FUNC_TAG();
 	u32 fp;
 
 	switch (cpuspd) {
@@ -512,6 +542,7 @@ SetSpeed(int cpuspd, int busspd)
 int
 sctrlKernelSetInitKeyConfig(int key)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -527,6 +558,7 @@ sctrlKernelSetInitKeyConfig(int key)
 int
 sctrlKernelSetInitFileName(char *file)
 {
+	ASM_FUNC_TAG();
 	int k1 = pspSdkSetK1(0);
 
 	*g_init_filename_addr = file;
@@ -540,6 +572,7 @@ sctrlKernelSetInitFileName(char *file)
 int
 sctrlKernelSetInitApitype(int apitype)
 {
+	ASM_FUNC_TAG();
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
@@ -555,6 +588,7 @@ sctrlKernelSetInitApitype(int apitype)
 int
 vctrlVSHRegisterVshMenu(void *ctrl)
 {
+	ASM_FUNC_TAG();
 	int k1 = pspSdkSetK1(0);
 
 	VshMenuCtrl = (void *) ((u32) ctrl | 0x80000000);
@@ -568,6 +602,7 @@ vctrlVSHRegisterVshMenu(void *ctrl)
 int
 vctrlVSHExitVSHMenu(TNConfig *conf)
 {
+	ASM_FUNC_TAG();
 	int k1 = pspSdkSetK1(0);
 	int cpuspeed = g_tnconfig.vshcpuspeed;
 

@@ -17,6 +17,7 @@ SceUID g_heapid = -1; /* 0x00008240 */
 int
 mallocinit(void)
 {
+	ASM_FUNC_TAG();
 	u32 size;
 	int apptype = sceKernelApplicationType();
 
@@ -46,6 +47,7 @@ init_heap:
 void *
 oe_malloc(u32 size)
 {
+	ASM_FUNC_TAG();
 	return sceKernelAllocHeapMemory(g_heapid, size);
 }
 
@@ -54,5 +56,6 @@ oe_malloc(u32 size)
 void
 oe_free(void *ptr)
 {
+	ASM_FUNC_TAG();
 	sceKernelFreeHeapMemory(g_heapid, ptr);
 }
