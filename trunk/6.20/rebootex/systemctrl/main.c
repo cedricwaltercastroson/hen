@@ -18,12 +18,6 @@
 PSP_MODULE_INFO("SystemControl", 0x3007, 2, 5);
 PSP_MAIN_THREAD_ATTR(0);
 
-#define MAKE_CALL(__f) \
-	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
-
-#define MAKE_JMP(__f) \
-	(((((u32)__f) & 0x0FFFFFFC) >> 2) | 0x08000000)
-
 extern int sceKernelProbeExecutableObject_Patched(void *buf, int *check);
 extern int sceKernelCheckExecFile_Patched(void *buf, int *check);
 extern int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
@@ -588,8 +582,7 @@ PatchVLF(u32 nid)
 	u32 fp = sctrlHENFindFunction("VLF_Module", "VlfGui", nid);
 
 	if (fp) {
-		_sw(0x03E00008, fp);
-		_sw(0x00001021, fp + 4);
+		MAKE_DUMMY_FUNCTION0(fp);
 	}
 }
 
@@ -803,8 +796,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 				u32 addr = syscon->unk1 + (i << 3);
 				u32 func = find_text_addr_by_name("sceSYSCON_Driver") + 0x2C64;
 
-				_sw((((func >> 2) & 0x03FFFFFF) | 0x08000000), addr);
-				_sw(0, addr + 4);
+				REDIRECT_FUNCTION(addr, func);
 				ClearCaches();
 			}
 		}
@@ -821,8 +813,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 				if (func) {
 					u32 addr = power->unk1 + (i << 3);
 
-					_sw((((func >> 2) & 0x03FFFFFF) | 0x08000000), addr);
-					_sw(0, addr + 4);
+					REDIRECT_FUNCTION(addr, func);
 					ClearCaches();
 				}
 			}
@@ -913,7 +904,6 @@ DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_
 		if (hdr->oe_tag != 0x28796DAA && hdr->oe_tag != 0x7316308C
 				&& hdr->oe_tag != 0x3EAD0AEE && hdr->oe_tag !=0x8555ABF2)
 			goto decrypt;
-		}
 
 		if (buf[0x150] == 0x1F && buf[0x151] == 0x8B) { /* gzip */
 			memmove(buf, buf + 0x150, hdr->comp_size);
@@ -1089,8 +1079,7 @@ PatchUpdatePlugin(u32 text_addr)
 void
 PatchGamePlugin(u32 text_addr)
 {
-	_sw(0x03E00008, text_addr + 0x0001EB08);
-	_sw(0x00001021, text_addr + 0x0001EB0C);
+	MAKE_DUMMY_FUNCTION0(text_addr + 0x0001EB08);
 
 	if (g_tnconfig.hidepic) {
 		_sw(0x00601021, text_addr + 0x0001C098);
@@ -1197,8 +1186,7 @@ PatchRegion(void)
 	u32 orig_addr = sctrlHENFindFunction("sceChkreg", "sceChkreg_driver", 0x59F8491D); /* sceChkregGetPsCode */
 	if (orig_addr) {
 		if (g_tnconfig.fakeregion) {
-			_sw(MAKE_JMP(PatchSceChkReg), orig_addr);
-			_sw(0, orig_addr + 4);
+			REDIRECT_FUNCTION(orig_addr, PatchSceChkReg);
 		}
 	}
 	ClearCaches();
@@ -1462,10 +1450,9 @@ PatchSceUmdCacheDriver(u32 text_addr)
 
 	if (sceKernelApplicationType() != PSP_INIT_KEYCONFIG_GAME)
 		return;
-	if (sceKernelBootFrom() != 0x40)
+	if (sceKernelBootFrom() != PSP_BOOT_MS)
 		return;
-	_sw(0x03E00008, text_addr + 0x9C8);
-	_sw(0x24020001, text_addr + 0x9CC);
+	MAKE_DUMMY_FUNCTION1(text_addr + 0x000009C8);
 	ClearCaches();
 
 	for (i = (u32 *) 0xBC000040; i != (u32 *) 0xBC000080; i++)
@@ -1494,10 +1481,8 @@ PatchSceImposeDriver(void)
 
 	if ((mod = sceKernelFindModuleByName("sceUSB_Driver"))) {
 		text_addr = mod->text_addr;
-		_sw(0x03E00008, text_addr + 0x8FE8);
-		_sw(0x00001021, text_addr + 0x8FEC);
-		_sw(0x03E00008, text_addr + 0x8FF0);
-		_sw(0x00001021, text_addr + 0x8FF4);
+		MAKE_DUMMY_FUNCTION0(text_addr + 0x00008FE8);
+		MAKE_DUMMY_FUNCTION0(text_addr + 0x00008FF0);
 		ClearCaches();
 	}
 }

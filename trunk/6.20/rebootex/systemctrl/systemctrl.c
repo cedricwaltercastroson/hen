@@ -483,26 +483,21 @@ SetSpeed(int cpuspd, int busspd)
 		if (sceKernelApplicationType() == PSP_INIT_KEYCONFIG_VSH)
 			return;
 
-		_sw(0x03E00008, fp);
-		_sw(0x00001021, fp + 4);
+		MAKE_DUMMY_FUNCTION0(fp);
 
 		fp = FindScePowerFunction(0x545A7F3C);
-		_sw(0x03E00008, fp);
-		_sw(0x00001021, fp + 4);
+		MAKE_DUMMY_FUNCTION0(fp);
 
 		/* scePowerSetBusClockFrequency */
 		fp = FindScePowerFunction(0xB8D7B3FB);
-		_sw(0x03E00008, fp);
-		_sw(0x00001021, fp + 4);
+		MAKE_DUMMY_FUNCTION0(fp);
 
 		/* scePowerSetCpuClockFrequency */
 		fp = FindScePowerFunction(0x843FBF43);
-		_sw(0x03E00008, fp);
-		_sw(0x00001021, fp + 4);
+		MAKE_DUMMY_FUNCTION0(fp);
 
 		fp = FindScePowerFunction(0xEBD177D6);
-		_sw(0x03E00008, fp);
-		_sw(0x00001021, fp + 4);
+		MAKE_DUMMY_FUNCTION0(fp);
 
 		ClearCaches();
 		break;
