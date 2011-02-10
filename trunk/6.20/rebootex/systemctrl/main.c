@@ -206,7 +206,7 @@ ProbeExec1_Patched(void *buf, int *check)
 }
 
 /* 0x000001E4 */
-char *
+char * __attribute__ ((noinline))
 GetStrTab(void *buf)
 {
 	ASM_FUNC_TAG();
@@ -361,7 +361,7 @@ ProbeExec2_Patched(char *buf, int *check)
 		return ret;
 
 	hdr = (Elf32_Ehdr *) buf;
-	if (hdr->e_type == 2 && (check[2] + 0xFEC0 < 5))
+	if (hdr->e_type == 2 && (check[2] - 0x140 < 5))
 		check[2] = 0x120;
 
 	if (check[19] != 0)
@@ -449,6 +449,7 @@ PatchInterruptMgr(void)
 void
 PatchIoFileMgr(void)
 {
+	ASM_FUNC_TAG();
 	u32 text_addr;
 
 	text_addr = find_text_addr_by_name("sceIOFileManager");
@@ -507,7 +508,7 @@ PatchSceMesgLed(void)
 {
 	ASM_FUNC_TAG();
 	/* 0x000069CC */
-	static u32 model0[] = {0x00001E3C, 0x00003808, 0x00003B4C, 0x00001ECC};
+	static u32 model0[] = {0x00001E3C, 0x00003808, 0x00003BC4, 0x00001ECC};
 	/* 0x000069DC */
 	static u32 model1[] = {0x00001ECC, 0x00003D10, 0x0000415C, 0x00001F5C};
 	/* 0x000069EC */
@@ -1232,7 +1233,7 @@ PatchRegion(void)
 }
 
 /* 0x000023A4 */
-u32
+u32 __attribute__ ((noinline))
 FindScePowerFunction(u32 nid)
 {
 	ASM_FUNC_TAG();
@@ -1240,7 +1241,7 @@ FindScePowerFunction(u32 nid)
 }
 
 /* 0x0000240C */
-u32
+u32 __attribute__ ((noinline))
 FindScePowerDriverFunction(u32 nid)
 {
 	ASM_FUNC_TAG();
@@ -1607,9 +1608,9 @@ void
 StrTrim(char *buf)
 {
 	ASM_FUNC_TAG();
-	char *s = buf + strlen(buf);
+	char *s = buf + strlen(buf) - 1;
 
-	while ((*s == ' ' || *s == '\t') && s > buf) {
+	while (s >= buf && (*s == ' ' || *s == '\t')) {
 		*s = '\0';
 		s--;
 	}
