@@ -885,14 +885,14 @@ DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling
 {
 	ASM_FUNC_TAG();
 	int r;
-	PSP_Header* hdr = (PSP_Header *) buf;
+	PSP_Header *hdr = (PSP_Header *) buf;
 
 	if (DecryptExecutable_HEN) {
 		if (DecryptExecutable_HEN(buf, size, compressed_size, polling) >= 0)
 			return 0;
 	}
 
-	if (hdr && compressed_size) {
+	if (buf && compressed_size) {
 		if (hdr->oe_tag == 0xC6BA41D3 || hdr->oe_tag == 0x55668D96) { /* M33 */
 			if (buf[0x150] == 0x1F && buf[0x151] == 0x8B) { /* gzip */
 				memmove(buf, buf + 0x150, hdr->comp_size);
@@ -1043,6 +1043,7 @@ PatchSceChkReg(char *pscode)
 	else
 		fakeregion -= 11;
 
+	fakeregion &= 0xFF;
 	if (fakeregion == 2)
 		fakeregion = 3;
 	pscode[6] = 1;
