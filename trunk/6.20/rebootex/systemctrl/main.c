@@ -894,7 +894,7 @@ DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling
 
 	if (buf && compressed_size) {
 		if (hdr->oe_tag == 0xC6BA41D3 || hdr->oe_tag == 0x55668D96) { /* M33 */
-			if (buf[0x150] == 0x1F && buf[0x151] == 0x8B) { /* gzip */
+			if (_lh((u32) buf) == 0x8B1F) { /* gzip */
 				memmove(buf, buf + 0x150, hdr->comp_size);
 				*compressed_size = hdr->comp_size;
 				return 0;
@@ -919,7 +919,7 @@ DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_
 {
 	ASM_FUNC_TAG();
 	int r;
-	PSP_Header* hdr = (PSP_Header*) buf;
+	PSP_Header *hdr = (PSP_Header*) buf;
 
 	if (DecryptPrx_HEN) {
 		if (DecryptPrx_HEN(a0, a1, a2, buf, size, compressed_size, polling, t3) >= 0)
@@ -927,18 +927,16 @@ DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_
 	}
 
 	if (a0 != 0 && buf && compressed_size) {
-		if (hdr->oe_tag != 0x28796DAA && hdr->oe_tag != 0x7316308C
-				&& hdr->oe_tag != 0x3EAD0AEE && hdr->oe_tag !=0x8555ABF2)
-			goto decrypt;
-
-		if (buf[0x150] == 0x1F && buf[0x151] == 0x8B) { /* gzip */
-			memmove(buf, buf + 0x150, hdr->comp_size);
-			*compressed_size = hdr->comp_size;
-			return 0;
+		if (hdr->oe_tag == 0x28796DAA || hdr->oe_tag == 0x7316308C
+				|| hdr->oe_tag == 0x3EAD0AEE || hdr->oe_tag ==0x8555ABF2) {
+			if (_lh((u32) buf) == 0x8B1F) { /* gzip */
+				memmove(buf, buf + 0x150, hdr->comp_size);
+				*compressed_size = hdr->comp_size;
+				return 0;
+			}
 		}
 	}
 
-decrypt:
 	r = DecryptPrx(a0, a1, a2, buf, size, compressed_size, polling, t3);
 	if (r >= 0)
 		return r;
