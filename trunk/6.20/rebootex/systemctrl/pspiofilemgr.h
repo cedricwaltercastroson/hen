@@ -167,7 +167,7 @@ int sceIoWriteAsync(SceUID fd, const void *data, SceSize size);
  * @return The position in the file after the seek. 
  */
 //SceOff sceIoLseek(SceUID fd, SceOff offset, int whence);
-SceOff sceIoLseek(SceUID fd, int *, int, SceOff offset, int whence);
+SceOff sceIoLseek(SceUID fd, int *, int, int, int);
 
 /**
  * Reposition read/write file descriptor offset (asynchronous)
