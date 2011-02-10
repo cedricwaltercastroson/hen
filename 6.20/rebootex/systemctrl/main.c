@@ -10,6 +10,7 @@
 #include "pspmodulemgr_kernel.h"
 #include "pspthreadman_kernel.h"
 #include "pspsysmem_kernel.h"
+#include "pspiofilemgr.h"
 
 #include "main.h"
 #include "systemctrl.h"
