@@ -35,6 +35,19 @@ PatchSyscall(u32 fp, void *func)
 	} while (vectors != end);
 }
 
+/* 0x00000364 */
+/* SystemCtrlForUser_1C90BECB SystemCtrlForKernel_1C90BECB */
+void *
+sctrlHENSetStartModuleHandler(void *handler)
+{
+	ASM_FUNC_TAG();
+	void *prev = ModuleStartHandler;
+
+	ModuleStartHandler = (void *) ((u32) handler | 0x80000000);
+
+	return prev;
+}
+
 /* 0x000003D4 */
 void *
 SystemCtrlForKernel_AC0E84D1(void *func)
@@ -55,19 +68,6 @@ SystemCtrlForKernel_1F3037FB(void *func)
 	void *prev = DecryptPrx_HEN;
 
 	DecryptPrx_HEN = func;
-
-	return prev;
-}
-
-/* 0x00000364 */
-/* SystemCtrlForUser_1C90BECB SystemCtrlForKernel_1C90BECB */
-void *
-sctrlHENSetStartModuleHandler(void *handler)
-{
-	ASM_FUNC_TAG();
-	void *prev = ModuleStartHandler;
-
-	ModuleStartHandler = (void *) ((u32) handler | 0x80000000);
 
 	return prev;
 }
