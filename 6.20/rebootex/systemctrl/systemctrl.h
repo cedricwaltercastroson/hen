@@ -10,9 +10,12 @@
 #include "psploadexec_kernel.h"
 #include "pspmodulemgr_kernel.h"
 
+#if 1
 static const char *__func_tag;
-
 #define ASM_FUNC_TAG() __func_tag = __FUNCTION__
+#else
+#define ASM_FUNC_TAG()
+#endif
 
 typedef struct {
 	int magic;//offset 0x000083E8 - 0x00    // 0x47434E54 == "TNCG" 
