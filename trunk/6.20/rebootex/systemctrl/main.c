@@ -22,7 +22,7 @@ PSP_MAIN_THREAD_ATTR(0);
 extern int sceKernelProbeExecutableObject_Patched(void *buf, int *check);
 extern int sceKernelCheckExecFile_Patched(void *buf, int *check);
 extern int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
-extern int PartitionCheck_Patched(void *buf, int *check);
+extern int PartitionCheck_Patched(void *buf, u32 *check);
 extern SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
 extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
 extern int VerifySignCheck_Patched(void *hdr, int, int);
@@ -964,32 +964,32 @@ sceKernelCheckExecFile_Patched(void *buf, int *check)
 
 /* 0x00001AB8 */
 int
-PartitionCheck_Patched(void *buf, int *check)
+PartitionCheck_Patched(void *buf, u32 *check)
 {
 	ASM_FUNC_TAG();
-	static int readbuf[64]; /* 0x0000829C */
+	static u32 readbuf[64]; /* 0x0000829C */
 
 	u16 attr;
 	SceUID fd;
-	SceOff pos;
+	u32 pos;
 
 	fd = _lw((u32) buf + 0x18);
-	pos = sceIoLseek(fd, check, 0, 0, 1);
-	sceIoLseek(fd, check, 0, 0, 0);
+	pos = sceIoLseek(fd, 0, 1);
+	sceIoLseek(fd, 0, 0);
 	if (sceIoRead(fd, readbuf, 0x100) < 0x100)
 		goto out;
 
 	if (readbuf[0] == 0x50425000) { /* PBP */
-		sceIoLseek(fd, readbuf, readbuf[8], 0, 0);
+		sceIoLseek(fd, (SceOff) readbuf[8], 0);
 		sceIoRead(fd, readbuf, 0x14);
 		if (readbuf[0] != ELF_MAGIC) /* encrypted module */
 			goto out;
 
-		sceIoLseek(fd, readbuf, readbuf[8] + check[19], 0, 0);
+		sceIoLseek(fd, (SceOff) (readbuf[8] + check[19]), 0);
 		if (!IsStaticElf(readbuf))
 			check[4] = readbuf[8] - readbuf[7];
 	} else if (readbuf[0] == ELF_MAGIC) {
-		sceIoLseek(fd, readbuf, check[19], 0, 0);
+		sceIoLseek(fd, (SceOff) check[19], 0);
 	} else
 		goto out;
 
@@ -1000,7 +1000,7 @@ PartitionCheck_Patched(void *buf, int *check)
 		check[17] = !!(attr & 0x1000);
 
 out:
-	sceIoLseek(fd, readbuf, pos, 0, 0);
+	sceIoLseek(fd, (SceOff) pos, 0);
 	return PartitionCheck(buf, check);
 }
 
