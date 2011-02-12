@@ -475,7 +475,7 @@ PatchMemlmd(void)
 	/* 0x00006A24 */
 	static u32 model1[] = {
 		0x00000FA8, 0x000011F0, 0x00001170, 0x000011C4,
-		0x00000EA8, 0x000011F0
+		0x00000EA8, 0x00000F0C
 	};
 
 	u32 text_addr;
@@ -741,6 +741,17 @@ module_bootstart(void)
 	return 0;
 }
 
+typedef union {
+	struct {
+		unsigned pad: 8;
+		unsigned minor: 4;
+		unsigned pad2: 12;
+		unsigned major: 4;
+		unsigned pad3: 4;
+	} s;
+	unsigned ver;
+} fmver_t;
+
 /* 0x000012A0 */
 int
 sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
@@ -757,9 +768,13 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	/* module_sdk_version */
 	ver = sctrlHENFindFunction(buf, NULL, 0x11B97506);
 	if (ver) {
-		if (*(int *) ver == 0x06020010) { /* 620 */
+		fmver_t fmv;
+
+		ver = _lw(ver);
+		fmv.ver = ver;
+
+		if (((fmv.s.major << 8) | ((ver >> 12) & 0xF0) | fmv.s.minor) == 0x620)
 			return sceKernelLinkLibraryEntries(buf, size);
-		}
 	}
 
 	offs = 0;
@@ -827,7 +842,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	}
 
 	if (power) {
-		stubcount = syscon->stubcount;
+		stubcount = power->stubcount;
 		for (i = 0; i < stubcount; i++) {
 			nid = _lw((u32) (power->entrytable + (i << 2)));
 

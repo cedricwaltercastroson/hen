@@ -91,21 +91,21 @@ typedef struct SceModule2
     member to determine the real size of the table (size = len * 4). */
 typedef struct SceLibraryEntryTable {
 	/**The library's name. */
-	const char *		libname;
+	const char *		libname; // 0
 	/** Library version. */
-	unsigned char		version[2];
+	unsigned char		version[2]; // 4
 	/** Library attributes. */
-	unsigned short		attribute;
+	unsigned short		attribute; // 6
 	/** Length of this entry table in 32-bit WORDs. */
-	unsigned char		len;
+	unsigned char		len; // 8
 	/** The number of variables exported by the library. */
-	unsigned char		vstubcount;
+	unsigned char		vstubcount; // 9
 	/** The number of functions exported by the library. */
-	unsigned short		stubcount;
+	unsigned short		stubcount; // A
 	/** Pointer to the entry table; an array of NIDs followed by
 	    pointers to functions and variables. */
-	void *				entrytable;
-	u32					unk1;
+	void *				entrytable; // C
+	u32					unk1; // 10
 } SceLibraryEntryTable;
 
 /** Specifies a library and a set of imports from that library.  Use the len
