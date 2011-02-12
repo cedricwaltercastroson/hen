@@ -10,7 +10,7 @@
 #include "psploadexec_kernel.h"
 #include "pspmodulemgr_kernel.h"
 
-#if 1
+#if 0
 static const char *__func_tag;
 #define ASM_FUNC_TAG() __func_tag = __FUNCTION__
 #else
