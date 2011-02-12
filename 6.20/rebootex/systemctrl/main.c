@@ -707,6 +707,15 @@ PatchLoadCore(void)
 	_sw(fp, text_addr + 0x000068F0);
 }
 
+void
+PatchThreadManager(void)
+{
+	SceModule2 *mod = sceKernelFindModuleByName("sceThreadManager");
+
+	if (mod)
+		_sw(0, mod->text_addr + 0x000175AC);
+}
+
 /* 0x0000119C */
 int
 module_bootstart(void)
@@ -721,6 +730,7 @@ module_bootstart(void)
 	PatchMemlmd();
 	PatchIoFileMgr();
 	PatchInterruptMgr();
+	PatchThreadManager();
 
 	ClearCaches();
 
