@@ -102,8 +102,8 @@ int (*g_sceCtrlReadBufferPositive) (SceCtrlData *, int) = NULL; /* 0x000083C4 */
 int (*VerifySignCheck)(void *, int, int) = NULL; /* 0x00008268 */
 int (*LoadExecBootstart) (int, int, int, int) = NULL; /* 0x000083BC */
 
-int (*ProbeExec1) (void *, int *) = NULL; /* 0x00008278 */
-int (*ProbeExec2) (void *, int *) = NULL; /* 0x000083A0 */
+int (*ProbeExec1) (void *, u32 *) = NULL; /* 0x00008278 */
+int (*ProbeExec2) (void *, u32 *) = NULL; /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *) = NULL; /* 0x00008294 */
 
 
@@ -166,13 +166,16 @@ PatchExec1(void *buf, int *check)
 		check[18] = 1;
 		check[17] = 1;
 		PatchExec2(buf, check);
-	} else {
-		if (i >= 0x52)
-			return -1;
-		if (check[17] == 0)
-			return -2;
-		check[18] = 1;
-	}
+
+		return 0;
+	} else if ((u32) i >= 0x52)
+		return -1;
+
+
+	if (check[17] == 0)
+		return -2;
+
+	check[18] = 1;
 
 	return 0;
 }
@@ -180,30 +183,36 @@ PatchExec1(void *buf, int *check)
 
 /* 0x00000150 */
 int
-ProbeExec1_Patched(void *buf, int *check)
+ProbeExec1_Patched(void *buf, u32 *check)
 {
 	ASM_FUNC_TAG();
-	int r;
-	u16 attr, realattr;
-	u16 *check2;
+	int ret;
+	u16 attr;
+	u16 *modinfo;
+	u16 realattr;
 
-	r = ProbeExec1(buf, check);
-	if (_lw((u32) buf) != ELF_MAGIC)
-		return r;
+	ret = ProbeExec1(buf, check);
 
-	realattr = *(u16 *) (((check[19] >> 1) << 1) + (u32) buf);
+	if (((u32 *)buf)[0] != ELF_MAGIC)
+		return ret;
+
+	modinfo = ((u16 *)buf) + (check[0x4C/4] / 2);
+
+	realattr = *modinfo;
 	attr = realattr & 0x1E00;
 
 	if (attr != 0) {
-		check2 = (u16 *) check;
-		if (attr != (check2[44] & 0x1E00))
-			check2[44] = realattr;
+		u16 attr2 = ((u16 *)check)[0x58/2];
+		attr2 &= 0x1E00;
+
+		if (attr2 != attr)
+			((u16 *)check)[0x58/2] = realattr;
 	}
 
-	if (check[18] == 0)
-		check[18] = 1;
+	if (check[0x48/4] == 0)
+		check[0x48/4] = 1;
 
-	return r;
+	return ret;
 }
 
 /* 0x000001E4 */
@@ -351,7 +360,7 @@ FindLibNidTable(const char *name)
 
 /* 0x000004B4 */
 int
-ProbeExec2_Patched(char *buf, int *check)
+ProbeExec2_Patched(char *buf, u32 *check)
 {
 	ASM_FUNC_TAG();
 	Elf32_Ehdr *hdr;
@@ -365,7 +374,7 @@ ProbeExec2_Patched(char *buf, int *check)
 	if (hdr->e_type == 2 && (check[2] - 0x140 < 5))
 		check[2] = 0x120;
 
-	if (check[19] != 0)
+	if (check[19] != 0 || !IsStaticElf(buf))
 		return ret;
 
 	if (hdr->e_type == 2) {
@@ -1014,7 +1023,7 @@ PartitionCheck_Patched(void *buf, u32 *check)
 
 		sceIoLseek(fd, (SceOff) (readbuf[8] + check[19]), 0);
 		if (!IsStaticElf(readbuf))
-			check[4] = readbuf[8] - readbuf[7];
+			check[4] = readbuf[9] - readbuf[8];
 	} else if (readbuf[0] == ELF_MAGIC) {
 		sceIoLseek(fd, (SceOff) check[19], 0);
 	} else
@@ -1522,7 +1531,7 @@ void
 PatchSceUmdCacheDriver(u32 text_addr)
 {
 	ASM_FUNC_TAG();
-	u32 *i;
+	int *p;
 
 	if (sceKernelApplicationType() != PSP_INIT_KEYCONFIG_GAME)
 		return;
@@ -1531,8 +1540,8 @@ PatchSceUmdCacheDriver(u32 text_addr)
 	MAKE_DUMMY_FUNCTION1(text_addr + 0x000009C8);
 	ClearCaches();
 
-	for (i = (u32 *) 0xBC000040; i != (u32 *) 0xBC000080; i++)
-		*i = 0xFFFF;
+	for (p = (int *) 0xBC000040; p != (int *) 0xBC000080; p++)
+		*p = -1;
 }
 
 /* 0x00002DBC */
