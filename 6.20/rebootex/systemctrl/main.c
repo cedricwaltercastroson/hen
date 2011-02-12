@@ -641,7 +641,7 @@ PatchModules(SceModule2 *mod)
 		PatchMsvideoMainPlugin(text_addr);
 	} else if (!strcmp(mod->modname, "game_plugin_module")) {
 		PatchGamePlugin(text_addr);
-	} else if (g_tnconfig.notnupdate == 0 && 
+	} else if (!g_tnconfig.notnupdate && 
 			!strcmp(mod->modname, "update_plugin_module")) {
 		PatchUpdatePlugin(text_addr);
 	} else if (!strcmp(mod->modname, "VLF_Module")) {
@@ -1351,7 +1351,7 @@ PatchSceUpdateDL(const char *path, int flags, SceKernelLMOption *option)
 		return ret;
 
 	k1 = pspSdkSetK1(0);
-	if(g_tnconfig.notnupdate) {
+	if(!g_tnconfig.notnupdate) {
 		SceModule2 *mod = sceKernelFindModuleByName("SceUpdateDL_Library");
 
 		if(mod) {
