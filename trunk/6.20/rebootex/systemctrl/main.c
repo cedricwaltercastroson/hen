@@ -906,6 +906,8 @@ sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p)
 	return sceKernelStartThread(tid, len, p);
 }
 
+#define is_gzip(__buf) (_lh((u32) (__buf)) == 0x8B1F)
+
 /* 0x000016D8 */
 int
 DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling)
@@ -921,7 +923,7 @@ DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling
 
 	if (buf && compressed_size) {
 		if (hdr->oe_tag == 0xC6BA41D3 || hdr->oe_tag == 0x55668D96) { /* M33 */
-			if (_lh((u32) buf) == 0x8B1F) { /* gzip */
+			if (is_gzip(&buf[0x150])) {
 				memmove(buf, buf + 0x150, hdr->comp_size);
 				*compressed_size = hdr->comp_size;
 				return 0;
@@ -956,7 +958,7 @@ DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_
 	if (a0 != 0 && buf && compressed_size) {
 		if (hdr->oe_tag == 0x28796DAA || hdr->oe_tag == 0x7316308C
 				|| hdr->oe_tag == 0x3EAD0AEE || hdr->oe_tag ==0x8555ABF2) {
-			if (_lh((u32) buf) == 0x8B1F) { /* gzip */
+			if (is_gzip(&buf[0x150])) {
 				memmove(buf, buf + 0x150, hdr->comp_size);
 				*compressed_size = hdr->comp_size;
 				return 0;
