@@ -57,54 +57,54 @@ static unsigned char satelite_bin[];
 /* 0x000083E8 */
 TNConfig g_tnconfig = { 0 };
 
-int g_model; /* 0x00008270 */
-void (*ModuleStartHandler) (void *); /* 0x000083A4 */
-int g_p2_size; /* 0x00008258 */
-int g_p8_size; /* 0x0000825C */
-unsigned int g_rebootex_size; /* 0x00008264 */
-void *g_rebootex_buf; /* 0x0000828C */
+int g_model = 0; /* 0x00008270 */
+void (*ModuleStartHandler) (void *) = NULL; /* 0x000083A4 */
+int g_p2_size = 0; /* 0x00008258 */
+int g_p8_size = 0; /* 0x0000825C */
+unsigned int g_rebootex_size = 0; /* 0x00008264 */
+void *g_rebootex_buf = NULL; /* 0x0000828C */
 
-int *g_apitype_addr; /* 0x00008288 */
-char **g_init_filename_addr; /* 0x00008284 */
-int *g_keyconfig_addr; /* 0x0000839C */
+int *g_apitype_addr = NULL; /* 0x00008288 */
+char **g_init_filename_addr = NULL; /* 0x00008284 */
+int *g_keyconfig_addr = NULL; /* 0x0000839C */
 
-int (*DecryptExecutable)(void *, unsigned int, void *, unsigned int);  /* 0x0000827C */
-void (*sceMemlmdInitializeScrambleKey)(void *, void *); /* 0x00008280 */
+int (*DecryptExecutable)(void *, unsigned int, void *, unsigned int) = NULL;  /* 0x0000827C */
+void (*sceMemlmdInitializeScrambleKey)(void *, void *) = NULL; /* 0x00008280 */
 
-int (*DecryptExecutable_HEN)(char *buf, int size, int *compressed_size, int polling); /* 0x00008260 */
-int (*DecryptPrx_HEN) (int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3); /* 0x00008290 */
-int (*DecryptPrx) (int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3); /* 0x0000826C */
+int (*DecryptExecutable_HEN)(char *buf, int size, int *compressed_size, int polling) = NULL; /* 0x00008260 */
+int (*DecryptPrx_HEN) (int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3) = NULL; /* 0x00008290 */
+int (*DecryptPrx) (int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3) = NULL; /* 0x0000826C */
 
-char *g_reboot_module; /* 0x000083B8 */
-void *g_reboot_module_buf; /* 0x000083C8 */
-int g_reboot_module_size; /* 0x000083D0 */
-int g_reboot_module_flags; /* 0x000083CC */
+char *g_reboot_module = NULL; /* 0x000083B8 */
+void *g_reboot_module_buf = NULL; /* 0x000083C8 */
+int g_reboot_module_size = 0; /* 0x000083D0 */
+int g_reboot_module_flags = 0; /* 0x000083CC */
 
-SceUID g_satelite_mod_id; /* 0x000083C0 */
+SceUID g_satelite_mod_id = 0; /* 0x000083C0 */
 
-int (*VshMenuCtrl) (SceCtrlData *, int); /* 0x000083B0 */
+int (*VshMenuCtrl) (SceCtrlData *, int) = NULL; /* 0x000083B0 */
 
 /* 4 timestamps */
-unsigned int g_timestamp_1; /* 0x000083D4 */
-unsigned int g_timestamp_2; /* 0x000083DC */
-unsigned int g_timestamp_3; /* 0x000083E0 */
-unsigned int g_timestamp_4; /* 0x000083E4 */
+unsigned int g_timestamp_1 = 0; /* 0x000083D4 */
+unsigned int g_timestamp_2 = 0; /* 0x000083DC */
+unsigned int g_timestamp_3 = 0; /* 0x000083E0 */
+unsigned int g_timestamp_4 = 0; /* 0x000083E4 */
 
-SceUID g_SceModmgrStart_tid; /* 0x00008298 */
-SceModule2 *g_SceModmgrStart_module; /* 0x00008274 */
+SceUID g_SceModmgrStart_tid = 0; /* 0x00008298 */
+SceModule2 *g_SceModmgrStart_module = NULL; /* 0x00008274 */
 
-int (*sceDisplaySetHoldMode) (int); /* 0x000083D8 */
+int (*sceDisplaySetHoldMode) (int) = NULL; /* 0x000083D8 */
 
-int (*g_scePowerSetClockFrequency) (int, int, int); /* 0x000083AC */
-int (*g_scePowerGetCpuClockFrequency) (void); /* 0x000083B4 */
-int (*g_sceCtrlReadBufferPositive) (SceCtrlData *, int); /* 0x000083C4 */
+int (*g_scePowerSetClockFrequency) (int, int, int) = NULL; /* 0x000083AC */
+int (*g_scePowerGetCpuClockFrequency) (void) = NULL; /* 0x000083B4 */
+int (*g_sceCtrlReadBufferPositive) (SceCtrlData *, int) = NULL; /* 0x000083C4 */
 
-int (*VerifySignCheck)(void *, int, int); /* 0x00008268 */
-int (*LoadExecBootstart) (int, int, int, int); /* 0x000083BC */
+int (*VerifySignCheck)(void *, int, int) = NULL; /* 0x00008268 */
+int (*LoadExecBootstart) (int, int, int, int) = NULL; /* 0x000083BC */
 
-int (*ProbeExec1) (void *, int *); /* 0x00008278 */
-int (*ProbeExec2) (void *, int *); /* 0x000083A0 */
-int (*PartitionCheck) (void *, void *); /* 0x00008294 */
+int (*ProbeExec1) (void *, int *) = NULL; /* 0x00008278 */
+int (*ProbeExec2) (void *, int *) = NULL; /* 0x000083A0 */
+int (*PartitionCheck) (void *, void *) = NULL; /* 0x00008294 */
 
 
 /* 0x00000000 */
@@ -1277,8 +1277,8 @@ FindScePowerDriverFunction(u32 nid)
 }
 
 /* 0x00002424 */
-int
-UsbChargingHandler(void)
+SceUInt
+UsbChargingHandler(SceUID uid, SceInt64 unused0, SceInt64 unused1, void *common)
 {
 	ASM_FUNC_TAG();
 	static int usbcharging_enabled = 0; /* 0x00008250 */
@@ -1547,21 +1547,23 @@ PatchSceImposeDriver(void)
 	sctrlSEGetConfig(&g_tnconfig);
 	PatchRegion();
 	if (g_model == 0)
-		return;
+		goto out;
 	if (g_tnconfig.slimcolor == 0)
-		return;
+		goto out;
 	timer = sceKernelCreateVTimer("", NULL);
 	if (timer < 0)
-		return;
+		goto out;
 	sceKernelStartVTimer(timer);
-	sceKernelSetVTimerHandlerWide(timer, 0, 5000000, 0, UsbChargingHandler, 0);
+	sceKernelSetVTimerHandlerWide(timer, 5000000LL, UsbChargingHandler, 0);
 
 	if ((mod = sceKernelFindModuleByName("sceUSB_Driver"))) {
 		text_addr = mod->text_addr;
 		MAKE_DUMMY_FUNCTION0(text_addr + 0x00008FE8);
 		MAKE_DUMMY_FUNCTION0(text_addr + 0x00008FF0);
-		ClearCaches();
 	}
+
+out:
+	ClearCaches();
 }
 
 void
