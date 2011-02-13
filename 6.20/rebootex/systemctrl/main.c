@@ -763,6 +763,7 @@ typedef union {
 	unsigned ver;
 } fmver_t;
 
+
 /* 0x000012A0 */
 int
 sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
