@@ -128,17 +128,12 @@ PatchExec2(void *buf, int *check)
 	if (index < 0)
 		index += 3;
 
-	addr = (u32) buf + index;
+	addr = (u32) (buf + index);
 	if (addr + 0x77C00000 < 0x00400001) /* same as addr < 0x88800001U */
 		return 0;
 
-	addr = index / 4;
-	addr <<= 2;
-	addr += (u32) buf;
-
-	check[22] = _lh(addr);
-
-	return _lw(addr);
+	check[0x58/4] = ((u32 *)buf)[index / 4] & 0xFFFF;
+	return ((u32 *)buf)[index / 4];
 }
 
 /* 0x00000090 */
@@ -249,7 +244,7 @@ PatchExec3(void *buf, int *check, int is_plain, int res)
 	if (!is_plain)
 		return res;
 
-	if (check[2] >= 0x52) {
+	if ((u32) check[2] >= 0x52) {
 		if (IsStaticElf(buf)) {
 			check[8] = 3;
 		}
@@ -374,10 +369,7 @@ ProbeExec2_Patched(char *buf, u32 *check)
 	if (hdr->e_type == 2 && (check[2] - 0x140 < 5))
 		check[2] = 0x120;
 
-	if (check[19] != 0 || !IsStaticElf(buf))
-		return ret;
-
-	if (hdr->e_type == 2) {
+	if (check[19] == 0 && IsStaticElf(buf)) {
 		char *stab, *p;
 		int i;
 
@@ -990,12 +982,14 @@ sceKernelCheckExecFile_Patched(void *buf, int *check)
 {
 	ASM_FUNC_TAG();
 	int ret = PatchExec1(buf, check);
+	int is_plain;
 
 	if (ret == 0)
 		return ret;
 
+	is_plain = (((u32 *)buf)[0] == 0x464C457F);
 	ret = sceKernelCheckExecFile(buf, check);
-	return PatchExec3(buf, check, ((*(int *) buf) + 0xB9B3BA81) < 1, ret);
+	return PatchExec3(buf, check, is_plain, ret);
 }
 
 /* 0x00001AB8 */
