@@ -22,17 +22,15 @@ PatchSyscall(u32 fp, void *func)
 {
 	ASM_FUNC_TAG();
 	u32 sr;
-	u32 *vectors, *end;
+	u32 *vectors;
+	int i;
 
 	__asm__ ("cfc0 $v0, $12;" : "=r"(sr));
 	vectors = (u32 *) _lw(sr);
-	end = vectors + 0x10000;
-
-	do {
-		if (vectors [4] == fp)
-			vectors[4] = (u32) func;
-		vectors++;
-	} while (vectors != end);
+	for (i = 0; i < 0x4000; i++) {
+		if (vectors[i] == fp)
+			vectors[i] = (u32) func;
+	}
 }
 
 /* 0x00000364 */
