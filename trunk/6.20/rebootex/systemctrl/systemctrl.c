@@ -367,10 +367,8 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 	ASM_FUNC_TAG();
 	SceModule2 *mod;
 	nidtable_t *nidtbl;
-	int i, j, ent_sz, stub_cnt;
+	int i, ent_sz;
 	void *ent_top;
-	struct SceLibraryEntryTable *entry;
-	u32 *entry_table;
 	u32 tmp;
 
 	if (!(mod = sceKernelFindModuleByName(module_name))) {
@@ -388,17 +386,33 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 	i = 0;
 
 	while (i < ent_sz) {
-		entry = (void *) (i + ent_top);
+		struct SceLibraryEntryTable *entry;
+		int j, total, stubcnt, vstubcnt;
+		unsigned int *entry_table;
+
+		entry = (void *) (ent_top + i);
 
 		if (entry->libname && !strcmp(entry->libname, lib_name)) {
 			if (entry->stubcount > 0) {
-				stub_cnt =  entry->stubcount;
+				stubcnt = entry->stubcount;
+				vstubcnt = entry->vstubcount;
+				total = stubcnt + vstubcnt;
 				entry_table = entry->entrytable;
-
-				for (j = 0; j < stub_cnt; j++) {
+				for (j = 0; j < stubcnt; j++) {
 					if (entry_table[j] == nid)
-						return entry_table[j + stub_cnt + entry->vstubcount];
+						return entry_table[j + total];
 				}
+			}
+		} else if (entry->vstubcount != 0) {
+			stubcnt = entry->stubcount;
+			vstubcnt = entry->vstubcount;
+			total = stubcnt + vstubcnt;
+			entry_table = entry->entrytable;
+			entry_table += stubcnt;
+
+			for (j = 0; j < vstubcnt; j++) {
+				//if (entry_table[j] == nid)
+					//return entry_table[j + total];
 			}
 		}
 
