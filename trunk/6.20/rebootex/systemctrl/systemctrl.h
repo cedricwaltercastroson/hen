@@ -2,13 +2,8 @@
 #define _SYSTEM_CTRL_H
 
 #include "psptypes.h"
-#include "pspkernel.h"
-#include "psputility.h"
-#include "psputilsforkernel.h"
-#include "pspinit.h"
-#include "pspctrl.h"
 #include "psploadexec_kernel.h"
-#include "pspmodulemgr_kernel.h"
+#include "pspiofilemgr_kernel.h"
 
 #if 0
 static const char *__func_tag;
