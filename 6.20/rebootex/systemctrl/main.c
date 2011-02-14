@@ -1093,11 +1093,11 @@ PatchSceLoadExec(u32 text_addr)
 {
 	ASM_FUNC_TAG();
 	/* 0x00006A40 */
-	static u32 model[] = 
+	static u32 model4[] = 
 	{ 0x00002F28, 0x00002F74, 0x000025A4, 0x000025E8, 0x00001674, 0x000016A8 };
 
 	/* 0x00006A58 */
-	static u32 model4[] = 
+	static u32 model[] = 
 	{ 0x00002CD8, 0x00002D24, 0x00002350, 0x00002394, 0x00001674, 0x000016A8 };
 
 	u32 *p;
