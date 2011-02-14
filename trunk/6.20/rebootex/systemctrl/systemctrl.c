@@ -403,7 +403,10 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 						return entry_table[j + total];
 				}
 			}
-		} else if (entry->vstubcount != 0) {
+		}
+		/* this piece of code exist in TN but seems not used, AND cause problem in mine =/ */
+#if 0
+		else if (entry->vstubcount != 0) {
 			stubcnt = entry->stubcount;
 			vstubcnt = entry->vstubcount;
 			total = stubcnt + vstubcnt;
@@ -411,11 +414,11 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 			entry_table += stubcnt;
 
 			for (j = 0; j < vstubcnt; j++) {
-				//if (entry_table[j] == nid)
-					//return entry_table[j + total];
+				if (entry_table[j] == nid)
+					return entry_table[j + total];
 			}
 		}
-
+#endif
 		i += entry->len * 4;
 	}
 
