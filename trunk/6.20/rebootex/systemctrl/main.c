@@ -80,8 +80,6 @@ void *g_reboot_module_buf = NULL; /* 0x000083C8 */
 int g_reboot_module_size = 0; /* 0x000083D0 */
 int g_reboot_module_flags = 0; /* 0x000083CC */
 
-SceUID g_satelite_mod_id = 0; /* 0x000083C0 */
-
 int (*VshMenuCtrl) (SceCtrlData *, int) = NULL; /* 0x000083B0 */
 
 /* 4 timestamps */
@@ -1402,6 +1400,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 	ASM_FUNC_TAG();
 	static int g_00008248;
 	static int g_0000824C;
+	static SceUID g_satelite_mod_id = -1; /* 0x000083C0 */
 
 	SceKernelLMOption opt = {
 		.size = 0x14,
@@ -1449,6 +1448,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 			if (g_satelite_mod_id >= 0) {
 				if (sceKernelStopModule(g_satelite_mod_id, 0, 0, 0, 0) >= 0) {
 					sceKernelUnloadModule(g_satelite_mod_id);
+					g_satelite_mod_id = -1;
 				}
 			}
 		}
@@ -1506,12 +1506,12 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 			goto out;
 
 		/* SELECT button is pressed! */
-		sceKernelSetDdrMemoryProtection((void *) 0x08400000, 0x00400000, 0xF);
+		//sceKernelSetDdrMemoryProtection((void *) 0x08400000, 0x00400000, 0xF);
 		modid = sceKernelLoadModuleBuffer(size_satelite_bin, satelite_bin, 0, &opt);
 		if (modid >= 0) {
 			g_satelite_mod_id = modid;
 			sceKernelStartModule(modid, 0, 0, 0, 0);
-			pad_data->Buttons &= 0xFFFE; /* clear PSP_CTRL_SELECT */
+			pad_data->Buttons &= 0xFFFFFFFE; /* clear PSP_CTRL_SELECT */
 		}
 	} /* non-TN-vsh */
 
