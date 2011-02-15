@@ -1570,25 +1570,27 @@ out:
 	ClearCaches();
 }
 
+/* un-used routine */
+#if 0
 void
 sub_00002EB0(int a0, int a1, int a2)
 {
 	ASM_FUNC_TAG();
-	/* un-used routine */
 }
+#endif
 
 /* 0x00003938 */
 int
-PatchSceKernelStartModule(int a0, int a1)
+PatchSceKernelStartModule(int text_addr, int a1)
 {
 	ASM_FUNC_TAG();
-	static char g_00008428[0x24];
+	//static char g_00008428[0x24];
 
-	int (*func) (int, u32) = (void *) a0;
+	int (*func) (int, u32) = (void *) text_addr;
 
-	memset(g_00008428, 0, 0x24);
-	_sw(MAKE_JMP(sceKernelStartModule_Patched), a0 + 0x00000278);
-	_sw(a1, (u32) g_00008428 + 4);
+	//memset(g_00008428, 0, 0x24);
+	_sw(MAKE_JMP(sceKernelStartModule_Patched), text_addr + 0x00000278);
+	//_sw(a1, (u32) g_00008428 + 4);
 	ClearCaches();
 
 	return func(4, a1);
