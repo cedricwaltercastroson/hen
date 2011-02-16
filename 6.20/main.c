@@ -65,7 +65,7 @@ power_callback(void)
 
 	m = _sceKernelGetModel();
 	if (m == 3)
-		m == 2;
+		m = 2;
 	model = m;
 	m ^= 4;
 
