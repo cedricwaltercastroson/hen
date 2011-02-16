@@ -67,9 +67,8 @@ power_callback(void)
 	if (m == 3)
 		m = 2;
 	model = m;
-	m ^= 4;
 
-	MAKE_CALL(addr + ((m == 0) ? 0x2F28 : 0x2CD8), rebootex_callback);
+	MAKE_CALL(addr + ((m == 4) ? 0x2F28 : 0x2CD8), rebootex_callback);
 
 	/* In PSP 3000, 0x00002D24 of module loadexec is as below:
 	 
@@ -84,7 +83,7 @@ power_callback(void)
 	   This line replaces entry to reboot.bin with 0x88FC0000, where
 	   rebootex locates.
 	*/
-	_sw(0x3C0188FC, addr + ((m == 0) ? 0x2F74 : 0x2D24)); /* lui $at, 0x88FC */
+	_sw(0x3C0188FC, addr + ((m == 4) ? 0x2F74 : 0x2D24)); /* lui $at, 0x88FC */
 
 	/* restore the effect of scePowerRegisterCallback */
 	_sw(0xACC24230, 0x8800CCB0); /* sw v0, 0x4230(a2) */

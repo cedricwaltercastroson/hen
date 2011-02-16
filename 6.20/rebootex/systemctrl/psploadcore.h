@@ -105,30 +105,29 @@ typedef struct SceLibraryEntryTable {
 	/** Pointer to the entry table; an array of NIDs followed by
 	    pointers to functions and variables. */
 	void *				entrytable; // C
-	u32					unk1; // 10
 } SceLibraryEntryTable;
 
 /** Specifies a library and a set of imports from that library.  Use the len
     member to determine the real size of the table (size = len * 4). */
 typedef struct SceLibraryStubTable {
 	/* The name of the library we're importing from. */
-	const char *		libname;
+	const char *		libname; // 0
 	/** Minimum required version of the library we want to import. */
-	unsigned char		version[2];
+	unsigned char		version[2]; // 4
 	/* Import attributes. */
-	unsigned short		attribute;
+	unsigned short		attribute; // 6
 	/** Length of this stub table in 32-bit WORDs. */
-	unsigned char		len;
+	unsigned char		len; // 8
 	/** The number of variables imported from the library. */
-	unsigned char		vstubcount;
+	unsigned char		vstubcount; // 9
 	/** The number of functions imported from the library. */
-	unsigned short		stubcount;
+	unsigned short		stubcount; // A
 	/** Pointer to an array of NIDs. */
-	unsigned int *		nidtable;
+	unsigned int *		nidtable; // C
 	/** Pointer to the imported function stubs. */
-	void *				stubtable;
+	void *				stubtable; // 10
 	/** Pointer to the imported variable stubs. */
-	void *				vstubtable;
+	void *				vstubtable; // 14
 } SceLibraryStubTable;
 
 
