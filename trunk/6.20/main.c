@@ -64,9 +64,12 @@ power_callback(void)
 	addr = *(unsigned int *) addr;
 
 	m = _sceKernelGetModel();
+	if (m == 3)
+		m == 2;
 	model = m;
+	m ^= 4;
 
-	MAKE_CALL(addr + ((m == 4) ? 0x2F28 : 0x2CD8), rebootex_callback);
+	MAKE_CALL(addr + ((m == 0) ? 0x2F28 : 0x2CD8), rebootex_callback);
 
 	/* In PSP 3000, 0x00002D24 of module loadexec is as below:
 	 
