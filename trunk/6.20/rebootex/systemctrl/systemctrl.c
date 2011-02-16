@@ -217,16 +217,16 @@ sctrlKernelLoadExecVSHWithApitype(int apitype, const char *file, struct SceKerne
 	ASM_FUNC_TAG();
 	int k1, ret;
 	u32 text_addr;
-	int (*_sceKernelLoadExecVSHWithApitype)(int, const char *, void *);
+	int (*_LoadExecVSH)(int, const char *, void *, int);
 
 	k1 = pspSdkSetK1(0);
 	text_addr = find_text_addr_by_name("sceLoadExec");
 	if (g_model == 4)
-		_sceKernelLoadExecVSHWithApitype = (void *) (text_addr + 0x2558);
+		_LoadExecVSH = (void *) (text_addr + 0x2558);
 	else
-		_sceKernelLoadExecVSHWithApitype = (void *) (text_addr + 0x2304);
+		_LoadExecVSH = (void *) (text_addr + 0x2304);
 
-	ret = _sceKernelLoadExecVSHWithApitype(apitype, file, param);
+	ret = _LoadExecVSH(apitype, file, param, 0x00010000);
 	pspSdkSetK1(k1);
 
 	return ret;
