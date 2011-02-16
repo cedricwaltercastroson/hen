@@ -22,7 +22,7 @@ sysctrl_bin.inc: systemctrl.prx
 	cp sysctrl_bin.inc ..
 
 LIBDIR =
-LIBS = 
+LIBS =
 LDFLAGS = -nostdlib -nodefaultlibs -e module_bootstart
 
 PSPSDK=$(shell psp-config --pspsdk-path)

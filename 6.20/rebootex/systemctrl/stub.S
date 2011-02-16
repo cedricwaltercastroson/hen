@@ -2,7 +2,7 @@
 
 #include "pspstub.s"
 
-	STUB_START "ModuleMgrForKernel", 0x00010000, 0x00070005
+	STUB_START "ModuleMgrForKernel", 0x00090011, 0x00070005
 	STUB_FUNC 0x329C89DB, sceKernelLoadModuleVSH
 	STUB_FUNC 0xB691CB9F, sceKernelLoadModuleForLoadExec
 	STUB_FUNC 0xE3CCC6EA, sceKernelLoadModule
@@ -12,7 +12,7 @@
 	STUB_FUNC 0x5352C26C, sceKernelLoadModuleBuffer
 	STUB_END
 
-	STUB_START "SysMemForKernel", 0x00010000, 0x00090005
+	STUB_START "SysMemForKernel", 0x00010011, 0x00090005
 	STUB_FUNC 0xE5E18A99, sceKernelAllocPartitionMemory
 	STUB_FUNC 0xFEB5C72B, sceKernelGetBlockHeadAddr
 	STUB_FUNC 0x31DFE03F, sceKernelSetDdrMemoryProtection
@@ -24,7 +24,7 @@
 	STUB_FUNC 0xC2A8C491, sceKernelFreeHeapMemory
 	STUB_END
 
-	STUB_START "LoadCoreForKernel", 0x00010000, 0x00060005
+	STUB_START "LoadCoreForKernel", 0x00010011, 0x00060005
 	STUB_FUNC 0x77E8F516, sceKernelFindModuleByUID
 	STUB_FUNC 0xBEF0A05E, sceKernelFindModuleByName
 	STUB_FUNC 0x452C5524, sceKernelFindModuleByAddress
@@ -32,3 +32,8 @@
 	STUB_FUNC 0xB95FA50D, sceKernelProbeExecutableObject
 	STUB_FUNC 0x8C712A03, sceKernelLinkLibraryEntries
 	STUB_END
+
+	STUB_START "LoadExecForKernel", 0x00090011, 0x00010005
+	STUB_FUNC 0xAEFEF0F4, sceKernelExitVSHVSH
+	STUB_END
+
