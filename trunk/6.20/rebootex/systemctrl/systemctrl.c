@@ -262,7 +262,8 @@ sctrlKernelLoadExecVSHDisc(const char *file, struct SceKernelLoadExecVSHParam *p
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	ret = sceKernelLoadExecVSHDisc(file, param);
+	//ret = sceKernelLoadExecVSHDisc(file, param);
+	ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -277,7 +278,8 @@ sctrlKernelLoadExecVSHDiscUpdater(const char *file, struct SceKernelLoadExecVSHP
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	ret = sceKernelLoadExecVSHDiscUpdater(file, param);
+	//ret = sceKernelLoadExecVSHDiscUpdater(file, param);
+	ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -292,7 +294,8 @@ sctrlKernelLoadExecVSHMs1(const char *file, struct SceKernelLoadExecVSHParam *pa
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	ret = sceKernelLoadExecVSHMs1(file, param);
+	//ret = sceKernelLoadExecVSHMs1(file, param);
+	ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -307,7 +310,8 @@ sctrlKernelLoadExecVSHMs2(const char *file, struct SceKernelLoadExecVSHParam *pa
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	ret = sceKernelLoadExecVSHMs2(file, param);
+	//ret = sceKernelLoadExecVSHMs2(file, param);
+	ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -322,7 +326,8 @@ sctrlKernelLoadExecVSHMs3(const char *file, struct SceKernelLoadExecVSHParam *pa
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	ret = sceKernelLoadExecVSHMs3(file, param);
+	//ret = sceKernelLoadExecVSHMs3(file, param);
+	ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -337,7 +342,8 @@ sctrlKernelLoadExecVSHMs4(const char *file, struct SceKernelLoadExecVSHParam *pa
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	ret = sceKernelLoadExecVSHMs4(file, param);
+	//ret = sceKernelLoadExecVSHMs4(file, param);
+	ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -352,7 +358,8 @@ sctrlKernelExitVSH(struct SceKernelLoadExecVSHParam *param)
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	ret = sceKernelExitVSHVSH(param);
+	//ret = sceKernelExitVSHVSH(param);
+	ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -403,10 +410,7 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 						return entry_table[j + total];
 				}
 			}
-		}
-		/* this piece of code exist in TN but seems not used, AND cause problem in mine =/ */
-#if 0
-		else if (entry->vstubcount != 0) {
+		} else if (entry->vstubcount != 0) {
 			stubcnt = entry->stubcount;
 			vstubcnt = entry->vstubcount;
 			total = stubcnt + vstubcnt;
@@ -418,7 +422,7 @@ sctrlHENFindFunction(char *module_name, char *lib_name, u32 nid)
 					return entry_table[j + total];
 			}
 		}
-#endif
+
 		i += entry->len * 4;
 	}
 

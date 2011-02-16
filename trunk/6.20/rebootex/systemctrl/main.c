@@ -750,18 +750,6 @@ module_bootstart(void)
 	return 0;
 }
 
-typedef union {
-	struct {
-		unsigned pad: 8;
-		unsigned minor: 4;
-		unsigned pad2: 12;
-		unsigned major: 4;
-		unsigned pad3: 4;
-	} s;
-	unsigned ver;
-} fmver_t;
-
-
 /* 0x000012A0 */
 int
 sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
@@ -771,19 +759,14 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	u32 *pnid;
 	nidtable_t *nidtbl;
 	const char *lib_name;
-	struct SceLibraryEntryTable *entry;
+	struct SceLibraryStubTable *stub;
 	int i, stubcount, ret;
-	struct SceLibraryEntryTable *clib, *syscon, *power;
+	struct SceLibraryStubTable *clib, *syscon, *power;
 
 	/* module_sdk_version */
 	ver = sctrlHENFindFunction(buf, NULL, 0x11B97506);
 	if (ver) {
-		fmver_t fmv;
-
-		ver = _lw(ver);
-		fmv.ver = ver;
-
-		if (((fmv.s.major << 8) | ((ver >> 12) & 0xF0) | fmv.s.minor) == 0x620)
+		if (_lw(ver) == 0x06020010)
 			return sceKernelLinkLibraryEntries(buf, size);
 	}
 
@@ -791,28 +774,28 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	clib = syscon = power = NULL;
 
 	while (offs < size) {
-		entry = buf + offs;
-		lib_name = entry->libname;
+		stub = buf + offs;
+		lib_name = stub->libname;
 		nidtbl = FindLibNidTable(lib_name);
 
 		if (!strcmp(lib_name, "SysclibForKernel")) {
-			clib = entry;
+			clib = stub;
 		} else if (!strcmp(lib_name, "sceSyscon_driver")) {
-			syscon = entry;
+			syscon = stub;
 		} else if (!strcmp(lib_name, "scePower_driver")) {
-			power = entry;
+			power = stub;
 		}
 
 		if (nidtbl != NULL) {
-			stubcount = entry->stubcount;
+			stubcount = stub->stubcount;
 			for (i = 0; i < stubcount; i++) {
-				pnid = entry->entrytable + (i << 2);
+				pnid = &stub->nidtable[i];
 				if ((nid = TranslateNid(nidtbl, *pnid)))
 					*pnid = nid;
 			}
 		}
 		
-		offs += entry->len << 2;
+		offs += stub->len << 2;
 	}
 
 	ret = sceKernelLinkLibraryEntries(buf, size);
@@ -820,10 +803,10 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	if (clib) {
 		stubcount = clib->stubcount;
 		for (i = 0; i < stubcount; i++) {
-			nid = _lw((u32) (clib->entrytable + (i << 2)));
+			nid = clib->nidtable[i];
 
 			if (nid == 0x909C228B || nid == 0x18FE80DB) { /* setjmp and longjmp */
-				u32 addr = clib->unk1 + (i << 3);
+				u32 addr = (u32) clib->stubtable + (i * 8);
 
 				if (nid == 0x909C228B)
 					_sw(0x0A000BA0, addr);
@@ -839,10 +822,8 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	if (syscon) {
 		stubcount = syscon->stubcount;
 		for (i = 0; i < stubcount; i++) {
-			nid = _lw((u32) (syscon->entrytable + (i << 2)));
-
-			if (nid == 0xC8439C57) { /* sceSysconPowerStandby */
-				u32 addr = syscon->unk1 + (i << 3);
+			if (syscon->nidtable[i] == 0xC8439C57) { /* sceSysconPowerStandby */
+				u32 addr = (u32) syscon->stubtable + (i * 8);
 				u32 func = find_text_addr_by_name("sceSYSCON_Driver") + 0x2C64;
 
 				REDIRECT_FUNCTION(addr, func);
@@ -854,13 +835,11 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	if (power) {
 		stubcount = power->stubcount;
 		for (i = 0; i < stubcount; i++) {
-			nid = _lw((u32) (power->entrytable + (i << 2)));
-
-			if (nid == 0x737486F2) { /* scePowerSetClockFrequency */
+			if (power->nidtable[i] == 0x737486F2) { /* scePowerSetClockFrequency */
 				u32 func = FindScePowerFunction(0x737486F2);
 
 				if (func) {
-					u32 addr = power->unk1 + (i << 3);
+					u32 addr = (u32) power->stubtable + (i * 8);
 
 					REDIRECT_FUNCTION(addr, func);
 					ClearCaches();
@@ -1506,7 +1485,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 			goto out;
 
 		/* SELECT button is pressed! */
-		//sceKernelSetDdrMemoryProtection((void *) 0x08400000, 0x00400000, 0xF);
+		sceKernelSetDdrMemoryProtection((void *) 0x08400000, 0x00400000, 0xF);
 		modid = sceKernelLoadModuleBuffer(size_satelite_bin, satelite_bin, 0, &opt);
 		if (modid >= 0) {
 			g_satelite_mod_id = modid;
