@@ -49,11 +49,6 @@ extern SceUID PatchSceUpdateDL(const char *, int, SceKernelLMOption *);
 
 extern int LoadExecBootStart_Patched(int a0, int a1, int a2, int a3);
 
-static unsigned int size_satelite_bin;
-static unsigned char satelite_bin[];
-
-#include "satelite_bin.inc"
-
 /* 0x000083E8 */
 TNConfig g_tnconfig = { 0 };
 
@@ -1371,6 +1366,57 @@ PatchSceMediaSync(u32 text_addr)
 	ClearCaches();
 }
 
+void
+fastscroll(SceCtrlData *pad_data, int count)
+{
+	static int g_00008248;
+	static int g_0000824C;
+	int i;
+	unsigned int *pbuttons, buttons, a1, a2;
+
+	if (!sceKernelFindModuleByName("music_browser_module"))
+		return;
+
+	a2 = g_00008248;
+	a1 = g_0000824C;
+	pbuttons = &pad_data->Buttons;
+
+	for (i = 0; i < count; i++) {
+		buttons = *pbuttons;
+
+		if (buttons & PSP_CTRL_UP) {
+			if (a2 >= 8) {
+				buttons ^= PSP_CTRL_UP;
+				*pbuttons = buttons;
+				a2 = 7;
+			} else 
+				a2++;
+		} else
+			a2 = 0;
+
+		if (buttons & PSP_CTRL_DOWN) {
+			if (a1 >= 8) {
+				buttons ^= PSP_CTRL_DOWN;
+				*pbuttons = buttons;
+				a1 = 7;
+			} else
+				a1++;
+		} else
+			a1 = 0;
+
+		if (a2 != 0 || a1 != 0) {
+			*pbuttons = (buttons & 
+					(PSP_CTRL_DOWN & PSP_CTRL_UP))
+				^ buttons;
+		}
+
+		pbuttons += 4;
+	}
+
+	g_00008248 = a2;
+	g_0000824C = a1;
+}
+
 
 /* 0x00002948 */
 int
@@ -1379,13 +1425,6 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 	ASM_FUNC_TAG();
 	static SceUID g_satelite_mod_id = -1; /* 0x000083C0 */
 
-	SceKernelLMOption opt = {
-		.size = 0x14,
-		.mpidtext = 5,
-		.mpiddata = 5,
-		.flags = 0,
-		.access = 1,
-	};
 	int k1, ret;
 	unsigned int now;
 	SceUID modid;
@@ -1430,56 +1469,8 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 			}
 		}
 	} else {
-		/* fastscroll is not needed -_- */
-#if 0
-		if (g_tnconfig.fastscroll) {
-			static int g_00008248;
-			static int g_0000824C;
-			int i;
-			unsigned int *pbuttons, buttons, a1, a2;
-
-			if (sceKernelFindModuleByName("music_browser_module")) {
-				a2 = g_00008248;
-				a1 = g_0000824C;
-				pbuttons = &pad_data->Buttons;
-
-				for (i = 0; i < count; i++) {
-					buttons = *pbuttons;
-
-					if (buttons & PSP_CTRL_UP) {
-						if (a2 >= 8) {
-							buttons ^= PSP_CTRL_UP;
-							*pbuttons = buttons;
-							a2 = 7;
-						} else 
-							a2++;
-					} else
-						a2 = 0;
-
-					if (buttons & PSP_CTRL_DOWN) {
-						if (a1 >= 8) {
-							buttons ^= PSP_CTRL_DOWN;
-							*pbuttons = buttons;
-							a1 = 7;
-						} else
-							a1++;
-					} else
-						a1 = 0;
-
-					if (a2 != 0 || a1 != 0) {
-						*pbuttons = (buttons & 
-										(PSP_CTRL_DOWN & PSP_CTRL_UP))
-									^ buttons;
-					}
-
-					pbuttons += 4;
-				} /* for loop */
-
-				g_00008248 = a2;
-				g_0000824C = a1;
-			} /* music_browser_module */
-		} /* fastscroll */
-#endif
+		if (g_tnconfig.fastscroll)
+			fastscroll(pad_data, count);
 
 		if (sceKernelFindModuleByName("htmlviewer_plugin_module"))
 			goto out;
@@ -1492,7 +1483,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 
 		/* SELECT button is pressed! */
 		sceKernelSetDdrMemoryProtection((void *) 0x08400000, 0x00400000, 0xF);
-		modid = sceKernelLoadModuleBuffer(size_satelite_bin, satelite_bin, 0, &opt);
+		modid = sceKernelLoadModule("ms0:/satelite.prx", 0, NULL);
 		if (modid >= 0) {
 			g_satelite_mod_id = modid;
 			sceKernelStartModule(modid, 0, 0, 0, 0);
