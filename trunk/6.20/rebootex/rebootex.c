@@ -202,13 +202,15 @@ secDecryptPSP_Patched(void *buf, unsigned int a1, int *compressed_size)
 }
 
 int
-sceKernelCheckExecFile_Patched(unsigned char *s, unsigned int a1)
+sceKernelCheckExecFile_Patched(void *buf, int *check)
 {
 	int i;
+	PSP_Header *hdr = buf;
 
-	for (i = 0; i < 88; i++) {
-		if (s[i + 212] != 0)
-			return sceKernelCheckExecFile(s, a1);
+	/* s is PSP_Header. check for hdr->scheck[] */
+	for (i = 0; i < 0x58; i++) {
+		if (hdr->scheck[i] != 0)
+			return sceKernelCheckExecFile(buf, check);
 	}
 
 	return 0;
