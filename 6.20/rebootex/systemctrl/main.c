@@ -1377,8 +1377,13 @@ int
 sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 {
 	ASM_FUNC_TAG();
+	/* needed by fastscroll */
+#if 0
 	static int g_00008248;
 	static int g_0000824C;
+	int i;
+	unsigned int *pbuttons, buttons, a1, a2;
+#endif
 	static SceUID g_satelite_mod_id = -1; /* 0x000083C0 */
 
 	SceKernelLMOption opt = {
@@ -1388,8 +1393,8 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 		.flags = 0,
 		.access = 1,
 	};
-	int k1, ret, i;
-	unsigned int now, *pbuttons, buttons, a1, a2;
+	int k1, ret;
+	unsigned int now;
 	SceUID modid;
    
 	ret = g_sceCtrlReadBufferPositive(pad_data, count);
@@ -1432,6 +1437,8 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 			}
 		}
 	} else {
+		/* fastscroll is not needed -_- */
+#if 0
 		if (g_tnconfig.fastscroll) {
 			if (sceKernelFindModuleByName("music_browser_module")) {
 				a2 = g_00008248;
@@ -1474,6 +1481,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 				g_0000824C = a1;
 			} /* music_browser_module */
 		} /* fastscroll */
+#endif
 
 		if (sceKernelFindModuleByName("htmlviewer_plugin_module"))
 			goto out;

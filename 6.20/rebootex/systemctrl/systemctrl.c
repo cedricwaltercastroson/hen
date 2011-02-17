@@ -358,8 +358,7 @@ sctrlKernelExitVSH(struct SceKernelLoadExecVSHParam *param)
 	int ret;
 	int k1 = pspSdkSetK1(0);
 
-	//ret = sceKernelExitVSHVSH(param);
-	ret = 0;
+	ret = sceKernelExitVSHVSH(param);
 	pspSdkSetK1(k1);
 
 	return ret;
