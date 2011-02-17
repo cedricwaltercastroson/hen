@@ -263,7 +263,6 @@ sctrlKernelLoadExecVSHDisc(const char *file, struct SceKernelLoadExecVSHParam *p
 	int k1 = pspSdkSetK1(0);
 
 	ret = sceKernelLoadExecVSHDisc(file, param);
-	//ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -279,7 +278,6 @@ sctrlKernelLoadExecVSHDiscUpdater(const char *file, struct SceKernelLoadExecVSHP
 	int k1 = pspSdkSetK1(0);
 
 	ret = sceKernelLoadExecVSHDiscUpdater(file, param);
-	//ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -295,7 +293,6 @@ sctrlKernelLoadExecVSHMs1(const char *file, struct SceKernelLoadExecVSHParam *pa
 	int k1 = pspSdkSetK1(0);
 
 	ret = sceKernelLoadExecVSHMs1(file, param);
-	//ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -311,7 +308,6 @@ sctrlKernelLoadExecVSHMs2(const char *file, struct SceKernelLoadExecVSHParam *pa
 	int k1 = pspSdkSetK1(0);
 
 	ret = sceKernelLoadExecVSHMs2(file, param);
-	//ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -327,7 +323,6 @@ sctrlKernelLoadExecVSHMs3(const char *file, struct SceKernelLoadExecVSHParam *pa
 	int k1 = pspSdkSetK1(0);
 
 	ret = sceKernelLoadExecVSHMs3(file, param);
-	//ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
@@ -343,7 +338,6 @@ sctrlKernelLoadExecVSHMs4(const char *file, struct SceKernelLoadExecVSHParam *pa
 	int k1 = pspSdkSetK1(0);
 
 	ret = sceKernelLoadExecVSHMs4(file, param);
-	//ret = 0;
 	pspSdkSetK1(k1);
 
 	return ret;
