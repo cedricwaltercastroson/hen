@@ -2,17 +2,8 @@
 #define _KUBRIDGE_H
 
 #include "pspsdk.h"
-#include "pspkernel.h"
-#include "psputility.h"
-#include "psputilsforkernel.h"
-#include "pspinit.h"
-#include "pspctrl.h"
-#include "psploadexec_kernel.h"
 #include "pspmodulemgr_kernel.h"
-#include "pspthreadman_kernel.h"
-#include "pspsysmem_kernel.h"
 
-#include "systemctrl.h"
 
 /* 0x00003264 */
 /* KUBridge_4C25EA72 */
