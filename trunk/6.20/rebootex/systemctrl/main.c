@@ -761,7 +761,7 @@ sceKernelLinkLibraryEntries_Patched(void *buf, u32 size)
 	/* module_sdk_version */
 	ver = sctrlHENFindFunction(buf, NULL, 0x11B97506);
 	if (ver) {
-		if (_lw(ver) == 0x06020010)
+		if (_lw(ver) == 0x06020010) /* OFW 620 */
 			return sceKernelLinkLibraryEntries(buf, size);
 	}
 
@@ -1457,7 +1457,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 		}
 	}
 
-	if (sceKernelFindModuleByName("TNVshMenu")) {
+	if (g_satelite_mod_id != -1) {
 		if (VshMenuCtrl) {
 			VshMenuCtrl(pad_data, count);
 		} else {
@@ -1483,7 +1483,7 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 
 		/* SELECT button is pressed! */
 		sceKernelSetDdrMemoryProtection((void *) 0x08400000, 0x00400000, 0xF);
-		modid = sceKernelLoadModule("ms0:/satelite.prx", 0, NULL);
+		modid = sceKernelLoadModule(g_model != 4 ? "ms0:/satelite.prx" : "ef0:/satelite.prx", 0, NULL);
 		if (modid >= 0) {
 			g_satelite_mod_id = modid;
 			sceKernelStartModule(modid, 0, 0, 0, 0);
