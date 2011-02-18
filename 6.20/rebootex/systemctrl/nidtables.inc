@@ -3,7 +3,7 @@
 
 #define NID_TABLE(__n) {#__n, __n##_##table, sizeof(__n##_##table)/sizeof(nidentry_t)}
 
-nidentry_t SysMemForKernel_table[] = {
+static nidentry_t SysMemForKernel_table[] = {
 	{ 0x1C1FBFE7, 0xC6A782DA }, 
 	{ 0x002BA296, 0x6FDEF86F }, 
 	{ 0x03808C51, 0x3988900F }, 
@@ -102,7 +102,7 @@ nidentry_t SysMemForKernel_table[] = {
 	{ 0xEF2EE8C1, 0x2F15F149 }, 
 };
 
-nidentry_t KDebugForKernel_table[] = {
+static nidentry_t KDebugForKernel_table[] = {
 	{ 0xA2983280, 0x56B63535 }, 
 	{ 0x2FF4E9F9, 0xEC5AE038 }, 
 	{ 0x5282DD5E, 0x44599648 }, 
@@ -131,7 +131,7 @@ nidentry_t KDebugForKernel_table[] = {
 	{ 0x24C32559, 0x93F5D2A6 }, 
 };
 
-nidentry_t LoadCoreForKernel_table[] = {
+static nidentry_t LoadCoreForKernel_table[] = {
 	{ 0x99A695F0, 0xCD1D28E3 }, 
 	{ 0x9BAF90F6, 0x3E5F5629 }, 
 	{ 0x0E760DBA, 0x8C712A03 }, 
@@ -173,7 +173,7 @@ nidentry_t LoadCoreForKernel_table[] = {
 	{ 0x54AB2675, 0x7B30197C }, 
 };
 
-nidentry_t ExceptionManagerForKernel_table[] = {
+static nidentry_t ExceptionManagerForKernel_table[] = {
 	{ 0x5A837AD4, 0x71286CF4 }, 
 	{ 0x565C0B0E, 0x557FBABB }, 
 	{ 0x1AA6CFFA, 0xC0BC60E9 }, 
@@ -183,7 +183,7 @@ nidentry_t ExceptionManagerForKernel_table[] = {
 	{ 0xFC26C354, 0x7DDFBCC7 }, 
 };
 
-nidentry_t InterruptManagerForKernel_table[] = {
+static nidentry_t InterruptManagerForKernel_table[] = {
 	{ 0x85F7766D, 0xD24AE49D }, 
 	{ 0x15894D0B, 0xD2274728 }, 
 	{ 0xB5A15B30, 0x54ACF6F8 }, 
@@ -222,7 +222,7 @@ nidentry_t InterruptManagerForKernel_table[] = {
 	{ 0x72CE22E8, 0x157ADE6A }, 
 };
 
-nidentry_t IoFileMgrForKernel_table[] = {
+static nidentry_t IoFileMgrForKernel_table[] = {
 	{ 0xA905B705, 0xEB5BE7EC }, 
 	{ 0x3C54E908, 0xF0AD3C72 }, 
 	{ 0xCB0A151F, 0x9D5CDC31 }, 
@@ -235,7 +235,7 @@ nidentry_t IoFileMgrForKernel_table[] = {
 	{ 0xBD17474F, 0x6CE0E5F0 }, 
 };
 
-nidentry_t ModuleMgrForKernel_table[] = {
+static nidentry_t ModuleMgrForKernel_table[] = {
 	{ 0x6DE9FF11, 0xB691CB9F }, 
 	{ 0xA1A78C58, 0x7F9670CF }, 
 	{ 0x896C15B6, 0xD2FB2722 }, 
@@ -286,7 +286,7 @@ nidentry_t ModuleMgrForKernel_table[] = {
 	{ 0x61EC6AB0, 0xDBE7524B }, 
 };
 
-nidentry_t LoadExecForKernel_table[] = {
+static nidentry_t LoadExecForKernel_table[] = {
 	{ 0xA3D5E142, 0xAEFEF0F4 }, 
 	{ 0x4AC57943, 0xB5CE3204 }, 
 	{ 0x62A27008, 0x63BB2F2C }, 
@@ -309,7 +309,7 @@ nidentry_t LoadExecForKernel_table[] = {
 	{ 0xD9739B89, 0x71EF3793 }, 
 };
 
-nidentry_t sceDdr_driver_table[] = {
+static nidentry_t sceDdr_driver_table[] = {
 	{ 0x286E1372, 0x37B1BD46 }, 
 	{ 0x6078F911, 0xEF5E4465 }, 
 	{ 0xB5694ECD, 0xFAC28535 }, 
@@ -325,10 +325,10 @@ nidentry_t sceDdr_driver_table[] = {
 	{ 0x4CE55E76, 0x25AB44F3 }, 
 };
 
-nidentry_t sceDmacplus_driver_table[] = {
+static nidentry_t sceDmacplus_driver_table[] = {
 };
 
-nidentry_t sceGpio_driver_table[] = {
+static nidentry_t sceGpio_driver_table[] = {
 	{ 0xCA8BE2EA, 0xD5469E56 }, 
 	{ 0x37C8DADC, 0x317D9D2C }, 
 	{ 0xF856CE46, 0xDB4F5CE2 }, 
@@ -342,7 +342,7 @@ nidentry_t sceGpio_driver_table[] = {
 	{ 0x2CDC8EDC, 0xEF344659 }, 
 };
 
-nidentry_t sceSysreg_driver_table[] = {
+static nidentry_t sceSysreg_driver_table[] = {
 	{ 0xC29D614E, 0x9EF98522 }, 
 	{ 0xDC6139A4, 0x3B286D7A }, 
 	{ 0xDE59DACB, 0x97EA6913 }, 
@@ -399,7 +399,7 @@ nidentry_t sceSysreg_driver_table[] = {
 	{ 0x07881A0B, 0xF6922705 }, 
 };
 
-nidentry_t sceSyscon_driver_table[] = {
+static nidentry_t sceSyscon_driver_table[] = {
 	{ 0x64FA0B22, 0xA0BA861F }, 
 	{ 0x58531E69, 0x70B4B7D9 }, 
 	{ 0xAD555CE5, 0x17B5F203 }, 
@@ -509,7 +509,7 @@ nidentry_t sceSyscon_driver_table[] = {
 	{ 0xBF458F40, 0x0FAAAA72 }, 
 };
 
-nidentry_t sceDisplay_driver_table[] = {
+static nidentry_t sceDisplay_driver_table[] = {
 	{ 0x63E22A26, 0xDC68E0EF }, 
 	{ 0x5B5AEFAD, 0x452B3820 }, 
 	{ 0x9E3C6DC6, 0xFF5A5D52 }, 
@@ -551,7 +551,7 @@ nidentry_t sceDisplay_driver_table[] = {
 	{ 0xE8466BC2, 0x82DE8125 }, 
 };
 
-nidentry_t sceDve_driver_table[] = {
+static nidentry_t sceDve_driver_table[] = {
 	{ 0x0836B2B5, 0x9E03BCF9 }, 
 	{ 0x17BC42E4, 0x5BC934E9 }, 
 	{ 0xADE8C471, 0xE5EE11B3 }, 
@@ -575,7 +575,7 @@ nidentry_t sceDve_driver_table[] = {
 	{ 0x22D50DA7, 0xBD65CFAE }, 
 };
 
-nidentry_t sceGe_driver_table[] = {
+static nidentry_t sceGe_driver_table[] = {
 	{ 0xE0D68148, 0x862248FD }, 
 	{ 0x71FCD1D6, 0x8AC047D1 }, 
 	{ 0x9F2C2948, 0x6175E7FC }, 
@@ -612,7 +612,7 @@ nidentry_t sceGe_driver_table[] = {
 	{ 0xC576E897, 0xC774B373 }, 
 };
 
-nidentry_t sceCtrl_driver_table[] = {
+static nidentry_t sceCtrl_driver_table[] = {
 	{ 0x1F4011E6, 0x262DD0DC }, 
 	{ 0xDA6B76A1, 0xC44ED01B }, 
 	{ 0x6A2774F3, 0xE4758982 }, 
@@ -649,7 +649,7 @@ nidentry_t sceCtrl_driver_table[] = {
 	{ 0xFF847C31, 0x5E758582 }, 
 };
 
-nidentry_t sceUmd_table[] = {
+static nidentry_t sceUmd_table[] = {
 	{ 0x659587F7, 0x004F4BE5 }, 
 	{ 0xAE53DC2D, 0xB826BD59 }, 
 	{ 0x230666E3, 0xF60013F8 }, 
@@ -685,7 +685,7 @@ nidentry_t sceUmd_table[] = {
 	{ 0xF2D0EDFB, 0xE70E8FFB }, 
 };
 
-nidentry_t sceHprm_driver_table[] = {
+static nidentry_t sceHprm_driver_table[] = {
 	{ 0xC7154136, 0xE611E89B }, 
 	{ 0xFD7DE6CD, 0xBF4C183C }, 
 	{ 0x8EC787E0, 0x0CB055CC }, 
@@ -712,7 +712,7 @@ nidentry_t sceHprm_driver_table[] = {
 	{ 0x133DE8FA, 0x74B54AEA }, 
 };
 
-nidentry_t scePower_driver_table[] = {
+static nidentry_t scePower_driver_table[] = {
 	{ 0x04B7766E, 0x1A41E0ED }, 
 	{ 0xDFA8BAF8, 0xCE5D389B }, 
 	{ 0xA9D22232, 0xDB086E2B }, 
@@ -799,7 +799,7 @@ nidentry_t scePower_driver_table[] = {
 	{ 0xFEE03A2F, 0xFDB5BFE9 }, 
 };
 
-nidentry_t sceImpose_driver_table[] = {
+static nidentry_t sceImpose_driver_table[] = {
 	{ 0x9C8C6C81, 0x01EF0650 }, 
 	{ 0x36AA6E91, 0xEC3F0727 }, 
 	{ 0x24FD7BCF, 0x7C972622 }, 
@@ -826,7 +826,7 @@ nidentry_t sceImpose_driver_table[] = {
 	{ 0x86924032, 0x80B0A780 }, 
 };
 
-nidentry_t sceRtc_driver_table[] = {
+static nidentry_t sceRtc_driver_table[] = {
 	{ 0x9763C138, 0x8FD3886D }, 
 	{ 0x7D1FBED3, 0x68AED59A }, 
 	{ 0xC2DDBEB5, 0x19C3C426 }, 
@@ -870,7 +870,7 @@ nidentry_t sceRtc_driver_table[] = {
 	{ 0xE6605BCA, 0xC59704E1 }, 
 };
 
-nidentry_t sceReg_driver_table[] = {
+static nidentry_t sceReg_driver_table[] = {
 	{ 0x98279CF1, 0x10808BB5 }, 
 	{ 0x9B25EDF1, 0x5B06A7B9 }, 
 	{ 0x92E41280, 0x873EB4E1 }, 
@@ -894,21 +894,21 @@ nidentry_t sceReg_driver_table[] = {
 	{ 0x0CAE832B, 0x21928F15 }, 
 };
 
-nidentry_t memlmd_table[] = {
+static nidentry_t memlmd_table[] = {
 	{ 0x323366CA, 0x2E208358 }, 
 	{ 0x1570BAB4, 0x8450109F }, 
 	{ 0x7CF1CD3E, 0xCA560AA6 }, 
 };
 
-nidentry_t sceMesgLed_driver_table[] = {
+static nidentry_t sceMesgLed_driver_table[] = {
 	{ 0xDFF0F308, 0x5D799BBF }, 
 };
 
-nidentry_t sceClockgen_driver_table[] = {
+static nidentry_t sceClockgen_driver_table[] = {
 	{ 0x4EB657D5, 0xACC30ECE }, 
 };
 
-nidentry_t sceCodec_driver_table[] = {
+static nidentry_t sceCodec_driver_table[] = {
 	{ 0x20C61103, 0xBCE58DC4 }, 
 };
 

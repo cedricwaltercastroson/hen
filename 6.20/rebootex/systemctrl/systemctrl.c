@@ -97,7 +97,7 @@ int
 sctrlSEGetConfig(void *buf)
 {
 	ASM_FUNC_TAG();
-	return sctrlSEGetConfigEx(buf, 0x40);
+	return sctrlSEGetConfigEx(buf, sizeof(TNConfig));
 }
 
 /* 0x000031A4 */
@@ -132,7 +132,7 @@ int
 sctrlSESetConfig(TNConfig *config)
 {
 	ASM_FUNC_TAG();
-	return sctrlSESetConfigEx(config, 0x40);
+	return sctrlSESetConfigEx(config, sizeof(TNConfig));
 }
 
 

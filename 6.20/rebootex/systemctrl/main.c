@@ -19,35 +19,35 @@
 PSP_MODULE_INFO("SystemControl", 0x3007, 2, 5);
 PSP_MAIN_THREAD_ATTR(0);
 
-extern int sceKernelProbeExecutableObject_Patched(void *buf, int *check);
-extern int sceKernelCheckExecFile_Patched(void *buf, int *check);
-extern int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
-extern int PartitionCheck_Patched(void *buf, u32 *check);
-extern SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
-extern int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
-extern int VerifySignCheck_Patched(void *hdr, int, int);
-extern int sceIoMkDir_Patched(char *dir, SceMode mode);
-extern int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
-extern int DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling);
-extern int PatchSceKernelStartModule(int, int);
-extern int DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3);
-extern int sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modstatus, SceKernelSMOption *opt);
+static int sceKernelProbeExecutableObject_Patched(void *buf, int *check);
+static int sceKernelCheckExecFile_Patched(void *buf, int *check);
+static int sceKernelLinkLibraryEntries_Patched(void *buf, u32 size);
+static int PartitionCheck_Patched(void *buf, u32 *check);
+static SceUID sceKernelCreateThread_Patched(const char *name, SceKernelThreadEntry entry, int priority, int stacksize, SceUInt attr, SceKernelThreadOptParam *opt);
+static int sceKernelStartThread_Patched(SceUID tid, SceSize len, void *p);
+static int VerifySignCheck_Patched(void *hdr, int, int);
+static int sceIoMkDir_Patched(char *dir, SceMode mode);
+static int sceIoAssign_Patched(const char *, const char *, const char *, int, void *, long);
+static int DecryptExecutable_Patched(char *buf, int size, int *compressed_size, int polling);
+static int PatchSceKernelStartModule(int, int);
+static int DecryptPrx_Patched(int a0, int a1, int a2, char *buf, int size, int *compressed_size, int polling, int t3);
+static int sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modstatus, SceKernelSMOption *opt);
 
-extern void PatchUpdatePlugin(u32);
-extern void PatchGamePlugin(u32);
-extern void PatchMsvideoMainPlugin(u32);
-extern void PatchSceWlanDriver(u32);
-extern void PatchScePowerService(u32);
-extern void PatchVsh(u32);
-extern void PatchSceMediaSync(u32);
-extern void PatchSceUmdCacheDriver(u32);
-extern void PatchSceImposeDriver(void);
-extern void PatchSysconfPlugin(u32);
+static void PatchUpdatePlugin(u32);
+static void PatchGamePlugin(u32);
+static void PatchMsvideoMainPlugin(u32);
+static void PatchSceWlanDriver(u32);
+static void PatchScePowerService(u32);
+static void PatchVsh(u32);
+static void PatchSceMediaSync(u32);
+static void PatchSceUmdCacheDriver(u32);
+static void PatchSceImposeDriver(void);
+static void PatchSysconfPlugin(u32);
 
-extern int sceCtrlReadBufferPositive_Patched(SceCtrlData *, int);
-extern SceUID PatchSceUpdateDL(const char *, int, SceKernelLMOption *);
+static int sceCtrlReadBufferPositive_Patched(SceCtrlData *, int);
+static SceUID PatchSceUpdateDL(const char *, int, SceKernelLMOption *);
 
-extern int LoadExecBootStart_Patched(int a0, int a1, int a2, int a3);
+static int LoadExecBootStart_Patched(int a0, int a1, int a2, int a3);
 
 /* 0x000083E8 */
 TNConfig g_tnconfig = { 0 };
