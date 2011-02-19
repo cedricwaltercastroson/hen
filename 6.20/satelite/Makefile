@@ -1,5 +1,5 @@
 TARGET = satelite
-OBJS = main.o
+OBJS = main.o stub.o
 
 INCDIR = ../rebootex/systemctrl
 
@@ -8,7 +8,7 @@ CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 ASFLAGS = $(CFLAGS)
 
 LDFLAGS =
-LIBS = -lpsppower -lpsputility
+LIBS =
 
 PSP_FW_VERSION = 371
 
