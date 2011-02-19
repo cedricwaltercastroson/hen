@@ -110,6 +110,8 @@ main_thread(SceSize args, void *argp)
 
 	do {
 		sceDisplayWaitVblankStart();
+		if (g_running_status != 0)
+			break;
 
 		if (g_00001DF0 == 1) {
 			sub_000002F8(&config);
@@ -152,7 +154,7 @@ main_thread(SceSize args, void *argp)
 			}
 		}
 
-	} while (g_running_status == 0);
+	} while (1);
 
 	if (g_00001DBC != 0)
 		sctrlSESetConfig(&config);
