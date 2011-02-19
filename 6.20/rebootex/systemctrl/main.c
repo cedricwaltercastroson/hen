@@ -331,6 +331,7 @@ FindLibNidTable(const char *name)
 		NID_TABLE(sceMesgLed_driver),
 		NID_TABLE(sceClockgen_driver),
 		NID_TABLE(sceCodec_driver),
+		NID_TABLE(SysTimerForKernel),
 	};
 
 	int i;
