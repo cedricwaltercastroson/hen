@@ -912,4 +912,16 @@ static nidentry_t sceCodec_driver_table[] = {
 	{ 0x20C61103, 0xBCE58DC4 }, 
 };
 
+static nidentry_t SysTimerForKernel_table[] = {
+	{ 0x228EDAE4, 0xC01A8A7E },
+	{ 0x4A01F9D3, 0x9D20D194 },
+	{ 0x53231A15, 0xD945310D },
+	{ 0x54BB5DB4, 0x30D5FF7A },
+	{ 0x975D8E84, 0xCA553E9C },
+	{ 0xA95143E2, 0xE7BD0E48 },
+	{ 0xB53534B4, 0xCCC7A9E4 },
+	{ 0xC105CF38, 0x4ECB4A4C },
+	{ 0xC99073E3, 0x8758ACCD },
+};
+
 #endif
