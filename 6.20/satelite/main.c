@@ -2,13 +2,21 @@
 
 #include "pspsdk.h"
 #include "pspkernel.h"
+#include "pspctrl.h"
+#include "pspdisplay.h"
+#include "psppower.h"
 
 #include "systemctrl.h"
 #include "kubridge.h"
 
-#define ALLKEYS 0x0083F3F9
+#define ALL_KEYS 0x0083F3F9
+#define NON_HOLD_KEYS  (ALL_KEYS & (~PSP_CTRL_HOLD))
 
 PSP_MODULE_INFO("TNVshMenu", 0, 1, 0);
+
+extern int scePowerRequestColdReset(int);
+extern void scePaf_memcpy(void *, void *, int);
+extern int scePaf_sprintf(char *, const char *, ...);
 
 static void __strcpy(char *, char *); /* 0x00000E9C */
 static int main_thread(SceSize, void *); /* 0x000008A4 */
@@ -16,6 +24,9 @@ static int vsh_menu_ctrl(SceCtrlData *, int); /* 0x000000D4 */
 static void parseconfig(TNConfig *); /* 0x000002F8 */
 static int cpuspeed_index(int); /* 0x00000B48 */
 static int busspeed_index(int); /* 0x00000B7C */
+static int button_action(int, int); /* 0x00000504 */
+static int normalize(int, int, int); /* 0x00000B28 */
+static void draw_menu(void); /* 0x00000170 */
 
 int g_cur_buttons = 0; /* 0x00001DD4 */
 int g_buttons_on = 0; /* 0x00001DD8 */
@@ -27,6 +38,12 @@ SceCtrlData g_pad_data = {0}; /* 0x00001DF8 */
 TNConfig *g_config = NULL; /* 0x00001DF4 */
 
 char *g_menu[16] = {0}; /* 0x00001E14 */
+
+static int g_cpu_speeds[] = { 0, 20, 75, 100, 133, 222, 266, 300, 333 }; /* 0x000013E8 */
+static int g_bus_speeds[] = { 0, 10, 37, 50, 66, 111, 133, 150, 166 }; /* 0x0000140C */
+
+int g_cur_index = 0; /* 0x00001DC0 */
+int g_00001DBC;
 
 
 char *g_menu_items[] = {
@@ -106,7 +123,10 @@ static int
 main_thread(SceSize args, void *argp)
 {
 	static TNConfig config = {0}; /* 0x00001E94 */
+	static int g_00001E0C, g_00001DF0;
+
 	int r;
+
 
 	sceKernelChangeThreadPriority(0, 0x8);
 	sctrlSEGetConfig(&config);
@@ -121,21 +141,21 @@ main_thread(SceSize args, void *argp)
 			parseconfig(&config);
 			g_00001DF0++;
 		} else if (g_00001DF0 == 2) {
-			sub_00000170();
+			draw_menu();
 			parseconfig(&config);
 		}
 
 		if (g_00001E0C == 0) {
 			if (g_cur_buttons == 0)
 				continue;
-			if (g_cur_buttons & PSP_CTRL_SELECT == 0)
+			if (!(g_cur_buttons & PSP_CTRL_SELECT))
 				g_00001E0C = 1;
 		} else if (g_00001E0C == 1) {
 			if (g_00001DF0 == 0) {
 				g_00001DF0 = 1;
 				continue;
 			}
-			r = sub_00000504(g_cur_buttons, g_buttons_on);
+			r = button_action(g_cur_buttons, g_buttons_on);
 			if (r == 0) {
 				g_00001E0C = 2;
 			} else if (r == -1) {
@@ -148,12 +168,12 @@ main_thread(SceSize args, void *argp)
 				g_00001E0C = 6;
 			}
 		} else if (g_00001E0C == 2) {
-			if (!(g_cur_buttons & ALLKEYS)) {
+			if (!(g_cur_buttons & ALL_KEYS)) {
 				g_running_status = 1;
 			}
 		} else {
 			if (g_00001E0C - 3 < 4) {
-				if (!(g_cur_buttons & ALLKEYS))
+				if (!(g_cur_buttons & ALL_KEYS))
 					g_running_status = g_00001E0C - 1;
 			}
 		}
@@ -201,7 +221,7 @@ vsh_menu_ctrl(SceCtrlData *pad_data, int count)
 	g_cur_buttons = g_pad_data.Buttons;
 
 	for (i = 0; i < count; i++)
-		pad_data[i].Buttons &= ~ALLKEYS;
+		pad_data[i].Buttons &= ~ALL_KEYS;
 
 	return 0;
 }
@@ -227,15 +247,15 @@ parseconfig(TNConfig *config)
 	}
 	g_menu[0] = vshspeed;
 
-	if (cpuspeed_index(config->isocpuspeed) == 0 ||
-			busspeed_index(config->isobusspeed) == 0) {
+	if (cpuspeed_index(config->umdisocpuspeed) == 0 ||
+			busspeed_index(config->umdisobusspeed) == 0) {
 		scePaf_sprintf(isospeed, "Default");
 	} else {
-		scePaf_sprintf(isospeed, "%d/%d", config->isocpuspeed, config->vshisospeed);
+		scePaf_sprintf(isospeed, "%d/%d", config->umdisocpuspeed, config->umdisobusspeed);
 	}
 	g_menu[1] = isospeed;
 
-	g_menu[2] = g_region[config->fakeregion];
+	g_menu[2] = g_regions[config->fakeregion];
 	g_menu[3] = g_choices[!config->skipgameboot];
 	g_menu[4] = g_choices[config->showmac];
 	g_menu[5] = g_choices[config->notnupdate];
@@ -247,13 +267,13 @@ parseconfig(TNConfig *config)
 }
 
 /* 0x00000B48 */
-static int cpuspeed_index(int speed)
+static int
+cpuspeed_index(int speed)
 {
-	int cpu = { 0, 20, 75, 100, 133, 222, 266, 300, 333 };
 	int i;
 
 	for (i = 0; i < 9; i++) {
-		if (speed == cpu[i])
+		if (speed == g_cpu_speeds[i])
 			return i;
 	}
 
@@ -261,15 +281,160 @@ static int cpuspeed_index(int speed)
 }
 
 /* 0x00000B7C */
-static int busspeed_index(int speed)
+static int
+busspeed_index(int speed)
 {
-	int bus = { 0, 10, 37, 50, 66, 111, 133, 150, 166 };
 	int i;
 
 	for (i = 0; i < 9; i++) {
-		if (speed == bus[i])
+		if (speed == g_bus_speeds[i])
 			return i;
 	}
 
 	return 0;
+}
+
+/* 0x00000504 */
+static int
+button_action(int cur_buttons, int buttons_on)
+{
+	int dir; /* up or down */
+	int idx; /* current index */
+	int r; /* offset */
+
+	buttons_on &= NON_HOLD_KEYS;
+	dir = (!!(buttons_on & PSP_CTRL_DOWN)) - (!!(buttons_on & PSP_CTRL_UP));
+
+	do {
+		idx = normalize(g_cur_index + dir, 0, 15);
+		g_cur_index = idx;
+	} while (g_menu_items[idx] == NULL);
+
+	r = -2;
+	if (buttons_on & PSP_CTRL_LEFT)
+		r = -1;
+	if (buttons_on & PSP_CTRL_CROSS)
+		r = 0;
+	if (buttons_on & PSP_CTRL_RIGHT)
+		r = 1;
+	if (!(buttons_on & (PSP_CTRL_HOME & PSP_CTRL_SELECT))) {
+		if (r == -2)
+			return 1;
+	} else {
+		g_cur_index = 15;
+		r = 0;
+	}
+
+	if (g_00001DBC == 0) {
+		if (r != 0)
+			g_cur_index = 1;
+	}
+
+	if (g_cur_index >= 16)
+		return 1;
+	
+#define update_cpuspeed(__spd, __off) do {\
+	*__spd = g_cpu_speeds[normalize(cpuspeed_index(*(__spd)) + (__off), 0, 8)];\
+} while (0)
+
+#define update_busspeed(__spd, __off) do {\
+	*__spd = g_bus_speeds[normalize(busspeed_index(*(__spd)) + (__off), 0, 8)];\
+} while (0)
+
+	switch (g_cur_index) {
+	case 0:
+		if (r != 0) {
+			update_cpuspeed(&g_config->vshcpuspeed, r);
+			update_busspeed(&g_config->vshbusspeed, r);
+		}
+		return 1;
+
+	case 1:
+		if (r != 0) {
+			update_cpuspeed(&g_config->umdisocpuspeed, r);
+			update_busspeed(&g_config->umdisobusspeed, r);
+		}
+		return 1;
+
+	case 2:
+		if (r != 0)
+			g_config->fakeregion = normalize(g_config->fakeregion + r, 0, 13);
+		return 1;
+
+	case 3:
+		if (r != 0)
+			g_config->skipgameboot = normalize(g_config->skipgameboot + r, 0, 1);
+		return 1;
+
+	case 4:
+		if (r != 0)
+			g_config->showmac = normalize(g_config->showmac + r, 0, 1);
+		return 1;
+
+	case 5:
+		if (r != 0)
+			g_config->notnupdate = normalize(g_config->notnupdate + r, 0, 1);
+		return 1;
+
+	case 6:
+		if (r != 0)
+			g_config->hidepic = normalize(g_config->hidepic + r, 0, 1);
+		return 1;
+
+	case 7:
+		if (r != 0)
+			g_config->nospoofversion = normalize(g_config->nospoofversion + r, 0, 1);
+		return 1;
+
+	case 8:
+		if (r != 0)
+			g_config->slimcolor = normalize(g_config->slimcolor + r, 0, 1);
+		return 1;
+
+	case 9:
+		if (r != 0)
+			g_config->fastscroll = normalize(g_config->fastscroll + r, 0, 1);
+		return 1;
+
+	case 10:
+		if (r != 0)
+			g_config->protectflash = normalize(g_config->protectflash + r, 0, 1);
+		return 1;
+
+	case 11:
+		return -1;
+
+	case 12:
+		return -2;
+
+	case 13:
+		return -3;
+
+	case 14:
+		return -4;
+
+	case 15:
+		return (r > 0);
+
+	default:
+		return 1;
+	}
+}
+
+/* 0x00000B28 */
+static int
+normalize(int val, int min, int max)
+{
+	if (val < min) 
+		return max;
+	else if (val > max)
+		return min;
+
+	return val;
+}
+
+/* 0x00000170 */
+static void draw_menu(void)
+{
+	/* XXX */
 }
