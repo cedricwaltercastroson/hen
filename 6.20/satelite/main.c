@@ -3,7 +3,7 @@
 #include "pspsdk.h"
 #include "pspkernel.h"
 
-#include "systemctrl_se.h"
+#include "systemctrl.h"
 #include "kubridge.h"
 
 #define ALLKEYS 0x0083F3F9
@@ -14,6 +14,8 @@ static void __strcpy(char *, char *); /* 0x00000E9C */
 static int main_thread(SceSize, void *); /* 0x000008A4 */
 static int vsh_menu_ctrl(SceCtrlData *, int); /* 0x000000D4 */
 static void parseconfig(TNConfig *); /* 0x000002F8 */
+static int cpuspeed_index(int); /* 0x00000B48 */
+static int busspeed_index(int); /* 0x00000B7C */
 
 int g_cur_buttons = 0; /* 0x00001DD4 */
 int g_buttons_on = 0; /* 0x00001DD8 */
@@ -23,6 +25,8 @@ int g_thread_id = 0; /* 0x00001E10 */
 SceCtrlData g_pad_data = {0}; /* 0x00001DF8 */
 
 TNConfig *g_config = NULL; /* 0x00001DF4 */
+
+char *g_menu[16] = {0}; /* 0x00001E14 */
 
 
 char *g_menu_items[] = {
@@ -59,7 +63,7 @@ char *g_regions[] = {
 	"China",
 	"Debug Type I",
 	"Debug Type II",
-};
+}; /* 0x00001570 */
 
 char *g_choices[] = {
 	"Enable",
@@ -114,11 +118,11 @@ main_thread(SceSize args, void *argp)
 			break;
 
 		if (g_00001DF0 == 1) {
-			sub_000002F8(&config);
+			parseconfig(&config);
 			g_00001DF0++;
 		} else if (g_00001DF0 == 2) {
 			sub_00000170();
-			sub_000002F8(&config);
+			parseconfig(&config);
 		}
 
 		if (g_00001E0C == 0) {
@@ -206,6 +210,66 @@ vsh_menu_ctrl(SceCtrlData *pad_data, int count)
 static void
 parseconfig(TNConfig *config)
 {
+	static char vshspeed[8] = {0}; /* 0x00001DCC */
+	static char isospeed[8] = {0}; /* 0x00001DC4 */
+
+	int i;
+
 	g_config = config;
-	/* XXX */
+	for (i = 0; i < 16; i++)
+		g_menu[i] = NULL;
+
+	if (cpuspeed_index(config->vshcpuspeed) == 0 ||
+			busspeed_index(config->vshbusspeed) == 0) {
+		scePaf_sprintf(vshspeed, "Default");
+	} else {
+		scePaf_sprintf(vshspeed, "%d/%d", config->vshcpuspeed, config->vshbusspeed);
+	}
+	g_menu[0] = vshspeed;
+
+	if (cpuspeed_index(config->isocpuspeed) == 0 ||
+			busspeed_index(config->isobusspeed) == 0) {
+		scePaf_sprintf(isospeed, "Default");
+	} else {
+		scePaf_sprintf(isospeed, "%d/%d", config->isocpuspeed, config->vshisospeed);
+	}
+	g_menu[1] = isospeed;
+
+	g_menu[2] = g_region[config->fakeregion];
+	g_menu[3] = g_choices[!config->skipgameboot];
+	g_menu[4] = g_choices[config->showmac];
+	g_menu[5] = g_choices[config->notnupdate];
+	g_menu[6] = g_choices[!config->hidepic];
+	g_menu[7] = g_choices[config->nospoofversion];
+	g_menu[8] = g_choices[!config->slimcolor];
+	g_menu[9] = g_choices[!config->skipgameboot];
+	g_menu[10] = g_choices[!config->protectflash];
+}
+
+/* 0x00000B48 */
+static int cpuspeed_index(int speed)
+{
+	int cpu = { 0, 20, 75, 100, 133, 222, 266, 300, 333 };
+	int i;
+
+	for (i = 0; i < 9; i++) {
+		if (speed == cpu[i])
+			return i;
+	}
+
+	return 0;
+}
+
+/* 0x00000B7C */
+static int busspeed_index(int speed)
+{
+	int bus = { 0, 10, 37, 50, 66, 111, 133, 150, 166 };
+	int i;
+
+	for (i = 0; i < 9; i++) {
+		if (speed == bus[i])
+			return i;
+	}
+
+	return 0;
 }
