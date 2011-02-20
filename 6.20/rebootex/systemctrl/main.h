@@ -3,7 +3,7 @@
 
 #include "psptypes.h"
 
-#include "systemctrl.h"
+#include "systemctrl_priv.h"
 
 #define MAKE_CALL(__f) \
 	(((((unsigned int)__f) >> 2) & 0x03FFFFFF) | 0x0C000000)
