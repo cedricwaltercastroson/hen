@@ -12,7 +12,7 @@
 #include "pspsysmem_kernel.h"
 
 #include "main.h"
-#include "systemctrl.h"
+#include "systemctrl_priv.h"
 #include "malloc.h"
 
 /* 0x000003F4 */

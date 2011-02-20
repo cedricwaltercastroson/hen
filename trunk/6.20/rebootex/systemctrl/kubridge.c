@@ -11,7 +11,7 @@
 #include "pspthreadman_kernel.h"
 #include "pspsysmem_kernel.h"
 
-#include "systemctrl.h"
+#include "systemctrl_priv.h"
 
 /* 0x00003264 */
 /* KUBridge_4C25EA72 */

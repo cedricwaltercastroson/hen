@@ -13,7 +13,7 @@
 #include "pspiofilemgr.h"
 
 #include "main.h"
-#include "systemctrl.h"
+#include "systemctrl_priv.h"
 #include "malloc.h"
 
 PSP_MODULE_INFO("SystemControl", 0x3007, 2, 5);

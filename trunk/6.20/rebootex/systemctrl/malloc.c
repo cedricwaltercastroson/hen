@@ -9,7 +9,7 @@
 #include "pspthreadman_kernel.h"
 #include "pspsysmem_kernel.h"
 
-#include "systemctrl.h"
+#include "systemctrl_priv.h"
 
 SceUID g_heapid = -1; /* 0x00008240 */
 
