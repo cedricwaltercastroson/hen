@@ -43,7 +43,7 @@ static int g_cpu_speeds[] = { 0, 20, 75, 100, 133, 222, 266, 300, 333 }; /* 0x00
 static int g_bus_speeds[] = { 0, 10, 37, 50, 66, 111, 133, 150, 166 }; /* 0x0000140C */
 
 int g_cur_index = 0; /* 0x00001DC0 */
-int g_00001DBC;
+int g_config_updated = 0; /* 0x00001DBC */
 
 
 char *g_menu_items[] = {
@@ -180,7 +180,7 @@ main_thread(SceSize args, void *argp)
 
 	} while (1);
 
-	if (g_00001DBC != 0)
+	if (g_config_updated != 0)
 		sctrlSESetConfig(&config);
 
 	switch(g_running_status) {
@@ -325,9 +325,9 @@ button_action(int cur_buttons, int buttons_on)
 		r = 0;
 	}
 
-	if (g_00001DBC == 0) {
+	if (g_config_updated == 0) {
 		if (r != 0)
-			g_cur_index = 1;
+			g_config_updated = 1;
 	}
 
 	if (g_cur_index >= 16)
