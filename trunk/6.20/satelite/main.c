@@ -26,14 +26,16 @@ static int cpuspeed_index(int); /* 0x00000B48 */
 static int busspeed_index(int); /* 0x00000B7C */
 static int button_action(int, int); /* 0x00000504 */
 static int normalize(int, int, int); /* 0x00000B28 */
-static void draw_menu(void); /* 0x00000170 */
+static int draw_menu(void); /* 0x00000170 */
+static void draw_string(int, int, char *); /* 0x00000C24 */
+static void set_color(int, int); /* 0x00000C10 */
+static int draw_init(void); /* 0x00000E04 */
 
 int g_cur_buttons = 0; /* 0x00001DD4 */
 int g_buttons_on = 0; /* 0x00001DD8 */
 
 int g_running_status = 0;
 int g_thread_id = 0; /* 0x00001E10 */
-SceCtrlData g_pad_data = {0}; /* 0x00001DF8 */
 
 TNConfig *g_config = NULL; /* 0x00001DF4 */
 
@@ -45,6 +47,11 @@ static int g_bus_speeds[] = { 0, 10, 37, 50, 66, 111, 133, 150, 166 }; /* 0x0000
 int g_cur_index = 0; /* 0x00001DC0 */
 int g_config_updated = 0; /* 0x00001DBC */
 
+int g_font_color = 0x00FFFFFF; /* 0x000015B0 */
+int g_bg_color = 0xFF000000; /* 0x000015B4 */
+
+int g_width = 0; /* 0x00001DDC */
+int g_height = 0; /* 0x00001DE0 */
 
 char *g_menu_items[] = {
 	"CPU CLOCK XMB    ",
@@ -64,28 +71,6 @@ char *g_menu_items[] = {
 	"RESTART VSH",
 	"EXIT"
 }; /* 0x00001530 */
-
-char *g_regions[] = {
-	"Disabled",
-	"Japan",
-	"America",
-	"Europe",
-	"Korea",
-	"United Kingdom",
-	"Mexico",
-	"Australia/New Zealand",
-	"East",
-	"Taiwan",
-	"Russia",
-	"China",
-	"Debug Type I",
-	"Debug Type II",
-}; /* 0x00001570 */
-
-char *g_choices[] = {
-	"Enable",
-	"Disable"
-}; /* 0x000015A8 */
 
 int
 main(void)
@@ -123,10 +108,10 @@ static int
 main_thread(SceSize args, void *argp)
 {
 	static TNConfig config = {0}; /* 0x00001E94 */
-	static int g_00001E0C, g_00001DF0;
+	static int g_00001E0C = 0;
+	static int g_00001DF0 = 0;
 
 	int r;
-
 
 	sceKernelChangeThreadPriority(0, 0x8);
 	sctrlSEGetConfig(&config);
@@ -214,6 +199,8 @@ main_thread(SceSize args, void *argp)
 static int
 vsh_menu_ctrl(SceCtrlData *pad_data, int count)
 {
+	static SceCtrlData g_pad_data = {0}; /* 0x00001DF8 */
+
 	int i;
 
 	scePaf_memcpy(&g_pad_data, pad_data, sizeof(SceCtrlData));
@@ -230,6 +217,28 @@ vsh_menu_ctrl(SceCtrlData *pad_data, int count)
 static void
 parseconfig(TNConfig *config)
 {
+	static char *g_regions[] = {
+		"Disabled",
+		"Japan",
+		"America",
+		"Europe",
+		"Korea",
+		"United Kingdom",
+		"Mexico",
+		"Australia/New Zealand",
+		"East",
+		"Taiwan",
+		"Russia",
+		"China",
+		"Debug Type I",
+		"Debug Type II",
+	}; /* 0x00001570 */
+
+	static char *g_choices[] = {
+		"Enable",
+		"Disable"
+	}; /* 0x000015A8 */
+
 	static char vshspeed[8] = {0}; /* 0x00001DCC */
 	static char isospeed[8] = {0}; /* 0x00001DC4 */
 
@@ -434,7 +443,69 @@ normalize(int val, int min, int max)
 }
 
 /* 0x00000170 */
-static void draw_menu(void)
+static int
+draw_menu(void)
+{
+	int i, color, x;
+
+	if (draw_init() < 0)
+		return -1;
+
+	set_color(0x00FFFFFF, 0x8000FF00);
+	draw_string(0xC0, 0x30, "TN VSH MENU");
+
+	for (i = 0; i < 0x10; i++) {
+		color = g_cur_index == i ? 0x00FF0000 : 0x00FF8080;
+		set_color(0x00FFFFFF, color);
+		if (g_menu_items[i] != NULL) {
+			if (i == 0xF)
+				x = 0xD8;
+			else if (i == 0xE)
+				x = 0xC0;
+			else if (i == 0xD)
+				x = 0xB8;
+			else if (i == 0xC)
+				x = 0xB0;
+			else if (i == 0xB)
+				x = 0xB0;
+			else
+				x = 0x88;
+
+			draw_string(x, 0x40 + 8 * i, g_menu_items[i]);
+
+			if (g_menu[i] != NULL) {
+				set_color(0x00FFFFFF, color);
+				draw_string(0x118, 0x40 + 8 * i, g_menu[i]);
+			}
+		}
+	}
+
+	set_color(0x00FFFFFF, 0);
+	return 0;
+}
+
+/* 0x00000C24 */
+static void
+draw_string(int x, int y, char *s)
 {
 	/* XXX */
+}
+
+/* 0x00000C10 */
+static void
+set_color(int font, int bg)
+{
+	g_font_color = font;
+	g_bg_color = bg;
+}
+
+/* 0x00000E04 */
+static int
+draw_init(void)
+{
+	int mode;
+
+	sceDisplayGetMode(&mode, &g_width, &g_height);
+	/* XXX */
+	return 0;
 }
