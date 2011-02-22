@@ -1429,33 +1429,36 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 	int k1, ret;
 	unsigned int now;
 	SceUID modid;
+	int cpuspeed, busspeed;
    
 	ret = g_sceCtrlReadBufferPositive(pad_data, count);
 
 	k1 = pspSdkSetK1(0);
 
-	if (g_timestamp_2 == 0) {
-		if (g_tnconfig.vshcpuspeed != 0 &&
-				g_tnconfig.vshcpuspeed != 222) {
-			if (g_scePowerGetCpuClockFrequency() == 222) {
-				now = sceKernelGetSystemTimeLow();
-				g_timestamp_3 = now;
-				if (now - g_timestamp_1 >= 10000000) {
-					SetSpeed(g_tnconfig.vshcpuspeed, g_tnconfig.vshbusspeed);
-				}
-				g_timestamp_1 = g_timestamp_3;
+	cpuspeed = g_tnconfig.vshcpuspeed;
+	busspeed = g_tnconfig.vshbusspeed;
+
+	if (cpuspeed == 0 || busspeed == 0) {
+		cpuspeed = 222;
+		busspeed = 111;
+	}
+
+	if (g_scePowerGetCpuClockFrequency() != cpuspeed) {
+		now = sceKernelGetSystemTimeLow();
+		g_timestamp_3 = now;
+
+		if (g_timestamp_2 == 0) {
+			if (now - g_timestamp_1 >= 10000000) {
+				SetSpeed(cpuspeed, busspeed);
 			}
-		}
-	} else {
-		if (g_tnconfig.vshcpuspeed != 0) {
-			now = sceKernelGetSystemTimeLow();
-			g_timestamp_3 = now;
+		} else { /* XXX this block is never entered? */
 			g_timestamp_2 = now;
 			if (now - g_timestamp_4 >= 10000000) {
-				SetSpeed(g_tnconfig.vshcpuspeed, g_tnconfig.vshbusspeed);
+				SetSpeed(cpuspeed, busspeed);
 			}
-			g_timestamp_1 = g_timestamp_3;
 		}
+
+		g_timestamp_1 = g_timestamp_3;
 	}
 
 	if (g_satelite_mod_id != -1) {

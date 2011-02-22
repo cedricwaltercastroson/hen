@@ -509,6 +509,11 @@ SetSpeed(int cpuspd, int busspd)
 	ASM_FUNC_TAG();
 	u32 fp;
 
+	if (cpuspd == 0 || busspd == 0) {
+		cpuspd = 222;
+		busspd = 111;
+	}
+
 	switch (cpuspd) {
 	case 0x14:
 	case 0x4B:
@@ -617,14 +622,14 @@ vctrlVSHExitVSHMenu(TNConfig *conf)
 	ASM_FUNC_TAG();
 	int k1 = pspSdkSetK1(0);
 	int cpuspeed = g_tnconfig.vshcpuspeed;
+	int busspeed = g_tnconfig.vshbusspeed;
 
 	VshMenuCtrl = NULL;
 	memcpy(&g_tnconfig, conf, sizeof(TNConfig));
 
 	if (g_timestamp_2 == 0) {
-		if (cpuspeed != g_tnconfig.vshcpuspeed &&
-				g_tnconfig.vshcpuspeed != 0) {
-			SetSpeed(g_tnconfig.vshcpuspeed, g_tnconfig.vshbusspeed);
+		if (cpuspeed != g_tnconfig.vshcpuspeed) {
+			SetSpeed(cpuspeed, busspeed);
 			g_timestamp_1 = sceKernelGetSystemTimeLow();
 		}
 	}
