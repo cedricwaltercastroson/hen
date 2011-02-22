@@ -53,6 +53,11 @@ int g_bg_color = 0xFF000000; /* 0x000015B4 */
 int g_width = 0; /* 0x00001DDC */
 int g_height = 0; /* 0x00001DE0 */
 
+u32 *g_vram32 = NULL; /* 0x00001DEC */
+int g_buffer_width = 0; /* 0x00001DEC */
+int g_pixel_format = 0; /* 0x00001DE8 */
+
+
 char *g_menu_items[] = {
 	"CPU CLOCK XMB    ",
 	"CPU CLOCK GAME   ",
@@ -486,9 +491,8 @@ draw_menu(void)
 
 /* 0x00000C24 */
 static void
-draw_string(int x, int y, char *s)
+draw_string(int x, int y, char *str)
 {
-	/* XXX */
 }
 
 /* 0x00000C10 */
@@ -506,6 +510,13 @@ draw_init(void)
 	int mode;
 
 	sceDisplayGetMode(&mode, &g_width, &g_height);
-	/* XXX */
+	sceDisplayGetFrameBuf((void **) &g_vram32, &g_buffer_width, &g_pixel_format, &mode);
+	if (g_buffer_width == 0)
+		return -1;
+	if (g_pixel_format != 3)
+		return -1;
+	g_font_color = 0x00FFFFFF;
+	g_bg_color = 0xFF000000;
+
 	return 0;
 }
