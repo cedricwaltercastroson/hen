@@ -536,9 +536,6 @@ draw_string(int x, int y, char *msg)
 		}
 	}
 	return i;
-	
-
-	return 0;
 }
 
 /* 0x00000C10 */
@@ -556,7 +553,7 @@ draw_init(void)
 	int mode;
 
 	sceDisplayGetMode(&mode, &g_width, &g_height);
-	sceDisplayGetFrameBuf((void **) &g_vram32, &g_buffer_width, &g_pixel_format, &mode);
+	sceDisplayGetFrameBuf((void **) &g_vram32, &g_buffer_width, &g_pixel_format, PSP_DISPLAY_SETBUF_NEXTFRAME);
 	if (g_buffer_width == 0)
 		return -1;
 	if (g_pixel_format != 3)
