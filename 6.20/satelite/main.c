@@ -27,9 +27,10 @@ static int busspeed_index(int); /* 0x00000B7C */
 static int button_action(int, int); /* 0x00000504 */
 static int normalize(int, int, int); /* 0x00000B28 */
 static int draw_menu(void); /* 0x00000170 */
-static void draw_string(int, int, char *); /* 0x00000C24 */
+static int draw_string(int, int, char *); /* 0x00000C24 */
 static void set_color(int, int); /* 0x00000C10 */
 static int draw_init(void); /* 0x00000E04 */
+static int _alpha(int color); /* 0x00000BB0 */
 
 int g_cur_buttons = 0; /* 0x00001DD4 */
 int g_buttons_on = 0; /* 0x00001DD8 */
@@ -54,7 +55,7 @@ int g_width = 0; /* 0x00001DDC */
 int g_height = 0; /* 0x00001DE0 */
 
 u32 *g_vram32 = NULL; /* 0x00001DEC */
-int g_buffer_width = 0; /* 0x00001DEC */
+int g_buffer_width = 0; /* 0x00001DE4 */
 int g_pixel_format = 0; /* 0x00001DE8 */
 
 
@@ -78,7 +79,7 @@ char *g_menu_items[] = {
 }; /* 0x00001530 */
 
 int
-main(void)
+module_start(SceSize args, void* argp)
 {
 	if (kuKernelGetModel() == 0)
 		__strcpy(g_menu_items[8], "SLIM COLORS      ");
@@ -91,7 +92,7 @@ main(void)
 }
 
 int
-module_stop(void)
+module_stop(SceSize args, void* argp)
 {
 	SceUInt timeout = 100000;
 
@@ -489,10 +490,55 @@ draw_menu(void)
 	return 0;
 }
 
+extern u8 msx[];
+
 /* 0x00000C24 */
-static void
-draw_string(int x, int y, char *str)
+static int
+draw_string(int x, int y, char *msg)
 {
+	int i;
+	int j;
+	int k;
+	int offset;
+	char code;
+	u8 font;
+
+	u32 color;
+	u32 c1;
+	u32 c2;
+	u32 alpha;
+
+	if((g_buffer_width == 0) || (g_pixel_format != 3))
+		return -1;
+
+	for(i = 0; msg[i] && x < (g_width / 8); i++) {
+		code = msg[i] & 0x7F;
+		for(j = 0; j < 8; j++) {
+			offset = (y + j)*g_buffer_width + (x + i*8);
+			font = j >= 7 ? 0x00 : msx[code*8 + j];
+			for(k = 0; k < 8; k++) {
+				color = (font & 0x80) ? _alpha(g_font_color) : _alpha(g_bg_color);
+				alpha = color>>24;
+				if(alpha == 0) {
+					g_vram32[offset] = color;
+				} else if(alpha != 0xFF) {
+					c2 = g_vram32[offset];
+					c1 = c2 & 0x00FF00FF;
+					c2 = c2 & 0x0000FF00;
+					c1 = ((c1*alpha)>>8)&0x00FF00FF;
+					c2 = ((c2*alpha)>>8)&0x0000FF00;
+					g_vram32[offset] = (color&0x00FFFFFF) + c1 + c2;
+				}
+
+				font <<= 1;
+				offset++;
+			}
+		}
+	}
+	return i;
+	
+
+	return 0;
 }
 
 /* 0x00000C10 */
@@ -519,4 +565,27 @@ draw_init(void)
 	g_bg_color = 0xFF000000;
 
 	return 0;
+}
+
+/* 0x00000BB0 */
+static int
+_alpha(int color)
+{
+	int alpha;
+	int v0, v1;
+
+	alpha = color >> 24;
+	if (alpha == 0 || alpha == 0xFF)
+		return color;
+
+	v1 = color & 0xFF00;
+	v0 = ~alpha & 0xFF;
+	v1 = v0 * v1;
+	v1 >>= 8;
+	v1 &= 0xFF00;
+	v0 = v0 * (color & 0x00FF00FF);
+	v0 >>= 8;
+	v0 &= 0x00FF00FF;
+
+	return v0 | v1 | (alpha << 24);
 }
