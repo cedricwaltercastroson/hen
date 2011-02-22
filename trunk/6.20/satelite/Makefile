@@ -1,5 +1,5 @@
 TARGET = satelite
-OBJS = main.o stub.o
+OBJS = main.o stub.o font.o
 
 INCDIR = ../rebootex/systemctrl
 
@@ -17,7 +17,7 @@ BUILD_PRX = 1
 PRX_EXPORTS = exports.exp
 
 LIBDIR =
-LDFLAGS =
+LDFLAGS = -nodefaultlibs -nostdlib
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
