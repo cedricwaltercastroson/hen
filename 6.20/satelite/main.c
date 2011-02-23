@@ -30,12 +30,12 @@ static int draw_menu(void); /* 0x00000170 */
 static int draw_string(int, int, char *); /* 0x00000C24 */
 static void set_color(int, int); /* 0x00000C10 */
 static int draw_init(void); /* 0x00000E04 */
-static int _alpha(int color); /* 0x00000BB0 */
+static int adjust_alpha(int color); /* 0x00000BB0 */
 
 int g_cur_buttons = 0; /* 0x00001DD4 */
 int g_buttons_on = 0; /* 0x00001DD8 */
 
-int g_running_status = 0;
+int g_running_status = 0; /* 0X00001E08 */
 int g_thread_id = 0; /* 0x00001E10 */
 
 TNConfig *g_config = NULL; /* 0x00001DF4 */
@@ -196,9 +196,7 @@ main_thread(SceSize args, void *argp)
 	}
 
 	vctrlVSHExitVSHMenu(&config);
-	sceKernelExitDeleteThread(0);
-
-	return 0;
+	return sceKernelExitDeleteThread(0);
 }
 
 /* 0x000000D4 */
@@ -332,7 +330,7 @@ button_action(int cur_buttons, int buttons_on)
 		r = 0;
 	if (buttons_on & PSP_CTRL_RIGHT)
 		r = 1;
-	if (!(buttons_on & (PSP_CTRL_HOME & PSP_CTRL_SELECT))) {
+	if (!(buttons_on & (PSP_CTRL_HOME | PSP_CTRL_SELECT))) {
 		if (r == -2)
 			return 1;
 	} else {
@@ -461,7 +459,7 @@ draw_menu(void)
 	draw_string(0xC0, 0x30, "TN VSH MENU");
 
 	for (i = 0; i < 0x10; i++) {
-		color = g_cur_index == i ? 0x00FF0000 : 0x00FF8080;
+		color = g_cur_index == i ? 0x00FF0000 : 0xC0FF8080;
 		set_color(0x00FFFFFF, color);
 		if (g_menu_items[i] != NULL) {
 			if (i == 0xF)
@@ -490,20 +488,18 @@ draw_menu(void)
 	return 0;
 }
 
-extern u8 msx[];
+extern u8 msx[]; /* 0x000015B8 */
 
 /* 0x00000C24 */
 static int
 draw_string(int x, int y, char *msg)
 {
-	int i;
-	int j;
-	int k;
+	int i, j, k;
 	int offset;
 	char code;
 	u8 font;
 
-	u32 color;
+	u32 color, fg, bg;
 	u32 c1;
 	u32 c2;
 	u32 alpha;
@@ -511,23 +507,26 @@ draw_string(int x, int y, char *msg)
 	if((g_buffer_width == 0) || (g_pixel_format != 3))
 		return -1;
 
-	for(i = 0; msg[i] && x < (g_width / 8); i++) {
+	fg = adjust_alpha(g_font_color);
+	bg = adjust_alpha(g_bg_color);
+
+	for(i = 0; msg[i] && i < (g_width / 8); i++) {
 		code = msg[i] & 0x7F;
 		for(j = 0; j < 8; j++) {
-			offset = (y + j)*g_buffer_width + (x + i*8);
-			font = j >= 7 ? 0x00 : msx[code*8 + j];
+			offset = (y + j) * g_buffer_width + x + i * 8;
+			font = j == 7 ? 0x00 : msx[code * 8 + j];
 			for(k = 0; k < 8; k++) {
-				color = (font & 0x80) ? _alpha(g_font_color) : _alpha(g_bg_color);
-				alpha = color>>24;
-				if(alpha == 0) {
+				color = (font & 0x80) ? fg : bg;
+				alpha = color >> 24;
+				if (alpha == 0) {
 					g_vram32[offset] = color;
 				} else if(alpha != 0xFF) {
 					c2 = g_vram32[offset];
 					c1 = c2 & 0x00FF00FF;
 					c2 = c2 & 0x0000FF00;
-					c1 = ((c1*alpha)>>8)&0x00FF00FF;
-					c2 = ((c2*alpha)>>8)&0x0000FF00;
-					g_vram32[offset] = (color&0x00FFFFFF) + c1 + c2;
+					c1 = ((c1 * alpha) >> 8) & 0x00FF00FF;
+					c2 = ((c2 * alpha) >> 8) & 0x0000FF00;
+					g_vram32[offset] = (color & 0x00FFFFFF) + c1 + c2;
 				}
 
 				font <<= 1;
@@ -535,6 +534,7 @@ draw_string(int x, int y, char *msg)
 			}
 		}
 	}
+
 	return i;
 }
 
@@ -566,23 +566,22 @@ draw_init(void)
 
 /* 0x00000BB0 */
 static int
-_alpha(int color)
+adjust_alpha(int col)
 {
-	int alpha;
-	int v0, v1;
+	u32 alpha = col>>24;
+	u8 mul;
+	u32 c1,c2;
 
-	alpha = color >> 24;
-	if (alpha == 0 || alpha == 0xFF)
-		return color;
+	if(alpha == 0)
+		return col;
+	if(alpha == 0xFF)
+		return col;
 
-	v1 = color & 0xFF00;
-	v0 = ~alpha & 0xFF;
-	v1 = v0 * v1;
-	v1 >>= 8;
-	v1 &= 0xFF00;
-	v0 = v0 * (color & 0x00FF00FF);
-	v0 >>= 8;
-	v0 &= 0x00FF00FF;
+	c1 = col & 0x00FF00FF;
+	c2 = col & 0x0000FF00;
+	mul = (u8) (255 - alpha);
+	c1 = ((c1 * mul) >> 8) & 0x00FF00FF;
+	c2 = ((c2 * mul) >> 8) & 0x0000FF00;
 
-	return v0 | v1 | (alpha << 24);
+	return (alpha << 24) | c1 | c2;
 }
