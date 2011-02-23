@@ -568,7 +568,7 @@ draw_init(void)
 static int
 adjust_alpha(int col)
 {
-	u32 alpha = col>>24;
+	u32 alpha = col >> 24;
 	u8 mul;
 	u32 c1,c2;
 
