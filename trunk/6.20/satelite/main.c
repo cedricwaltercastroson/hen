@@ -275,7 +275,7 @@ parseconfig(TNConfig *config)
 	g_menu[6] = g_choices[!config->hidepic];
 	g_menu[7] = g_choices[config->nospoofversion];
 	g_menu[8] = g_choices[!config->slimcolor];
-	g_menu[9] = g_choices[!config->skipgameboot];
+	g_menu[9] = g_choices[!config->fastscroll];
 	g_menu[10] = g_choices[!config->protectflash];
 }
 
@@ -313,7 +313,7 @@ button_action(int cur_buttons, int buttons_on)
 {
 	int dir; /* up or down */
 	int idx; /* current index */
-	int r; /* offset */
+	int r;
 
 	buttons_on &= NON_HOLD_KEYS;
 	dir = (!!(buttons_on & PSP_CTRL_DOWN)) - (!!(buttons_on & PSP_CTRL_UP));
@@ -430,7 +430,7 @@ button_action(int cur_buttons, int buttons_on)
 		return (r > 0);
 
 	default:
-		return 1;
+		return r;
 	}
 }
 
