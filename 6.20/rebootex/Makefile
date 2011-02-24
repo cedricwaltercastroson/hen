@@ -7,10 +7,10 @@ CC = psp-gcc
 CFLAGS = -W -Wall -O2 -G0 -fno-pic -mno-abicalls -w -fomit-frame-pointer
 CFLAGS += $(INCLUDE)
 
+all: rebootex.bin
+
 clean:
 	rm -rf *.bin *.elf *.o rebootex.s
-
-all: rebootex.bin
 
 rebootex.bin: rebootex.c linker.x
 	$(CC) $(CFLAGS) -c rebootex.c
