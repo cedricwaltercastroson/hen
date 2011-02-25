@@ -1674,7 +1674,7 @@ int
 sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modstatus, SceKernelSMOption *opt)
 {
 	ASM_FUNC_TAG();
-	char *buf;
+	char *buf, *p;
 	char plugin_path[0x40];
 	int fd, apptype, fpl, active, len, ret;
 
@@ -1710,13 +1710,15 @@ sceKernelStartModule_Patched(int modid, SceSize argsize, void *argp, int *modsta
 
 	sceKernelAllocateFpl(fpl, (void **) &buf, NULL);
 	len = sceIoRead(fd, buf, 0x400);
+	p = buf;
 
 	do {
 		memset(plugin_path, 0, 0x40);
 		active = 0;
-		ret = ParsePluginsConfig(buf, len, plugin_path, &active);
+		ret = ParsePluginsConfig(p, len, plugin_path, &active);
 		if (ret > 0) {
 			len -= ret;
+			p += ret;
 			if (active)
 				StartPlugin(plugin_path);
 		} else
