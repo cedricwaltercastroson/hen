@@ -43,6 +43,7 @@ static void PatchSceMediaSync(u32);
 static void PatchSceUmdCacheDriver(u32);
 static void PatchSceImposeDriver(void);
 static void PatchSysconfPlugin(u32);
+static void PatchLftv(u32);
 
 static int sceCtrlReadBufferPositive_Patched(SceCtrlData *, int);
 static SceUID PatchSceUpdateDL(const char *, int, SceKernelLMOption *);
@@ -646,6 +647,8 @@ PatchModules(SceModule2 *mod)
 		PatchVLF(0x158BE61A);
 		PatchVLF(0xD495179F);
 		ClearCaches();
+	} else if (!strcmp(mod->modname, "sceVshLftvMw_Module")) {
+		PatchLftv(text_addr);
 	}
 
 	if (g_00008244 == 0) {
@@ -1203,6 +1206,15 @@ PatchSysconfPlugin(u32 text_addr)
 	ClearCaches();
 }
 
+void
+PatchLftv(u32 text_addr)
+{
+	ASM_FUNC_TAG();
+
+	_sw(0x24020000, text_addr + 0x00033DA0); /* registration always OK */
+	ClearCaches();
+}
+
 /* 0x00002200 */
 int
 LoadExecBootStart_Patched(int a0, int a1, int a2, int a3)
@@ -1481,6 +1493,8 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 		if (sceKernelFindModuleByName("sceVshOSK_Module"))
 			goto out;
 		if (sceKernelFindModuleByName("camera_plugin_module"))
+			goto out;
+		if (sceKernelFindModuleByName("lftv_main_plugin_module"))
 			goto out;
 		if (!(pad_data->Buttons & PSP_CTRL_SELECT))
 			goto out;
