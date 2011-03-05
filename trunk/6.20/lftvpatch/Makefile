@@ -1,5 +1,5 @@
-TARGET = satelite
-OBJS = main.o stub.o font.o log.o
+TARGET = lftvpatch
+OBJS = main.o log.o stub.o
 VPATH = ../lib
 
 INCDIR = ../rebootex/systemctrl ../lib
