@@ -103,20 +103,30 @@ int (*ProbeExec1) (void *, u32 *) = NULL; /* 0x00008278 */
 int (*ProbeExec2) (void *, u32 *) = NULL; /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *) = NULL; /* 0x00008294 */
 
-static u32 g_mod_hook_handler = 0;
-static u32 g_mod_hook_offset = 0;
-static char g_mod_hook_name[128] = {0};
+typedef struct {
+	u32 patch;
+	u32 offset;
+	char mod[64]; /* limit of module name len */
+} mod_patch_t;
 
-/* SystemCtrlForUser_F62D5EA8 */
+static mod_patch_t g_mod_patches[16]; /* support up to 16 patches */
+static int g_mod_patch_index = -1;
+
+/* SystemCtrlForUser_62CAC4CF */
 void
-sctrlSetModuleHook(char *name, void *handler, u32 offset)
+sctrlPatchModule(char *name, u32 patch, u32 offset)
 {
 	ASM_FUNC_TAG();
+	mod_patch_t *pat;
 
-	memset(g_mod_hook_name, 0, 128);
-	strcpy(g_mod_hook_name, name);
-	g_mod_hook_handler = (u32) handler;
-	g_mod_hook_offset = offset;
+	if (g_mod_patch_index >= 15)
+		return;
+
+	pat = &g_mod_patches[++g_mod_patch_index];
+	memset(pat->mod, 0, 64);
+	strcpy(pat->mod, name);
+	pat->patch = (u32) patch;
+	pat->offset = offset;
 }
 
 /* 0x00000000 */
@@ -669,10 +679,16 @@ PatchModules(SceModule2 *mod)
 		PatchLftv(text_addr);
 	}
 
-	/* install hook */
-	if (g_mod_hook_handler && g_mod_hook_name[0]) {
-		if (!strcmp(mod->modname, g_mod_hook_name)) {
-			_sw(MAKE_CALL(g_mod_hook_handler), mod->text_addr + g_mod_hook_offset);
+	/* apply user space patches */
+	if (g_mod_patch_index != -1) {
+		int i;
+		mod_patch_t *pat;
+
+		for (i = 0; i <= g_mod_patch_index; i++) {
+			pat = &g_mod_patches[i];
+			if (!strcmp(mod->modname, pat->mod)) {
+				_sw(pat->patch, mod->text_addr + pat->offset);
+			}
 		}
 		ClearCaches();
 	}

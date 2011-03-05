@@ -9,6 +9,6 @@
 	STUB_END
 
 	STUB_START "SystemCtrlForUser", 0x40090000, 0x00020005
-	STUB_FUNC 0xF62D5EA8, sctrlSetModuleHook
+	STUB_FUNC 0x62CAC4CF, sctrlPatchModule
 	STUB_FUNC 0x2A868045, sctrlModuleTextAddr
 	STUB_END
