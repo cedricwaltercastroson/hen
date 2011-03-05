@@ -16,6 +16,8 @@
 #include "systemctrl_priv.h"
 #include "malloc.h"
 
+#include "log.h"
+
 PSP_MODULE_INFO("SystemControl", 0x3007, 2, 5);
 PSP_MAIN_THREAD_ATTR(0);
 
@@ -84,6 +86,7 @@ unsigned int g_timestamp_2 = 0; /* 0x000083DC */
 unsigned int g_timestamp_3 = 0; /* 0x000083E0 */
 unsigned int g_timestamp_4 = 0; /* 0x000083E4 */
 
+
 SceUID g_SceModmgrStart_tid = 0; /* 0x00008298 */
 SceModule2 *g_SceModmgrStart_module = NULL; /* 0x00008274 */
 
@@ -100,6 +103,21 @@ int (*ProbeExec1) (void *, u32 *) = NULL; /* 0x00008278 */
 int (*ProbeExec2) (void *, u32 *) = NULL; /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *) = NULL; /* 0x00008294 */
 
+static u32 g_mod_hook_handler = 0;
+static u32 g_mod_hook_offset = 0;
+static char g_mod_hook_name[128] = {0};
+
+/* SystemCtrlForUser_F62D5EA8 */
+void
+sctrlSetModuleHook(char *name, void *handler, u32 offset)
+{
+	ASM_FUNC_TAG();
+
+	memset(g_mod_hook_name, 0, 128);
+	strcpy(g_mod_hook_name, name);
+	g_mod_hook_handler = (u32) handler;
+	g_mod_hook_offset = offset;
+}
 
 /* 0x00000000 */
 int
@@ -649,6 +667,14 @@ PatchModules(SceModule2 *mod)
 		ClearCaches();
 	} else if (!strcmp(mod->modname, "sceVshLftvMw_Module")) {
 		PatchLftv(text_addr);
+	}
+
+	/* install hook */
+	if (g_mod_hook_handler && g_mod_hook_name[0]) {
+		if (!strcmp(mod->modname, g_mod_hook_name)) {
+			_sw(MAKE_CALL(g_mod_hook_handler), mod->text_addr + g_mod_hook_offset);
+		}
+		ClearCaches();
 	}
 
 	if (g_00008244 == 0) {
@@ -1212,6 +1238,7 @@ PatchLftv(u32 text_addr)
 	ASM_FUNC_TAG();
 
 	_sw(0x24020000, text_addr + 0x00033DA0); /* registration always OK */
+
 	ClearCaches();
 }
 
@@ -1502,10 +1529,16 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 		/* SELECT button is pressed! */
 		sceKernelSetDdrMemoryProtection((void *) 0x08400000, 0x00400000, 0xF);
 		modid = sceKernelLoadModule(g_model != 4 ? "ms0:/satelite.prx" : "ef0:/satelite.prx", 0, NULL);
+
 		if (modid >= 0) {
 			g_satelite_mod_id = modid;
 			sceKernelStartModule(modid, 0, 0, 0, 0);
 			pad_data->Buttons &= 0xFFFFFFFE; /* clear PSP_CTRL_SELECT */
+
+			/* XXX ugly loading. will fix later */
+			modid = sceKernelLoadModule(g_model != 4 ? "ms0:/lftvpatch.prx" : "ef0:/lftvpatch.prx", 0, NULL);
+			if (modid >= 0)
+				sceKernelStartModule(modid, 0, 0, 0, 0);
 		}
 	} /* non-TN-vsh */
 
