@@ -37,7 +37,7 @@ PSP_EXPORT_FUNC_HASH(sctrlKernelSetInitKeyConfig)
 PSP_EXPORT_FUNC_HASH(sctrlKernelSetInitFileName)
 PSP_EXPORT_FUNC_HASH(sctrlKernelSetInitApitype)
 PSP_EXPORT_FUNC_HASH(sctrlModuleTextAddr)
-PSP_EXPORT_FUNC_HASH(sctrlSetModuleHook)
+PSP_EXPORT_FUNC_HASH(sctrlPatchModule)
 PSP_EXPORT_END
 
 PSP_EXPORT_START(SystemCtrlForKernel, 0, 0x0001)
