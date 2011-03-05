@@ -15,8 +15,6 @@
 #include "systemctrl_priv.h"
 #include "malloc.h"
 
-#include "log.h"
-
 /* 0x000003F4 */
 /* SystemCtrlForKernel_826668E9 */
 void
@@ -641,16 +639,3 @@ vctrlVSHExitVSHMenu(TNConfig *conf)
 	return 0;
 }
 
-/* SystemCtrlForUser_2A868045 */
-u32
-sctrlModuleTextAddr(char *name)
-{
-	ASM_FUNC_TAG();
-	SceModule2 *mod;
-
-	if (!(mod = sceKernelFindModuleByName(name))) {
-			return 0;
-	}
-
-	return mod->text_addr;
-}

@@ -16,8 +16,6 @@
 #include "systemctrl_priv.h"
 #include "malloc.h"
 
-#include "log.h"
-
 PSP_MODULE_INFO("SystemControl", 0x3007, 2, 5);
 PSP_MAIN_THREAD_ATTR(0);
 
@@ -86,7 +84,6 @@ unsigned int g_timestamp_2 = 0; /* 0x000083DC */
 unsigned int g_timestamp_3 = 0; /* 0x000083E0 */
 unsigned int g_timestamp_4 = 0; /* 0x000083E4 */
 
-
 SceUID g_SceModmgrStart_tid = 0; /* 0x00008298 */
 SceModule2 *g_SceModmgrStart_module = NULL; /* 0x00008274 */
 
@@ -103,31 +100,6 @@ int (*ProbeExec1) (void *, u32 *) = NULL; /* 0x00008278 */
 int (*ProbeExec2) (void *, u32 *) = NULL; /* 0x000083A0 */
 int (*PartitionCheck) (void *, void *) = NULL; /* 0x00008294 */
 
-typedef struct {
-	u32 patch;
-	u32 offset;
-	char mod[64]; /* limit of module name len */
-} mod_patch_t;
-
-static mod_patch_t g_mod_patches[16]; /* support up to 16 patches */
-static int g_mod_patch_index = -1;
-
-/* SystemCtrlForUser_62CAC4CF */
-void
-sctrlPatchModule(char *name, u32 patch, u32 offset)
-{
-	ASM_FUNC_TAG();
-	mod_patch_t *pat;
-
-	if (g_mod_patch_index >= 15)
-		return;
-
-	pat = &g_mod_patches[++g_mod_patch_index];
-	memset(pat->mod, 0, 64);
-	strcpy(pat->mod, name);
-	pat->patch = (u32) patch;
-	pat->offset = offset;
-}
 
 /* 0x00000000 */
 int
@@ -677,20 +649,6 @@ PatchModules(SceModule2 *mod)
 		ClearCaches();
 	} else if (!strcmp(mod->modname, "sceVshLftvMw_Module")) {
 		PatchLftv(text_addr);
-	}
-
-	/* apply user space patches */
-	if (g_mod_patch_index != -1) {
-		int i;
-		mod_patch_t *pat;
-
-		for (i = 0; i <= g_mod_patch_index; i++) {
-			pat = &g_mod_patches[i];
-			if (!strcmp(mod->modname, pat->mod)) {
-				_sw(pat->patch, mod->text_addr + pat->offset);
-			}
-		}
-		ClearCaches();
 	}
 
 	if (g_00008244 == 0) {
@@ -1254,7 +1212,6 @@ PatchLftv(u32 text_addr)
 	ASM_FUNC_TAG();
 
 	_sw(0x24020000, text_addr + 0x00033DA0); /* registration always OK */
-
 	ClearCaches();
 }
 
@@ -1545,16 +1502,10 @@ sceCtrlReadBufferPositive_Patched(SceCtrlData *pad_data, int count)
 		/* SELECT button is pressed! */
 		sceKernelSetDdrMemoryProtection((void *) 0x08400000, 0x00400000, 0xF);
 		modid = sceKernelLoadModule(g_model != 4 ? "ms0:/satelite.prx" : "ef0:/satelite.prx", 0, NULL);
-
 		if (modid >= 0) {
 			g_satelite_mod_id = modid;
 			sceKernelStartModule(modid, 0, 0, 0, 0);
 			pad_data->Buttons &= 0xFFFFFFFE; /* clear PSP_CTRL_SELECT */
-
-			/* XXX ugly loading. will fix later */
-			modid = sceKernelLoadModule(g_model != 4 ? "ms0:/lftvpatch.prx" : "ef0:/lftvpatch.prx", 0, NULL);
-			if (modid >= 0)
-				sceKernelStartModule(modid, 0, 0, 0, 0);
 		}
 	} /* non-TN-vsh */
 

@@ -180,11 +180,5 @@ extern int vctrlVSHRegisterVshMenu(void *ctrl);
 /* VshCtrlLib_CD6B3913 */
 extern int vctrlVSHExitVSHMenu(TNConfig *conf);
 
-/* SystemCtrlForUser_62CAC4CF */
-extern void sctrlPatchModule(char *name, u32 patch, u32 offset);
-
-/* SystemCtrlForUser_2A868045 */
-extern u32 sctrlModuleTextAddr(char *name);
-
 #endif
 

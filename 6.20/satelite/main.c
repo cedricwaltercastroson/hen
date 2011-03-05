@@ -9,8 +9,6 @@
 #include "systemctrl.h"
 #include "kubridge.h"
 
-#include "log.h"
-
 #define ALL_KEYS 0x0083F3F9
 #define NON_HOLD_KEYS  (ALL_KEYS & (~PSP_CTRL_HOLD))
 

@@ -1,8 +1,7 @@
 TARGET = systemctrl
-OBJS = main.o stub.o malloc.o kubridge.o systemctrl.o log.o
-VPATH = ../../lib
+OBJS = main.o stub.o malloc.o kubridge.o systemctrl.o
 
-INCDIR = ../../lib
+INCDIR = 
 CFLAGS = -O2 -G0 -Wall -fshort-wchar -fno-pic -mno-check-zero-division
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 ASFLAGS = $(CFLAGS)

@@ -1,8 +1,7 @@
 TARGET = satelite
-OBJS = main.o stub.o font.o log.o
-VPATH = ../lib
+OBJS = main.o stub.o font.o
 
-INCDIR = ../rebootex/systemctrl ../lib
+INCDIR = ../rebootex/systemctrl
 
 CFLAGS = -O2 -G0 -Wall -mno-gpopt
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
