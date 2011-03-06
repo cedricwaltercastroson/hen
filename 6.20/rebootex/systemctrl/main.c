@@ -45,7 +45,6 @@ static void PatchSceMediaSync(u32);
 static void PatchSceUmdCacheDriver(u32);
 static void PatchSceImposeDriver(void);
 static void PatchSysconfPlugin(u32);
-static void PatchLftv(u32);
 
 static int sceCtrlReadBufferPositive_Patched(SceCtrlData *, int);
 static SceUID PatchSceUpdateDL(const char *, int, SceKernelLMOption *);
@@ -125,7 +124,7 @@ sctrlPatchModule(char *name, u32 patch, u32 offset)
 	pat = &g_mod_patches[++g_mod_patch_index];
 	memset(pat->mod, 0, 64);
 	strcpy(pat->mod, name);
-	pat->patch = (u32) patch;
+	pat->patch = patch;
 	pat->offset = offset;
 }
 
@@ -675,8 +674,6 @@ PatchModules(SceModule2 *mod)
 		PatchVLF(0x158BE61A);
 		PatchVLF(0xD495179F);
 		ClearCaches();
-	} else if (!strcmp(mod->modname, "sceVshLftvMw_Module")) {
-		PatchLftv(text_addr);
 	}
 
 	/* apply user space patches */
@@ -1244,16 +1241,6 @@ PatchSysconfPlugin(u32 text_addr)
 		_sw(_lw(text_addr + 0x00007498), text_addr + 0x00007494);
 		_sw(0x24020001, text_addr + 0x00007498);
 	}
-
-	ClearCaches();
-}
-
-void
-PatchLftv(u32 text_addr)
-{
-	ASM_FUNC_TAG();
-
-	_sw(0x24020000, text_addr + 0x00033DA0); /* registration always OK */
 
 	ClearCaches();
 }
