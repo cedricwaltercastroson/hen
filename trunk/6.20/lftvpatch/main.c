@@ -50,6 +50,8 @@ int
 module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(send_request_patched), 0x0000292C);
+	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
+
 	return 0;
 }
 
