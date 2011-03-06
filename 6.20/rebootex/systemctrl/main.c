@@ -112,20 +112,22 @@ static mod_patch_t g_mod_patches[16]; /* support up to 16 patches */
 static int g_mod_patch_index = -1;
 
 /* SystemCtrlForUser_62CAC4CF */
-void
+int
 sctrlPatchModule(char *name, u32 patch, u32 offset)
 {
 	ASM_FUNC_TAG();
 	mod_patch_t *pat;
 
 	if (g_mod_patch_index >= 15)
-		return;
+		return -1;
 
 	pat = &g_mod_patches[++g_mod_patch_index];
 	memset(pat->mod, 0, 64);
 	strcpy(pat->mod, name);
 	pat->patch = patch;
 	pat->offset = offset;
+
+	return 0;
 }
 
 /* 0x00000000 */
