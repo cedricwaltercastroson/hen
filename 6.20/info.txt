@@ -1,0 +1,30 @@
+6.20 CFW, version A
+
+- flashable CFW loader with recovery menu
+- all modules have to be flashed
+- rebootex does not contain SystemControl module
+- removed rebootex FAT patches
+- rebootex renames vshmain.prx to vshorig.prx in btcnf.bin
+- new config format
+- added support for CFW addons as flash plugins (flash0:/plugins/), configured in recovery
+- removed "TN UPDATE" option
+- added "use VSH menu" option
+- added USB name spoofer, replaces "PSP Type A" with "username's PSP" when ON
+- rewrote seplugins code
+
+Folders:
+install - install app, set INSTALL_MODE in main.c
+rebootex - modified from HEN
+sysctrl - SystemControl module
+tester - simple app, use when INSTALL_MODE is 1, this will start CFW
+vshcrypt - PC program to encrypt gzipped (fake)vshmain
+vshmain - replaces original vshmain, contains CFW boot and recovery menu
+vshmenu - modified to match new settings
+
+Compile order:
+rebootex
+sysctrl
+vshmain
+vshmenu
+install
+

@@ -16,26 +16,14 @@
 
 /* global variables */
 
-#define HEN_STR "/hen.prx"
-
 int (*RebootEntry)(void *, void *, void *, void *) = (void *) REBOOT_BASE;
 void (*DcacheClear)(void) = (void *) 0x88600938;
 void (*IcacheClear)(void) = (void *) 0x886001E4;
 
-int (*sceBootLfatRead)(void *, void *);
-int (*sceBootLfatOpen)(char *);
-int (*sceBootLfatClose)(void);
 int (*sceBootDecryptPSP)(void *, void *);
 
 int (*sceDecryptPSP)(void *, unsigned int, int *);
 int (*sceKernelCheckExecFile)(unsigned char *, unsigned int);
-
-int has_hen_prx;
-
-static unsigned int size_sysctrl_bin;
-static unsigned char sysctrl_bin[];
-
-#include "sysctrl_bin.inc"
 
 /* util functions */
 
@@ -121,36 +109,6 @@ ClearCaches(void)
 {
 	DcacheClear();
 	IcacheClear();
-}
-
-int
-sceBootLfatRead_Patched(void *a0, void *a1)
-{
-	if (has_hen_prx) {
-		__memcpy(a0, sysctrl_bin, size_sysctrl_bin);
-		return size_sysctrl_bin;
-	}
-	return sceBootLfatRead(a0, a1);
-}
-
-int
-sceBootLfatOpen_Patched(char *s)
-{
-	if (!__memcmp(s, HEN_STR, 9)) {
-		has_hen_prx = 1;
-		return 0;
-	}
-	return sceBootLfatOpen(s);
-}
-
-int
-sceBootLfatClose_Patched(void)
-{
-	if (has_hen_prx) {
-		has_hen_prx = 0;
-		return 0;
-	}
-	return sceBootLfatClose();
 }
 
 typedef struct
@@ -335,13 +293,45 @@ inject_module(void *a0, char *mod_name, char *neu_mod_name, u16 flags)
 	}
 }
 
+// CFW, new text can't be bigger
+void
+rename_module(void *a0, char *mod_name, char *neu_mod_name)
+{
+	ModuleEntry *pmod;
+	int i, len;
+	char *modules_start, *names_start;
+	BtcnfHeader *hdr = a0;
+
+	modules_start = (char *) a0 + hdr->modules_start;
+	names_start = (char *) a0 + hdr->names_start;
+
+	pmod = (ModuleEntry *) modules_start;
+	len = __strlen(mod_name) + 1;
+
+	if (hdr->modules_nr < 0)
+		return;
+
+	/* search mod by name */
+	for (i = 0; i < hdr->modules_nr; i++) {
+		if (!__memcmp(names_start + pmod->name, mod_name, len))
+			break;
+		pmod++;
+	}
+	if (i == hdr->modules_nr)
+		return;
+
+	__memcpy(names_start + pmod->name, neu_mod_name, len);
+}
+
 int
 sceBootDecryptPSP_Patched(void *a0, void *a1)
 {
 	int r;
 	
 	r = sceBootDecryptPSP(a0, a1);
-	inject_module(a0, "/kd/init.prx", HEN_STR, 255);
+	inject_module(a0, "/kd/init.prx", "/kd/sysctrl.prx", 255);
+// CFW, new text can't be bigger
+	rename_module(a0, "/vsh/module/vshmain.prx", "/vsh/module/vshorig.prx");
 
 	return r;
 }
@@ -372,9 +362,6 @@ main(void *a0, void *a1, void *a2, void *a3)
 	else
 		pf = model1;
 
-	SAVE_CALL(pf[4], sceBootLfatOpen_Patched); /* replace sceBootLfatOpen */
-	SAVE_CALL(pf[5], sceBootLfatRead_Patched); /* replace sceBootLfatRead */
-	SAVE_CALL(pf[6], sceBootLfatClose_Patched); /* replace sceBootLfatClose */
 	SAVE_CALL(pf[7], sceBootDecryptPSP_Patched); /* replace sceBootDecryptPSP */
 
 	/* mask sub_88603798 of reboot */
@@ -392,12 +379,7 @@ main(void *a0, void *a1, void *a2, void *a3)
 	SAVE_VALUE(pf[15], 0x02A0E821); /* addu $sp, $zr, $s5 */
 	SAVE_VALUE(pf[16], 0); /* nop */
 
-	sceBootLfatOpen = (void *) (pf[0] | REBOOT_BASE);
-	sceBootLfatRead = (void *) (pf[1] | REBOOT_BASE);
-	sceBootLfatClose = (void *) (pf[2] | REBOOT_BASE);
 	sceBootDecryptPSP = (void *) (pf[3] | REBOOT_BASE);
-
-	has_hen_prx = 0;
 
 	ClearCaches();
 
