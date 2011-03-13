@@ -252,6 +252,8 @@ sub_0000543C(u32 a0, u32 a1)
 }
 #endif
 
+#if 0
+
 u32
 sub_00005758(u32 a0)
 {
@@ -327,17 +329,20 @@ sub_0000604C(u32 a0)
 
 	return ret;
 }
-
+#endif
 
 int
 module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+#if 0
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0000604C), 0x00005570);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000577C);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00005758), 0x00004EA8);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00005550, 0x000591F8);
+#endif
+
 #if 0
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000054C8), 0x00004E98);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0000543C), 0x00004EC0);
