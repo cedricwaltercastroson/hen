@@ -141,7 +141,7 @@ power_offset(void *func)
 	_scePowerRegisterCallback = func;
 	_scePowerRegisterCallback(0, sceuid);
 	_scePowerRegisterCallback(0, sceuid);
-	__asm__ volatile ("addiu $v0, $v1, 0;" : "=r"(offset));
+	__asm__ volatile ("addiu %0, $v1, 0;" : "=r"(offset));
 
 	return offset;
 }
