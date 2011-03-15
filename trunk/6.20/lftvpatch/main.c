@@ -17,7 +17,6 @@
 PSP_MODULE_INFO("lftv_patch_module", 0, 1, 0);
 
 
-
 static u32
 get_text_addr(u32 offset)
 {
@@ -331,10 +330,88 @@ sub_0000604C(u32 a0)
 }
 #endif
 
+#if 0
+u32
+sub_00011E3C(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 ret = -1;
+
+	load_text_addr(func, 0x00011E3C, ret);
+	logstr("sub_00011E3C:");
+	logint(_lb(0x2E + a0));
+	logint(a2);
+	logint(_lw(0x4 + _lw(_lw(0x34 + a0))));
+	logint(_lw(0x8 + _lw(_lw(0x34 + a0))));
+	ret = func(a0, a1, a2);
+	logstr("0x00011E3C:");
+	logint(ret);
+
+	return ret;
+}
+
+u32
+sub_000160AC(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 ret = -1;
+
+	load_text_addr(func, 0x000160AC, ret);
+	logstr("sub_000160AC:");
+	ret = func(a0, a1, a2);
+	logstr("0x000160AC:");
+	logint(ret);
+
+	return ret;
+}
+
+u32
+sub_00011C8C(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = -1;
+
+	load_text_addr(func, 0x00011C8C, ret);
+	logstr("sub_00011C8C:");
+	logint(_lw(0x4+_lw(_lw(0x30+a0))));
+	ret = func(a0, a1);
+	logstr("0x00011C8C:");
+	logint(ret);
+
+	return ret;
+}
+#endif
+
+u32
+sub_0000377C(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 myra;
+	u32 ret = -1;
+
+	__asm__ volatile ("addiu $s2, $ra, 0;" : "=r"(myra));
+
+	load_text_addr(func, 0x0000377C, ret);
+	logstr("sub_0000377C:");
+	logint(myra);
+	ret = func(a0);
+	logstr("0x0000377C");
+	logint(ret);
+
+	return ret;
+}
+
 int
 module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
+
+	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000377C, 0x00059104);
+#if 0
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00011C8C), 0x00011F34);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000160AC), 0x00011F08);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00011E3C), 0x00003820);
+#endif
 
 #if 0
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0000604C), 0x00005570);
