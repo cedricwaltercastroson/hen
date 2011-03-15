@@ -389,7 +389,7 @@ sub_0000377C(u32 a0)
 	u32 myra;
 	u32 ret = -1;
 
-	__asm__ volatile ("addiu $s2, $ra, 0;" : "=r"(myra));
+	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
 
 	load_text_addr(func, 0x0000377C, ret);
 	logstr("sub_0000377C:");
