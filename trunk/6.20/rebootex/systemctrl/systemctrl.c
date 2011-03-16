@@ -27,7 +27,7 @@ PatchSyscall(u32 fp, void *func)
 	u32 *vectors;
 	int i;
 
-	__asm__ ("cfc0 $v0, $12;" : "=r"(sr));
+	__asm__ ("cfc0 %0, $12;" : "=r"(sr));
 	vectors = (u32 *) _lw(sr);
 	for (i = 0; i < 0x4000; i++) {
 		if (vectors[i] == fp)
