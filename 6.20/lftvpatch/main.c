@@ -516,24 +516,6 @@ sub_00007818(u32 a0, u32 a1)
 	return ret;
 }
 
-u32
-sub_000078BC(u32 a0)
-{
-	static u32 (*func) (u32) = NULL;
-	u32 myra;
-	u32 ret;
-
-	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
-	ret = 0;
-	load_text_addr(func, 0x000078BC, ret);
-	logstr("sub_000078BC:");
-	logint(myra);
-	ret = func(a0);
-	logstr("0x000078BC:");
-	logint(ret);
-
-	return ret;
-}
 #endif
 
 #if 0
@@ -562,17 +544,66 @@ sub_00007B7C(u32 a0)
 }
 #endif
 
+#if 0
 u32
-sub_00006A14(u32 a0, u32 a1, u32 a3)
+sub_00006A14(u32 a0, u32 a1, u32 a2)
 {
 	static u32 (*func) (u32, u32, u32) = NULL;
 	u32 ret;
 
 	ret = 0;
 	load_text_addr(func, 0x00006A14, ret);
-	logstr("sub_00006A14:");
+	if (a2 >= 512) {
+		logstr("sub_00006A14:");
+		logint(a2);
+		logint(_lw(0x28+a0));
+		logint(_lb(_lw(0x24+a0)));
+	}
 	ret = func(a0, a1, a2);
-	logstr("0x00006A14");
+	if (a2 >= 512) {
+		logstr("0x00006A14");
+		logint(ret);
+	}
+
+	return ret;
+}
+#endif
+
+#if 0
+u32
+sub_000078BC(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 myra;
+	u32 ret;
+
+	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	ret = 0;
+	load_text_addr(func, 0x000078BC, ret);
+	logstr("sub_000078BC:");
+	logint(_lw(a0));
+	if (_lw(a0))
+		logint(_lw(0x1c+_lw(a0)));
+	logint(myra);
+	ret = func(a0);
+	logstr("0x000078BC:");
+	logint(ret);
+
+	return ret;
+}
+#endif
+
+u32
+sub_000087B4(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x000087B4, ret);
+	logstr("sub_000087B4:");
+	logint(_lw(_lw(0x4+a1)));
+	ret = func(a0, a1);
+	logstr("0x000087B4");
 	logint(ret);
 
 	return ret;
@@ -583,17 +614,20 @@ module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006A14), 0x000069C4);
+	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_000087B4, 0x0005934C);
+#if 0
+	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_000078BC, 0x00059310);
+	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_000078BC, 0x00059340);
+	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_000078BC, 0x000592E0);
+#endif
+
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006A14), 0x000069C4);
 #if 0
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007B7C, 0x000592DC);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007B7C, 0x0005930C);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007B7C, 0x0005933C);
 #endif
 #if 0
-	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_000078BC, 0x00059310);
-	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_000078BC, 0x00059340);
-	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_000078BC, 0x000592E0);
-
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007818, 0x00059338);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007818, 0x000592D8);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007818, 0x00059308);
