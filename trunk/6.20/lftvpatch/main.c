@@ -16,6 +16,7 @@
 
 PSP_MODULE_INFO("lftv_patch_module", 0, 1, 0);
 
+static u32 (sub_0000719C *) (u32) = NULL;
 
 static u32
 get_text_addr(u32 offset)
@@ -740,6 +741,29 @@ sub_0000DE10(u32 a0, u32 a1)
 	return ret;
 }
 
+union rtp_seg {
+	struct {
+		unsigned short pad:3;
+		unsigned short len:13;
+	} s;
+	unsigned short val;
+};
+
+int
+check_rtp_payload(struct rtp_1 *r)
+{
+	char *p;
+	rtp_seg seg;
+
+	if (r->len - r->offset < 2) {
+		return 1;
+	}
+	p = r->data + r->offset;
+	seg.val = (p[0] << 8) | p[1];
+	r->offset += 2;
+	/* XXX */
+}
+
 u32
 sub_00008D04(u32 a0, u32 a1, u32 a2, u32 a3)
 {
@@ -748,7 +772,10 @@ sub_00008D04(u32 a0, u32 a1, u32 a2, u32 a3)
 
 	load_text_addr(func, 0x00008D04, ret);
 	logstr("sub_00008D04:");
-	ret = func(a0, a1, a2, a3);
+	/* skip original call and do our check */
+	check_rtp_payload((void *) a1);
+	//ret = func(a0, a1, a2, a3);
+	ret = 0xC;
 	logstr("0x00008D04:");
 	logint(ret);
 
