@@ -16,7 +16,6 @@
 
 PSP_MODULE_INFO("lftv_patch_module", 0, 1, 0);
 
-static u32 (sub_0000719C *) (u32) = NULL;
 
 static u32
 get_text_addr(u32 offset)
@@ -661,11 +660,11 @@ sub_00008AD0(u32 a0, u32 a1)
 	logstr("sub_00008AD0:");
 	logint(_lb(0xD+a1));
 	s0 = _lw(a1);
-	logint(s0);
-	logint(_lw(0xC+s0));
-	logint(_lw(0x14+s0));
-	logint(_lw(0x10+s0));
-	logint(_lw(0x8+s0));
+	logint(s0); //593A0
+	logint(_lw(0xC+s0)); //9C14
+	logint(_lw(0x14+s0)); //9974
+	logint(_lw(0x10+s0)); //9C5C
+	logint(_lw(0x8+s0)); //9168
 	ret = func(a0, a1);
 	logstr("0x00008AD0:");
 	logint(ret);
@@ -683,8 +682,8 @@ sub_000094CC(u32 a0)
 	logstr("sub_000094CC:");
 	logint(_lb(0xD+a0));
 	logint(_lb(0xC+a0));
-	logint(_lw(0x8+_lw(_lw(0x4+a0))));
-	logint(_lw(0x14+_lw(a0)));
+	logint(_lw(0x8+_lw(_lw(0x4+a0)))); //7178
+	logint(_lw(0x14+_lw(a0))); //9974
 	ret = func(a0);
 	logstr("0x000094CC:");
 	logint(ret);
@@ -741,27 +740,50 @@ sub_0000DE10(u32 a0, u32 a1)
 	return ret;
 }
 
-union rtp_seg {
+typedef union {
 	struct {
 		unsigned short pad:3;
 		unsigned short len:13;
 	} s;
 	unsigned short val;
-};
+} rtp_seg;
 
 int
 check_rtp_payload(struct rtp_1 *r)
 {
 	char *p;
 	rtp_seg seg;
+	int len;
 
+	logint(r->len);
+	logint(r->offset);
 	if (r->len - r->offset < 2) {
 		return 1;
 	}
 	p = r->data + r->offset;
+	logint(*(int *) p);
 	seg.val = (p[0] << 8) | p[1];
 	r->offset += 2;
-	/* XXX */
+	len = seg.s.len;
+	logint(len);
+	if ((r->len - r->offset) <= len)
+		return 2; // first return 8
+	p = r->data + r->offset;
+	seg.val = (p[0] << 8) | p[1];
+	r->offset += len;
+	len = seg.s.len;
+	logint(len);
+	if (r->len <= r->offset)
+		return 3; // 2nd 8
+	if ((r->len - r->offset) <= len)
+		return 4; // first return 8
+	r->offset += len;
+	logint(r->offset);
+	logint(r->len);
+	if (r->len - r->offset < 2)
+		return 0;
+	else
+		return -1;
 }
 
 u32
@@ -771,12 +793,11 @@ sub_00008D04(u32 a0, u32 a1, u32 a2, u32 a3)
 	u32 ret = 0;
 
 	load_text_addr(func, 0x00008D04, ret);
-	logstr("sub_00008D04:");
+	logstr("==sub_00008D04:");
 	/* skip original call and do our check */
-	check_rtp_payload((void *) a1);
-	//ret = func(a0, a1, a2, a3);
-	ret = 0xC;
-	logstr("0x00008D04:");
+	//logint(check_rtp_payload((void *) a1));
+	ret = func(a0, a1, a2, a3);
+	logstr("==0x00008D04:");
 	logint(ret);
 
 	return ret;
