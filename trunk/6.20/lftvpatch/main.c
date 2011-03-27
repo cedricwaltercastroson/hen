@@ -41,6 +41,14 @@ get_text_addr(u32 offset)
 	}\
 } while(0)
 
+#define load_text_addr2(__func, __offset) do {\
+	if ((__func) == NULL) {\
+		(__func) = (void *) get_text_addr((__offset));\
+		if ((__func) == NULL)\
+			return;\
+	}\
+} while(0)
+
 #if 0
 u32
 send_request_patched(u32 a0, u32 a1, u32 a2, char *a3, char *t0, char *t1, char *t2, u32 t3)
@@ -677,15 +685,52 @@ sub_000094CC(u32 a0)
 {
 	static u32 (*func) (u32) = NULL;
 	u32 ret = 0;
+	struct rtp_1 *r;
+	char *p;
 
 	load_text_addr(func, 0x000094CC, ret);
 	logstr("sub_000094CC:");
+	r = (void *) _lw(0x4+a0);
+	p = r->data;
+	logint(r->offset);
+	logint(r->len);
+	p += r->offset;
+	logint((u32) p);
+	logint(*(int *) p); // ???
+	logint(*(int *) (p + 4));
+	logint(*(int *) (p + 8));
 	logint(_lb(0xD+a0));
 	logint(_lb(0xC+a0));
 	logint(_lw(0x8+_lw(_lw(0x4+a0)))); //7178
 	logint(_lw(0x14+_lw(a0))); //9974
 	ret = func(a0);
 	logstr("0x000094CC:");
+	logint(ret);
+
+	return ret;
+}
+
+u32
+sub_00009CA4(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 ret = 0;
+	struct rtp_1 *r;
+	char *p;
+
+	load_text_addr(func, 0x00009CA4, ret);
+	logstr("sub_00009CA4:");
+	r = (void *) _lw(0x4+a0);
+	p = r->data;
+	logint(r->offset);
+	logint(r->len);
+	p += r->offset;
+	logint((u32) p);
+	logint(*(int *) p);
+	logint(*(int *) (p + 4));
+	logint(*(int *) (p + 8));
+	ret = func(a0);
+	logstr("0x00009CA4:");
 	logint(ret);
 
 	return ret;
@@ -762,6 +807,8 @@ check_rtp_payload(struct rtp_1 *r)
 	}
 	p = r->data + r->offset;
 	logint(*(int *) p);
+	logint(*(int *) (p + 4));
+	logint(*(int *) (p + 8));
 	seg.val = (p[0] << 8) | p[1];
 	r->offset += 2;
 	len = seg.s.len;
@@ -796,6 +843,7 @@ sub_00008D04(u32 a0, u32 a1, u32 a2, u32 a3)
 	logstr("==sub_00008D04:");
 	/* skip original call and do our check */
 	//logint(check_rtp_payload((void *) a1));
+	//ret = 0xC;
 	ret = func(a0, a1, a2, a3);
 	logstr("==0x00008D04:");
 	logint(ret);
@@ -803,12 +851,80 @@ sub_00008D04(u32 a0, u32 a1, u32 a2, u32 a3)
 	return ret;
 }
 
+void
+sub_00006EA8(u32 a0, u32 a1, u32 a2)
+{
+	static void (*func) (u32, u32, u32) = NULL;
+
+	load_text_addr2(func, 0x00006EA8);
+	logstr("sub_00006EA8:");
+	logint(a1);
+	logint(a2);
+	//logint(_lw(a1));
+	func(a0, a1, a2);
+	logstr("0x00006EA8");
+	return;
+}
+
+u32
+sub_00007178(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 ret = 0;
+	struct rtp_1 *r;
+
+	load_text_addr(func, 0x00007178, ret);
+	logstr("sub_00007178:");
+	r = (void *) a0;
+	logint((u32) r->data);
+	logint(_lb((u32) r->data));
+	logint(r->len);
+	logint(r->offset);
+	ret = func(a0);
+	logstr("0x00007178:");
+	logint(ret);
+	return ret;
+}
+
+u32
+sub_00006FB4(struct rtp_1 *r1, struct rtp_1 *r2)
+{
+	static u32 (*func) (struct rtp_1 *, struct rtp_1 *) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00006FB4, ret);
+	logstr("sub_00006FB4:");
+	logint(r2->data);
+	logint(r2->len);
+	logint(r2->offset);
+	logint((r2->data)[0]);
+	logint((r2->data)[1]);
+	logint((r2->data)[2]);
+	logint((r2->data)[3]);
+	logint((r2->data)[4]);
+	logint((r2->data)[5]);
+	logint((r2->data)[6]);
+	logint((r2->data)[7]);
+
+	ret = func(r1, r2);
+	logint(r1->data);
+	logint(r1->len);
+	logint(r1->offset);
+	logstr("0x00006FB4:");
+	logint(ret);
+	return ret;
+}
 
 int
 module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006FB4), 0x00009304);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007178), 0x00008DB0);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007178), 0x00008E1C);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006EA8), 0x00008E2C);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009CA4), 0x00009C30);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00008D04), 0x00008A64);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0000DE10), 0x0000DA00);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0000D3D0), 0x0000DECC);
