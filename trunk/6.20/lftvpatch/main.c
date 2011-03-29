@@ -50,11 +50,11 @@ struct rtp_1_c {
 
 #endif
 
+static u32 g_text_addr = 0;
 
 static u32
 get_text_addr(u32 offset)
 {
-	static u32 g_text_addr = 0;
 
 	if (g_text_addr == 0) {
 		g_text_addr = sctrlModuleTextAddr("sceVshLftvMw_Module");
@@ -1020,12 +1020,30 @@ sub_00009330(u32 a0)
 {
 	static u32 (*func) (u32) = NULL;
 	int ret = 0;
+	u32 x;
+	struct rtp_1 *r;
+	char *p;
 
 	load_text_addr(func, 0x00009330, ret);
 	logstr("sub_00009330:");
-	print_data(0);
+	//print_data(0);
+	x = _lw(0x24+a0);
+	r = (void *) _lw(0x8+x);
+	logint(r->func_table);
+	p = r->data;
+	//logint(_lw(_lw(0x8+x))); //592A0
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	logint(p[4]);
+	logint(p[5]);
+	logint(p[6]);
+	logint(p[7]);
+	x = _lw(g_text_addr + 0x0005DB14);
+	logint(_lw(x)); //599C8
 	ret = func(a0);
-	print_data(0);
+	//print_data(0);
 	logstr("0x00009330:");
 	logint(ret);
 	return ret;
