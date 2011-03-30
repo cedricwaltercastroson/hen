@@ -1049,12 +1049,41 @@ sub_00009330(u32 a0)
 	return ret;
 }
 
+u32
+sub_000072A4(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+	struct rtp_1 *r0, *r1;
+	char *p;
+
+	load_text_addr(func, 0x000072A4, ret);
+	logstr("sub_000072A4:");
+	r0 = (void *) a0;
+	r1 = (void *) a1;
+	ret = func(a0, a1);
+	p = r0->data;
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	logint(p[4]);
+	logint(p[5]);
+	logint(p[6]);
+	logint(p[7]);
+	logstr("0x000072A4:");
+	logint(ret);
+	return ret;
+}
+
 int
 module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000072A4), 0x0000942C);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009330), 0x00008E70);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x0000948C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x00009C24);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00008D04), 0x00008A64);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009240), 0x00008E38);
