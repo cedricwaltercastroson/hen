@@ -1076,14 +1076,57 @@ sub_000072A4(u32 a0, u32 a1)
 	return ret;
 }
 
+u32
+sub_00009550(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00009550, ret);
+	logstr("sub_00009550:");
+	ret = func(a0);
+	logstr("0x00009550:");
+	logint(ret);
+	return ret;
+}
+
+/* wrapper of aes_decrypt */
+u32
+sub_0002124C(u32 a0, char *s1, u32 len, char *s2)
+{
+	static u32 (*func) (u32, char *, u32, char *) = NULL;
+	u32 ret = 0;
+	u32 *table;
+
+	load_text_addr(func, 0x0002124C, ret);
+	logstr("sub_0002124C:");
+	logint(a0);
+	logint(_lw(a0));
+	logint(_lw(0x4+a0));
+	logint(_lw(0x8+a0));
+	logint(_lw(0x1c+a0));
+	table = (void *)((_lw(0x1c+a0)<<4)+a0);
+	logint(table);
+	logint(table[0x20/4]);
+	logint(table[0x24/4]);
+	logint(table[0x28/4]);
+	logint(table[0x2C/4]);
+	ret = func(a0, s1, len, s2);
+	logstr("0x0002124C:");
+	logint(ret);
+	return ret;
+}
+
 int
 module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000072A4), 0x0000942C);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002124C), 0x00020514);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009550), 0x00009498);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000072A4), 0x0000942C);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009330), 0x00008E70);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x0000948C);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x0000948C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x00009C24);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00008D04), 0x00008A64);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009240), 0x00008E38);
