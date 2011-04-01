@@ -1121,10 +1121,14 @@ u32
 sub_0002059C(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0, u32 t1)
 {
 	static u32 (*func)(u32, u32, u32, u32, u32, u32) = NULL;
-	u32 ret = 0;
+	u32 myra;
+	u32 ret;
 
+	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	ret = 0;
 	load_text_addr(func, 0x0002059C, ret);
 	logstr("sub_0002059C:");
+	logint(myra);
 	ret = func(a0, a1, a2, a3, t0, t1);
 	logstr("0x0002059C:");
 	logint(ret);
