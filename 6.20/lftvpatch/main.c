@@ -1117,6 +1117,7 @@ sub_0002124C(u32 a0, char *s1, u32 len, char *s2)
 	return ret;
 }
 
+// 0x000204C8
 u32
 sub_0002059C(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0, u32 t1)
 {
@@ -1134,6 +1135,42 @@ sub_0002059C(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0, u32 t1)
 	logint(ret);
 	return ret;
 }
+
+/*
+a1 is the aes KEY:
+68109ADA
+351FF0C3
+E1E5D29A
+ACC98A8B
+*/
+void
+sub_000214E4(u32 a0, u32 a1)
+{
+	static void (*func)(u32, u32) = NULL;
+	//int i;
+	//char *p;
+	u32 *p;
+	int i, j;
+
+	load_text_addr2(func, 0x000214E4);
+	logstr("sub_000214E4:");
+	i = _lw(0x1c+a0);
+	i -= 6;
+	logint(i);
+	p = (u32 *) a1;
+	for (j = 0; j < i; j++)
+		logint(p[j]);
+#if 0
+	p = (char *) a1;
+	for (i = 0; i < 32; i++) {
+		logint(p[i]);
+	}
+#endif
+	func(a0, a1);
+	logstr("0x000214E4:");
+	return;
+}
+
 // sub_0002059C(a0, a1, a2, a3, t0, t1) -- caller of sub_000214E4
 // sub_000214E4(a0, a1) -- set_aes_key
 // key is "Sony Location Fr" ?
@@ -1150,6 +1187,7 @@ module_start(SceSize args, void* argp)
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000201DC);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000204C8);
 	// aes init fini
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000214E4), 0x00020674);
 
 
 
