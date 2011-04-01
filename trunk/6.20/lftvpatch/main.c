@@ -1117,10 +1117,37 @@ sub_0002124C(u32 a0, char *s1, u32 len, char *s2)
 	return ret;
 }
 
+u32
+sub_0002059C(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0, u32 t1)
+{
+	static u32 (*func)(u32, u32, u32, u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x0002059C, ret);
+	logstr("sub_0002059C:");
+	ret = func(a0, a1, a2, a3, t0, t1);
+	logstr("0x0002059C:");
+	logint(ret);
+	return ret;
+}
+// sub_0002059C(a0, a1, a2, a3, t0, t1) -- caller of sub_000214E4
+// sub_000214E4(a0, a1) -- set_aes_key
+// key is "Sony Location Fr" ?
+
 int
 module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
+
+	// aes init
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0001FFFC);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0002008C);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0002014C);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000201DC);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000204C8);
+	// aes init fini
+
+
 
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002124C), 0x00020514);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009550), 0x00009498);
