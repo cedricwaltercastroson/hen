@@ -672,9 +672,9 @@ sub_000087B4(u32 a0, u32 a1)
 	load_text_addr(func, 0x000087B4, ret);
 	logstr("sub_000087B4:");
 	//logint(_lw(_lw(0x4+a1)));
-	//print_data(0);
+	print_data(0);
 	ret = func(a0, a1);
-	//print_data(0);
+	print_data(0);
 	logstr("0x000087B4:");
 	logint(ret);
 
@@ -695,8 +695,9 @@ sub_00007B7C(u32 a0)
 	logstr("sub_00007B7C:");
 	//logint(myra);
 	//logint(_lw(0x20+_lw(a0))); //0x00008AD0
-	//print_data(a0);
+	print_data(a0);
 	ret = func(a0);
+	print_data(a0);
 	logstr("0x00007B7C:");
 	logint(ret);
 
@@ -896,12 +897,12 @@ sub_00008D04(u32 a0, u32 a1, u32 a2, u32 a3)
 
 	load_text_addr(func, 0x00008D04, ret);
 	logstr("sub_00008D04:");
-	//print_data(0);
+	print_data(0);
 	/* skip original call and do our check */
 	//logint(check_rtp_payload((void *) a1));
 	//ret = 0xC;
 	ret = func(a0, a1, a2, a3);
-	//print_data(0);
+	print_data(0);
 	logstr("0x00008D04:");
 	logint(ret);
 
@@ -1171,30 +1172,27 @@ sub_000214E4(u32 a0, u32 a1)
 	return;
 }
 
-// sub_0002059C(a0, a1, a2, a3, t0, t1) -- caller of sub_000214E4
-// sub_000214E4(a0, a1) -- set_aes_key
-// key is "Sony Location Fr" ?
-
 int
 module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
 	// aes init
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0001FFFC);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0002008C);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0002014C);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000201DC);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000204C8);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0001FFFC);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0002008C);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0002014C);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000201DC);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000204C8);
 	// aes init fini
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000214E4), 0x00020674);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000214E4), 0x00020674);
 
 
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x0000948C);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009550), 0x00009498);
 
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002124C), 0x00020514);
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009550), 0x00009498);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002124C), 0x00020514);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000072A4), 0x0000942C);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009330), 0x00008E70);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009330), 0x00008E70);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x0000948C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x00009C24);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00008D04), 0x00008A64);
