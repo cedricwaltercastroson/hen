@@ -1190,6 +1190,51 @@ sub_000214E4(u32 a0, u32 a1)
 	return;
 }
 
+u32
+sub_00009C5C(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00009C5C, ret);
+	logstr("sub_00009C5C:");
+	ret = func(a0);
+	logstr("0x00009C5C:");
+	logint(ret);
+	return ret;
+}
+
+u32
+sub_00009AA8(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00009AA8, ret);
+	logstr("sub_00009AA8:");
+	ret = func(a0, a1);
+	logstr("0x00009AA8:");
+	logint(_lw(a1));
+	logint(ret);
+	return ret;
+}
+
+u32
+sub_00013F1C(u32 a0, u64 a1)
+{
+	static u32 (*func) (u32, u64) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00013F1C, ret);
+	logstr("sub_00013F1C:");
+	logint(_lw(0x4+_lw(_lw(0x4+a0)))); //2473C
+	logint(_lw(0x8+_lw(_lw(0x4+a0)))); // 24704
+	ret = func(a0, a1);
+	logstr("0x00013F1C:");
+	logint(ret);
+	return ret;
+}
+
 /*
  * 6410
  *     78BC
@@ -1209,6 +1254,9 @@ module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013F1C), 0x00008BD4);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009AA8), 0x00008BB4);
+	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00009C5C, 0x0000593B0);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00008AD0, 0x000059350);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x00009C24);
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009CA4), 0x00009C30);
