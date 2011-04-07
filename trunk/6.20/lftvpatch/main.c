@@ -312,33 +312,6 @@ sub_00005758(u32 a0)
 }
 
 u32
-sub_00014C34(u32 a0, u32 a1, u32 a2, u32 a3)
-{
-	static u32 (*func) (u32, u32, u32, u32) = NULL;
-	u32 ret = 0;
-
-	load_text_addr(func, 0x00014C34, ret);
-
-	logstr("sub_00014C34:");
-	logint(a0);
-	logint(_lb(a0 + 0x18));
-	logint(_lb(a0 + 0x19));
-	logint(_lw(a0));
-	logint(_lw(0x20 + _lw(a0)));
-	logint(_lw(0x24 + _lw(a0)));
-	logint(_lw(0x4 + _lw(a0)));
-	logint(_lw(0x8 + _lw(_lw(0x1C + a0))));
-	logint(_lw(0x4 + _lw(_lw(0x20 + a0))));
-	ret = func(a0, a1, a2, a3);
-	logstr("0x00014C34:");
-	logint(ret);
-	logint(_lw(a3));
-	logint(_lw(a1));
-
-	return ret;
-}
-
-u32
 sub_00005550(u32 a0, u32 a1)
 {
 	static u32 (*func) (u32, u32)= NULL;
@@ -1356,6 +1329,136 @@ sub_00009168(u32 a0)
 	return ret;
 }
 
+u64
+sub_00007A44(u32 a0, u32 a1)
+{
+	static u64 (*func) (u32, u32) = NULL;
+	u64 ret = 0;
+
+	load_text_addr(func, 0x00007A44, ret);
+	logstr("sub_00007A44:");
+	logint(a1);
+	logint(_lw(0x38+a0));
+	ret = func(a0, a1);
+	logstr("0x00007A44:");
+	logint((u32) ret);
+	logint((u32) (ret >> 32));
+	return ret;
+}
+
+u64
+sub_00007D7C(u32 a0, u64 a1)
+{
+	static u64 (*func) (u32, u64) = NULL;
+	u64 ret = 0;
+
+	load_text_addr(func, 0x00007D7C, ret);
+	logstr("sub_00007D7C:");
+	logint((u32) a1);
+	logint((u32) (a1 >> 32));
+	ret = func(a0, a1);
+	logstr("0x00007D7C:");
+	logint((u32) ret);
+	logint((u32) (ret >> 32));
+	return ret;
+}
+
+void
+sub_00013D30(u32 a0, u64 a1)
+{
+	static void (*func) (u32, u64) = NULL;
+	u32 tmp;
+
+	load_text_addr2(func, 0x00013D30);
+	logstr("sub_00013D30:");
+	logint(a0);
+	logint((u32) a1);
+	logint((u32) (a1 >> 32));
+#if 0
+	tmp = _lw(0x2C+a0);
+	logint(tmp);
+	if (tmp != 0) {
+		tmp = _lw(0x1020+tmp);
+		logint(tmp);
+		if (tmp != 0) {
+			tmp = _lw(tmp);
+			logint(tmp);
+		}
+	}
+#endif
+
+#if 0
+	logint(_lw(0x4+_lw(_lw(0x4+a0))));
+	logint(_lw(0x8+_lw(_lw(0x4+a0))));
+	if (_lw(0x28+a0) != 0)
+		logint(_lw(0x8+_lw(_lw(0x28+a0))));
+#endif
+	func(a0, a1);
+	logstr("0x00013D30:");
+	return;
+}
+
+u32
+sub_0000FA9C(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x0000FA9C, ret);
+	logstr("sub_0000FA9C:");
+	ret = func(a0, a1, a2);
+	logstr("0x0000FA9C:");
+	logint(ret);
+	return ret;
+}
+
+/* video decode */
+u32
+sub_0000D410(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 myra;
+	u32 ret = 0;
+
+	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	load_text_addr(func, 0x0000D410, ret);
+	logstr("sub_0000D410:");
+	logint(myra);
+	ret = func(a0);
+	logstr("0x0000D410:");
+	logint(ret);
+	return ret;
+}
+
+u32
+sub_00014C34(u32 a0, u32 a1, u32 a2, u32 a3)
+{
+	static u32 (*func) (u32, u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00014C34, ret);
+
+	logstr("sub_00014C34:");
+	logint(a0);
+	logint(a1);
+	logint(a2);
+	logint(_lb(a0 + 0x18));
+	logint(_lb(a0 + 0x19));
+	logint(_lw(a0));
+	logint(_lw(0x20 + _lw(a0)));
+	logint(_lw(0x24 + _lw(a0)));
+	logint(_lw(0x4 + _lw(a0)));
+	logint(_lw(0x8 + _lw(_lw(0x1C + a0))));
+	logint(_lw(0x4 + _lw(_lw(0x20 + a0))));
+	ret = func(a0, a1, a2, a3);
+	logstr("0x00014C34:");
+	logint(ret);
+	logint(_lw(a3));
+	logint(_lw(a1));
+
+	return ret;
+}
+
 /*
  * 6410
  *     78BC
@@ -1368,6 +1471,8 @@ sub_00009168(u32 a0)
  *	           9C14
  *	               94CC
  *	           9C5C
+ *
+ *             hdr D0D0D0D0:
  *	           9AA8
  *	           sub_00013F1C
  *	               sub_000140D8
@@ -1375,6 +1480,25 @@ sub_00009168(u32 a0)
  *	                       sub_000271CC
  *	                   sub_000271CC    
  *	                   sub_00013FE8
+ *
+ *	           hdr E0E0E0E0:
+ *	           0x00009974
+ *	           sub_00007D0C
+ *	           sub_00014A98
+ *	               0x00015270
+ *	                   sub_00015484
+ *	                       memmove_reverse
+ *	           0x00009168 // read and return frame len
+ *	           sub_00007A44
+ *	           sub_00007D7C
+ *	               sub_00007EC8
+ *	               sub_00007E84
+ *	               sub_00006CF4
+ *	           sub_00014A98
+ *	           sub_00014A98
+ *	           sub_00013D30
+ *
+ *	        0x0000993C
  */
 
 int
@@ -1382,6 +1506,15 @@ module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000D45C);
+	sctrlPatchModule("sceVshLftvMw_Module", 0x2404FFF5, 0x0000D46C);
+	sctrlPatchModule("sceVshLftvMw_Module", 0x2404FFF6, 0x0000D48C);
+	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000D410, 0x00059568);
+	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000FA9C, 0x00059660);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013D30), 0x00008CF4);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007D7C), 0x00008C78);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007A44), 0x00008C5C);
+	
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00009168, 0x000059368);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00009168, 0x000059388);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00009168, 0x0000593A8);
