@@ -573,7 +573,7 @@ print_data(u32 a0)
 		else
 			goto out;
 	} else {
-		if (saved_a0 == 0)
+		if (saved_a0 != a0)
 			saved_a0 = a0;
 	}
 
@@ -1200,9 +1200,12 @@ sub_00013F1C(u32 a0, u64 a1)
 
 	load_text_addr(func, 0x00013F1C, ret);
 	logstr("sub_00013F1C:");
-	logint(_lw(0x10+_lw(_lw(0x2c+a0)))); //called in sub_00013FE8 , 0x0000FA9C
-	logint(_lw(0x4+_lw(_lw(0x4+a0)))); //2473C
-	logint(_lw(0x8+_lw(_lw(0x4+a0)))); // 24704
+	logint(a0);
+	logint((u32)a1);
+	logint((u32)(a1>>32));
+	//logint(_lw(0x10+_lw(_lw(0x2c+a0)))); //called in sub_00013FE8 , 0x0000FA9C
+	//logint(_lw(0x4+_lw(_lw(0x4+a0)))); //2473C
+	//logint(_lw(0x8+_lw(_lw(0x4+a0)))); // 24704
 	ret = func(a0, a1);
 	logstr("0x00013F1C:");
 	logint(ret);
@@ -1210,18 +1213,18 @@ sub_00013F1C(u32 a0, u64 a1)
 }
 
 u64
-sub_000271CC(u32 a0, u32 a1, u32 a2, u32 a3)
+sub_000271CC(u64 a0, u32 a1, u32 a2)
 {
-	static u64 (*func) (u32, u32, u32, u32) = NULL;
+	static u64 (*func) (u64, u32, u32) = NULL;
 	u64 ret = 0;
 
 	load_text_addr(func, 0x000271CC, ret);
 	logstr("sub_000271CC:");
-	logint(a0);
+	logint((u32) a0);
+	logint((u32) (a0 >> 32));
 	logint(a1);
 	logint(a2);
-	logint(a3);
-	ret = func(a0, a1, a2, a3);
+	ret = func(a0, a1, a2);
 	logstr("0x000271CC:");
 	logint((u32) ret);
 	logint((u32) (ret >> 32));
@@ -1459,29 +1462,48 @@ sub_00014C34(u32 a0, u32 a1, u32 a2, u32 a3)
 	return ret;
 }
 
+/* audio codec cb */
+u32
+sub_0001124C(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 myra;
+	u32 ret = 0;
+
+	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	load_text_addr(func, 0x0001124C, ret);
+	logstr("sub_0001124C:");
+	logint(a0);
+	logint(myra);
+	ret = func(a0);
+	logstr("0x0001124C:");
+	logint(ret);
+	return ret;
+}
+
 /*
  * 6410
  *     78BC
  *         87B4
  *         8D04
  *		       9330
- *		           204E8
+ *		           204E8 // AES decrypt
  *	   7B7C
  *	       8AD0
  *	           9C14
  *	               94CC
  *	           9C5C
  *
- *             hdr D0D0D0D0:
+ *             hdr D0D0D0D0: // audio?
  *	           9AA8
- *	           sub_00013F1C
- *	               sub_000140D8
- *	                   sub_00013F9C
- *	                       sub_000271CC
+ *	           sub_00013F1C(a0)
+ *	               sub_000140D8(a0)
+ *	                   sub_00013F9C(a0)
+ *	                       sub_000271CC()
  *	                   sub_000271CC    
  *	                   sub_00013FE8
  *
- *	           hdr E0E0E0E0:
+ *	           hdr E0E0E0E0: // vedio?
  *	           0x00009974
  *	           sub_00007D0C
  *	           sub_00014A98
@@ -1506,10 +1528,14 @@ module_start(SceSize args, void* argp)
 {
 	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000D45C);
-	sctrlPatchModule("sceVshLftvMw_Module", 0x2404FFF5, 0x0000D46C);
-	sctrlPatchModule("sceVshLftvMw_Module", 0x2404FFF6, 0x0000D48C);
-	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000D410, 0x00059568);
+	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0001124C, 0x00059698);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x000112F0);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x000112AC);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0001128C);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000D45C);
+	//sctrlPatchModule("sceVshLftvMw_Module", 0x2404FFF5, 0x0000D46C);
+	//sctrlPatchModule("sceVshLftvMw_Module", 0x2404FFF6, 0x0000D48C);
+	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000D410, 0x00059568);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000FA9C, 0x00059660);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013D30), 0x00008CF4);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007D7C), 0x00008C78);
@@ -1521,9 +1547,10 @@ module_start(SceSize args, void* argp)
 
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014A98), 0x00008C14);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00008F68), 0x00009954);
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013F9C), 0x000140E4);
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000271CC), 0x00013FD4);
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013F1C), 0x00008BD4);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013F9C), 0x000140E4);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000271CC), 0x00013FD4);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000271CC), 0x00014138);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013F1C), 0x00008BD4);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009AA8), 0x00008BB4);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00009C5C, 0x0000593B0);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00008AD0, 0x000059350);
