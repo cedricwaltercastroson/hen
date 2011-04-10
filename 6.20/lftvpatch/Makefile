@@ -4,7 +4,7 @@ VPATH = ../lib
 
 INCDIR = ../rebootex/systemctrl ../lib
 
-CFLAGS = -O2 -G0 -Wall -mno-gpopt
+CFLAGS = -O2 -G0 -Wall -mno-gpopt -Wno-unused
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 ASFLAGS = $(CFLAGS)
 
