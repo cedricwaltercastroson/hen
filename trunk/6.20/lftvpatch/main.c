@@ -1408,6 +1408,7 @@ sub_00013D30(u32 a0, u64 a1)
 
 	load_text_addr2(func, 0x00013D30);
 	logstr("sub_00013D30:");
+	print_sema(_lw(0x4+_lw(0x4+a0)));
 	logint(a0);
 	logint((u32) a1);
 	logint((u32) (a1 >> 32));
@@ -1641,7 +1642,7 @@ module_start(SceSize args, void* argp)
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x2404FFF6, 0x0000D48C);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000D410, 0x00059568);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000FA9C, 0x00059660);
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013D30), 0x00008CF4);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013D30), 0x00008CF4);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007D7C), 0x00008C78);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007A44), 0x00008C5C);
 	
