@@ -69,13 +69,14 @@ void
 logstr(char *s)
 {
 	char buf[512] = {0};
-	SceUID fd = openlog();
+	SceUID fd;
 	int len = my_strlen(s);
 
 	my_strcpy(buf, s);
 	buf[len] = '\r';
 	buf[len + 1] = '\n';
 	buf[len + 2] = '\0';
+	fd = openlog();
 	sceIoWrite(fd, buf, my_strlen(buf));
 	closelog(fd);
 }
