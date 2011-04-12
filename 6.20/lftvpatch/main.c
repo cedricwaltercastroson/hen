@@ -25,6 +25,36 @@ struct rtp_1 {
 };
 
 
+static u32 g_payload_c = 0; /* set in 00007B7C */
+
+static void
+print_payload(void)
+{
+	u32 pc = g_payload_c;
+
+	if (pc == 0) {
+		logstr("XXXXXXXX");
+		return;
+	}
+	logint(pc);
+	pc = _lw(0x58+pc);
+	if (pc == 0) {
+		logstr("0x58");
+		return;
+	}
+	pc = _lw(0x24+pc);
+	if (pc == 0) {
+		logstr("0x24");
+		return;
+	}
+	pc = _lw(0xC+pc);
+	if (pc == 0) {
+		logstr("0xC");
+		return;
+	}
+	logint(_lw(0xC+pc));
+}
+
 #if 0
 // size 0x30
 struct rtp_1_cc {
@@ -683,6 +713,49 @@ sub_000087B4(u32 a0, u32 a1)
 }
 
 u32
+sub_00008AD0(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+	struct rtp_1 *r;
+	char *p;
+	u32 s0;
+
+	load_text_addr(func, 0x00008AD0, ret);
+	logstr("sub_00008AD0:");
+	//r = (void *) _lw(0x4+a1);
+	//logint(r);
+	//p = r->data;
+	//logint(r->offset);
+	//logint(r->len);
+	//p += r->offset;
+	//logint((u32) p);
+	//logint(p[0]);
+	//logint(p[1]);
+	//logint(p[2]);
+	//logint(p[3]);
+	//logint(p[4]);
+	//logint(p[5]);
+	//logint(p[6]);
+	//logint(p[7]);
+	//print_data(a0);
+	//logint(_lb(0xD+a1));
+	//s0 = _lw(a1);
+	//logint(s0); //593A0
+	//logint(_lw(0xC+s0)); //9C14
+	//logint(_lw(0x14+s0)); //9974
+	//logint(_lw(0x10+s0)); //9C5C
+	//logint(_lw(0x8+s0)); //9168
+	//g_payload_c = a0;
+	ret = func(a0, a1);
+	logstr("0x00008AD0:");
+	//print_payload(g_payload_c);
+	logint(ret);
+
+	return ret;
+}
+
+u32
 sub_00007B7C(u32 a0)
 {
 	static u32 (*func) (u32) = NULL;
@@ -694,53 +767,14 @@ sub_00007B7C(u32 a0)
 	ret = 0;
 	load_text_addr(func, 0x00007B7C, ret);
 	logstr("sub_00007B7C:");
+	g_payload_c = a0;
 	//logint(myra);
 	//logint(_lw(0x20+_lw(a0))); //0x00008AD0
 	//print_data(a0);
 	ret = func(a0);
 	//print_data(a0);
 	logstr("0x00007B7C:");
-	logint(ret);
-
-	return ret;
-}
-
-u32
-sub_00008AD0(u32 a0, u32 a1)
-{
-	static u32 (*func) (u32, u32) = NULL;
-	u32 ret = 0;
-	struct rtp_1 *r;
-	char *p;
-	u32 s0;
-
-	load_text_addr(func, 0x00008AD0, ret);
-	logstr("sub_00008AD0:");
-	r = (void *) _lw(0x4+a1);
-	//logint(r);
-	p = r->data;
-	logint(r->offset);
-	logint(r->len);
-	p += r->offset;
-	logint((u32) p);
-	logint(p[0]);
-	logint(p[1]);
-	logint(p[2]);
-	logint(p[3]);
-	logint(p[4]);
-	logint(p[5]);
-	logint(p[6]);
-	logint(p[7]);
-	//print_data(a0);
-	//logint(_lb(0xD+a1));
-	//s0 = _lw(a1);
-	//logint(s0); //593A0
-	//logint(_lw(0xC+s0)); //9C14
-	//logint(_lw(0x14+s0)); //9974
-	//logint(_lw(0x10+s0)); //9C5C
-	//logint(_lw(0x8+s0)); //9168
-	ret = func(a0, a1);
-	logstr("0x00008AD0:");
+	//print_payload();
 	logint(ret);
 
 	return ret;
@@ -1312,11 +1346,20 @@ sub_00014A98(u32 a0, u32 a1, u32 a2, u32 *a3)
 {
 	static u32 (*func) (u32, u32, u32, u32 *) = NULL;
 	u32 ret = 0;
+	u32 p;
 
 	load_text_addr(func, 0x00014A98, ret);
 	logstr("sub_00014A98:");
+	logint(a0); // a0 of 0x00015270
 	logint(a1);
+	logint(a2);
 	logint(_lw(a1));
+
+	p = _lw(0x24+a0); // a0 of sub_00015484
+	logint(_lw(p));
+	logint(_lw(0x4+p));
+	logint(_lw(0x8+p));
+	p = _lw(0xC+p); // watch me
 	//print_sema(_lw(0x4+_lw(0x20+a0)));
 	//print_sema(_lw(0x4+_lw(0x1C+a0)));
 	//logint(_lb(0x19+a0));
@@ -1330,6 +1373,9 @@ sub_00014A98(u32 a0, u32 a1, u32 a2, u32 *a3)
 	ret = func(a0, a1, a2, a3);
 	logstr("0x00014A98:");
 	logint(ret);
+	logint(_lw(0xC+p));
+	//logint(_lw(0x4+p));
+	//logint(_lw(0x8+p));
 	logint(a3[0]);
 	return ret;
 }
@@ -1451,6 +1497,7 @@ sub_0000FA9C(u32 a0, u32 a1, u32 a2)
 }
 
 /* video decode */
+/* video data is at 0x0005DE98 */
 u32
 sub_0000D410(u32 a0)
 {
@@ -1580,6 +1627,38 @@ sub_00015270(u32 a0, u32 a1, u32 a2)
 	return ret;
 }
 
+u32
+sub_00006410(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00006410, ret);
+	logstr("sub_00006410:");
+	//g_payload_c = a0;
+	ret = func(a0, a1);
+	logstr("0x00006410:");
+	logint(ret);
+	print_payload();
+	return ret;
+}
+
+u32
+sub_00006730(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00006730, ret);
+	logstr("sub_00006730:");
+	ret = func(a0, a1, a2);
+	logstr("0x00006730:");
+	logint(ret);
+	logint(_lb(a0));
+	print_payload();
+	return ret;
+}
+
 /*
  * 6410
  *     78BC
@@ -1629,8 +1708,10 @@ module_start(SceSize args, void* argp)
 
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00015270, 0x0005972C);
 
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006730), 0x000068C8);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006410), 0x000067AC);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00015484), 0x00015278);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014A98), 0x00008CC0);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014A98), 0x00008CC0);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007D0C), 0x00008BF8);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0001124C, 0x00059698);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x000112F0);
@@ -1642,7 +1723,7 @@ module_start(SceSize args, void* argp)
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x2404FFF6, 0x0000D48C);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000D410, 0x00059568);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000FA9C, 0x00059660);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013D30), 0x00008CF4);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013D30), 0x00008CF4);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007D7C), 0x00008C78);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007A44), 0x00008C5C);
 	
@@ -1701,7 +1782,7 @@ module_start(SceSize args, void* argp)
 #endif
 
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006A14), 0x000069C4);
-#if 0
+#if 1
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007B7C, 0x000592DC);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007B7C, 0x0005930C);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007B7C, 0x0005933C);
