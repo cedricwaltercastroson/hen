@@ -1158,19 +1158,24 @@ sub_0002124C(u32 a0, char *s1, u32 len, char *s2)
 
 	load_text_addr(func, 0x0002124C, ret);
 	logstr("sub_0002124C:");
-	logint(a0);
-	logint(_lw(a0));
-	logint(_lw(0x4+a0));
-	logint(_lw(0x8+a0));
-	logint(_lw(0x1c+a0));
-	table = (void *)((_lw(0x1c+a0)<<4)+a0);
-	logint((u32) table);
-	logint(table[0x20/4]);
-	logint(table[0x24/4]);
-	logint(table[0x28/4]);
-	logint(table[0x2C/4]);
+	//logint(a0);
+	//logint(_lw(a0));
+	//logint(_lw(0x4+a0));
+	//logint(_lw(0x8+a0));
+	//logint(_lw(0x1c+a0));
+	//table = (void *)((_lw(0x1c+a0)<<4)+a0);
+	//logint((u32) table);
+	//logint(table[0x20/4]);
+	//logint(table[0x24/4]);
+	//logint(table[0x28/4]);
+	//logint(table[0x2C/4]);
+	logint(len);
+	logint(_lw((u32) s1));
+	logint(_lw(0x4 + ((u32) s1)));
 	ret = func(a0, s1, len, s2);
 	logstr("0x0002124C:");
+	logint(_lw((u32) s2));
+	logint(_lw(0x4 + ((u32) s2)));
 	logint(ret);
 	return ret;
 }
@@ -1188,6 +1193,14 @@ sub_0002059C(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0, u32 t1)
 	load_text_addr(func, 0x0002059C, ret);
 	logstr("sub_0002059C:");
 	logint(myra);
+	logint(_lb(a3));
+	logint(_lb(1+a3));
+	logint(_lb(2+a3));
+	logint(_lb(3+a3));
+	logint(_lb(4+a3));
+	logint(_lb(5+a3));
+	logint(_lb(6+a3));
+	logint(_lb(7+a3));
 	ret = func(a0, a1, a2, a3, t0, t1);
 	logstr("0x0002059C:");
 	logint(ret);
@@ -1526,10 +1539,11 @@ sub_0000D410(u32 a0)
 	//logint((u32) result);
 	//logint((u32) (result >> 32));
 
-	logint(_lw(0x20+_lw(_lw(0x18+a0))));
-	logint(_lw(0x8+_lw(_lw(0x18+a0))));
+	//logint(_lw(0x20+_lw(_lw(0x18+a0))));
+	logint(_lw(0x34+_lw(_lw(0x18+a0)))); //0000ebec
+	//logint(_lw(0x8+_lw(_lw(0x18+a0))));
 
-	print_sema(sema_id(_lw(0xC+a0))); // semaphore NetAVSynBufVideoDecodR
+	//print_sema(sema_id(_lw(0xC+a0))); // semaphore NetAVSynBufVideoDecodR
 	//logint(myra);
 	ret = func(a0);
 	logstr("0x0000D410:");
@@ -1553,8 +1567,8 @@ sub_00014C34(u32 a0, u32 a1, u32 a2, u32 a3)
 	//logint(a0);
 	//logint(a1);
 	//logint(a2);
-	logint(_lb(a0 + 0x18));
-	logint(_lb(a0 + 0x19));
+	//logint(_lb(a0 + 0x18));
+	//logint(_lb(a0 + 0x19));
 	//logint(_lw(a0));
 	//logint(_lw(0x20 + _lw(a0)));
 	//logint(_lw(0x24 + _lw(a0)));
@@ -1745,6 +1759,66 @@ sub_000020D0(u32 a0, u32 a1, u32 a2)
 	return ret;
 }
 
+u32
+sub_0000F0E8(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0)
+{
+	static u32 (*func) (u32, u32, u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x0000F0E8, ret);
+	logstr("sub_0000F0E8:");
+	logint(_lw(a2));
+	logint(_lw(4+a2));
+	logint(_lw(8+a2));
+	logint(a3);
+	ret = func(a0, a1, a2, a3, t0);
+	logstr("0x0000F0E8:");
+	logint(ret);
+	return ret;
+}
+
+u32
+sub_0000EBEC(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x0000EBEC, ret);
+	logstr("sub_0000EBEC:");
+	logint(_lw(a1));
+	logint(_lw(4+a1));
+	logint(_lw(8+a1));
+	logint(a2);
+	ret = func(a0, a1, a2);
+	logstr("0x0000EBEC:");
+	logint(ret);
+	return ret;
+}
+
+u32
+sub_00020474(u32 a0)
+{
+	static u32 (*func)(u32) = NULL;
+	u32 myra;
+	u32 ret;
+	char *p;
+
+	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	ret = 0;
+	load_text_addr(func, 0x00020474, ret);
+	logstr("sub_00020474:");
+	logint(myra);
+	p = (char *) a0 + 4;
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	ret = func(a0);
+	logstr("0x00020474:");
+	logint(ret);
+	return ret;
+}
+
 /*
  * 6410
  *     78BC
@@ -1787,15 +1861,159 @@ sub_000020D0(u32 a0, u32 a1, u32 a2)
  *	        0x0000993C
  */
 
+u32
+sub_000202F4(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 ret = 0;
+	int *p;
+
+	load_text_addr(func, 0x000202F4, ret);
+	logstr("sub_000202F4:");
+	p = (int *) (a0 + 4);
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	ret = func(a0, a1, a2);
+	logstr("0x000202F4:");
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	logint(ret);
+	return ret;
+}
+
+/* a0 is
+ * 67452301 45230189 23018967 01896745
+ *
+ * a1 ?
+ *
+ * output is in a0, which is to be used in next routine
+ *
+ * a1 is copied to a0
+ */
+u32
+sub_00023520(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 ret = 0;
+	int *p;
+
+	load_text_addr(func, 0x00023520, ret);
+	logstr("sub_00023520:");
+	p = (int *) a0;
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	p = (int *) a1;
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	ret = func(a0, a1, a2);
+	logstr("0x00023520:");
+	p = (int *) a0;
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	logint(ret);
+	return ret;
+}
+
+/* a0 is in/out
+ * in ?
+ * out AES key
+ */
+u32
+sub_00022490(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 ret = 0;
+	int *p;
+
+	load_text_addr(func, 0x00022490, ret);
+	logstr("sub_00022490:");
+	p = (int *) a0;
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	ret = func(a0);
+	logstr("0x00022490:");
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	logint(ret);
+	return ret;
+}
+
+u32
+sub_0000CC20(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 ret = 0;
+	int *p;
+
+	load_text_addr(func, 0x0000CC20, ret);
+	logstr("sub_0000CC20:");
+	ret = func(a0);
+	logstr("0x0000CC20:");
+	logint(ret);
+	return ret;
+}
+
+/* a1 is nonce + 3B8C...
+ * returns a 32byte string to be fed to sub_00022490,
+ * which makes the key
+ */
+u32
+sub_0001B29C(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+	int *p;
+
+	load_text_addr(func, 0x0001B29C, ret);
+	logstr("sub_0001B29C:");
+	logstr((char *) a1); /* a1 is nonce+ 3B8C7905473EB41C7392BA718F084439 */
+	p = (int *) a0;
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	logint(p[4]);
+	logint(p[5]);
+	logint(p[6]);
+	logint(p[7]);
+	ret = func(a0, a1);
+	logstr("0x0001B29C:");
+	logint(ret);
+	return ret;
+}
+
 int
 module_start(SceSize args, void* argp)
 {
-	sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
+	//sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0001B29C), 0x0000CC78);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0000CC20), 0x0000B8A0);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00022490), 0x00020310);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00023520), 0x00020308);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000202F4), 0x0000299C);
+	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00020474, 0x000599D0);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000020D0), 0x000049F4);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_000049A4, 0x000591D4);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00015270, 0x0005972C);
 
+	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000EBEC, 0x0005963C);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_BREAK(7), 0x0000D5CC);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0000F0E8), 0x0000E4B8);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006818), 0x000049B4);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006730), 0x000068C8);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006410), 0x000067AC);
@@ -1807,10 +2025,17 @@ module_start(SceSize args, void* argp)
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x000112AC);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0001128C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x00011350);
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000D45C);
+#if 0
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000D45C);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000D47C);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000D4F0);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000D548);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000D610);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x0000DDC0);
+#endif
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x2404FFF5, 0x0000D46C);
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x2404FFF6, 0x0000D48C);
-	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000D410, 0x00059568);
+	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000D410, 0x00059568);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0000FA9C, 0x00059660);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013D30), 0x00008CF4);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00007D7C), 0x00008C78);
@@ -1838,9 +2063,9 @@ module_start(SceSize args, void* argp)
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0002008C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0002014C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000201DC);
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000204C8);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000204C8);
 	// aes init fini
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000214E4), 0x00020674);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000214E4), 0x00020674);
 
 
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x0000948C);
@@ -1871,7 +2096,7 @@ module_start(SceSize args, void* argp)
 #endif
 
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00006A14), 0x000069C4);
-#if 1
+#if 0
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007B7C, 0x000592DC);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007B7C, 0x0005930C);
 	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00007B7C, 0x0005933C);
