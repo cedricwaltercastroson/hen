@@ -1925,8 +1925,10 @@ sub_00023520(u32 a0, u32 a1, u32 a2)
 }
 
 /* a0 is in/out
- * in ?
+ * in nonce + 3...
  * out AES key
+ *
+ * simply MD5 to make the key!
  */
 u32
 sub_00022490(u32 a0)
@@ -1966,7 +1968,7 @@ sub_0000CC20(u32 a0)
 	logint(ret);
 	return ret;
 }
-
+//e30fef576f60f29f74b99661a64dc0f93B8C7905473EB41C7392BA718F084439
 /* a1 is nonce + 3B8C...
  * returns a 32byte string to be fed to sub_00022490,
  * which makes the key
@@ -1992,7 +1994,59 @@ sub_0001B29C(u32 a0, u32 a1)
 	logint(p[7]);
 	ret = func(a0, a1);
 	logstr("0x0001B29C:");
-	logint(ret);
+	//logint(ret);
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	return ret;
+}
+
+u32
+sub_0004C6E0(int *buf, char *s, int len)
+{
+	static u32 (*func) (int *, char *, int) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x0004C6E0, ret);
+	logstr("sub_0004C6E0:");
+	logstr(s);
+	logint(buf[0]);
+	logint(buf[1]);
+	logint(buf[2]);
+	logint(buf[3]);
+	ret = func(buf, s, len);
+	logstr("0x0004C6E0:");
+	logint(buf[0]);
+	logint(buf[1]);
+	logint(buf[2]);
+	logint(buf[3]);
+	return ret;
+}
+
+u32
+sub_00026F90(int *buf, int *a1)
+{
+	static u32 (*func) (int *, int *) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00026F90, ret);
+	logstr("sub_00026F90:");
+	logint(buf[0]);
+	logint(buf[1]);
+	logint(buf[2]);
+	logint(buf[3]);
+	logint(a1[0]);
+	logint(a1[1]);
+	logint(a1[2]);
+	logint(a1[3]);
+	logint(a1[4]);
+	ret = func(buf, a1);
+	logstr("0x00026F90:");
+	logint(buf[0]);
+	logint(buf[1]);
+	logint(buf[2]);
+	logint(buf[3]);
 	return ret;
 }
 
@@ -2001,9 +2055,11 @@ module_start(SceSize args, void* argp)
 {
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00026F90), 0x0004C7BC);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0004C6E0), 0x0001B2C4);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0001B29C), 0x0000CC78);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0000CC20), 0x0000B8A0);
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00022490), 0x00020310);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00022490), 0x00020310);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00023520), 0x00020308);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000202F4), 0x0000299C);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00020474, 0x000599D0);
@@ -2063,7 +2119,7 @@ module_start(SceSize args, void* argp)
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0002008C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x0002014C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000201DC);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000204C8);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000204C8);
 	// aes init fini
 	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000214E4), 0x00020674);
 
