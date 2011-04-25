@@ -2050,16 +2050,51 @@ sub_00026F90(int *buf, int *a1)
 	return ret;
 }
 
+/* make LFX_MSG "d=" */
+u32
+sub_00023584(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0)
+{
+	static u32 (*func) (u32, u32, u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00023584, ret);
+	logstr("sub_00023584:");
+	ret = func(a0, a1, a2, a3, t0);
+	logstr("0x00023584:");
+	logstr((char *) a2);
+	return ret;
+}
+
+/* base64 encode */
+u32
+sub_00026EC0(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00026EC0, ret);
+	logstr("sub_00026EC0:");
+	logint(a1);
+	logint(a2);
+	ret = func(a0, a1, a2);
+	logstr("0x00026EC0:");
+	logstr((char *)a0);
+	return ret;
+}
+
 int
 module_start(SceSize args, void* argp)
 {
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00026EC0), 0x000235D4);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00023584), 0x00012BF8);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00023584), 0x00016904);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00026F90), 0x0004C7BC);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0004C6E0), 0x0001B2C4);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0001B29C), 0x0000CC78);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0000CC20), 0x0000B8A0);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00022490), 0x00020310);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00022490), 0x00020310);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00023520), 0x00020308);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000202F4), 0x0000299C);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00020474, 0x000599D0);
