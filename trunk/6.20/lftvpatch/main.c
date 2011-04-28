@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "pspsdk.h"
 #include "pspkernel.h"
@@ -15,6 +16,57 @@
 #define MAKE_BREAK(n) ((((u32)n << 6) & 0x03FFFFC0) | 0x0000000D)
 
 PSP_MODULE_INFO("lftv_patch_module", 0, 1, 0);
+
+char *reg_table[] = {
+	"zr", "at",
+	"v0", "v1",
+	"a0", "a1", "a2", "a3",
+	"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
+	"s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
+	"t8", "t9",
+	"k0", "k1",
+	"gp",
+	"sp",
+	"fp",
+	"ra"
+};
+
+static u32
+ator(char *r)
+{
+	u32 i;
+
+	for (i = 0; i < sizeof(reg_table) / sizeof(char *); i++) {
+		if (strcmp(r, reg_table[i]) == 0)
+			return i;
+	}
+
+	return 0;
+}
+
+/* val - our hook func
+ * addr - start addr of patch
+ * r0   - the register to be set (usually a0/a1...)
+ * r1   - the utility register (usually v0/v1...)
+ */
+static void
+patch_load_value(u32 val, u32 addr_hi, u32 addr_lo, char *r0, char *r1)
+{
+	u32 hi, lo;
+
+	/* hi is lui r1, val >> 16 */
+	hi = 0x3C000000 | (ator(r1) << 16);
+	hi |= val >> 16;
+
+	/* lo is addiu r0, val & 0xFFFF */
+	lo = 0x24000000 | (ator(r0) << 16);
+	lo |= ator(r1) << 21;
+	lo |= val & 0xFFFF;
+
+	/* then write hi and lo to addr */
+	sctrlPatchModule("sceVshLftvMw_Module", hi, addr_hi);
+	sctrlPatchModule("sceVshLftvMw_Module", lo, addr_lo);
+}
 
 struct rtp_1 {
 	void *func_table; //0x0 table at 0x000592A0
@@ -1372,25 +1424,25 @@ sub_00014A98(u32 a0, u32 a1, u32 a2, u32 *a3)
 	logint(a2);
 	logint(_lw(a1));
 
-	p = _lw(0x24+a0); // a0 of sub_00015484
-	logint(_lw(p));
-	logint(_lw(0x4+p));
-	logint(_lw(0x8+p));
-	p = _lw(0xC+p); // watch me
+	//p = _lw(0x24+a0); // a0 of sub_00015484
+	//logint(_lw(p));
+	//logint(_lw(0x4+p));
+	//logint(_lw(0x8+p));
+	//p = _lw(0xC+p); // watch me
 	//print_sema(_lw(0x4+_lw(0x20+a0)));
 	//print_sema(_lw(0x4+_lw(0x1C+a0)));
 	//logint(_lb(0x19+a0));
 	//logint(_lb(0x1A+a0));
 	//logint(_lb(0x18+a0));
 	//logint(_lw(0x1C+a0));
-	//logstr("functions:");
-	//logint(_lw(0x1C+_lw(a0)));
-	//logint(_lw(0x8+_lw(_lw(0x20+a0))));
-	//logint(_lw(0x4+_lw(_lw(0x1C+a0))));
+	logstr("functions:");
+	logint(_lw(0x1C+_lw(a0)));
+	logint(_lw(0x8+_lw(_lw(0x20+a0))));
+	logint(_lw(0x4+_lw(_lw(0x1C+a0))));
 	ret = func(a0, a1, a2, a3);
 	logstr("0x00014A98:");
 	logint(ret);
-	logint(_lw(0xC+p));
+	//logint(_lw(0xC+p));
 	//logint(_lw(0x4+p));
 	//logint(_lw(0x8+p));
 	logint(a3[0]);
@@ -2082,11 +2134,75 @@ sub_00026EC0(u32 a0, u32 a1, u32 a2)
 	return ret;
 }
 
+u32
+sub_00039EDC(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00039EDC, ret);
+	logstr("sub_00039EDC:");
+	ret = func(a0);
+	logstr("0x00039EDC:");
+	logint(ret);
+	return ret;
+}
+
+u32
+NetAVLfxMsgCb(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00012F54, ret);
+	logstr("NetAVLfxMsgCb:");
+	ret = func(a0, a1);
+	logstr("NetAVLfxMsgCb ret:");
+	logint(ret);
+	return ret;
+}
+
+u32
+NetAVLfxMsgHdlr(void)
+{
+	static u32 (*func) (void) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x000127A0, ret);
+	logstr("NetAVLfxMsgHdlr:");
+	ret = func();
+	logstr("NetAVLfxMsgHdlr ret:");
+	logint(ret);
+	return ret;
+}
+
+u32
+parse_lfx_msg(char *a0, u32 a1)
+{
+	static u32 (*func) (char *, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00012CE0, ret);
+	logstr("parseLfx:");
+	ret = func(a0, a1);
+	logstr("parseLfx ret:");
+	logint(_lw(a1 + 0xC));
+	logint(_lw(a1 + 0xC + 0x4));
+	logint(_lw(a1 + 0xC + 0x8));
+	logint(ret);
+	return ret;
+}
+
 int
 module_start(SceSize args, void* argp)
 {
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(parse_lfx_msg), 0x0001206C);
+	//patch_load_value((u32) NetAVLfxMsgHdlr, 0x00012978, 0x0001297C, "a1", "v0");
+	//patch_load_value((u32) NetAVLfxMsgCb, 0x000130BC, 0x000130C8, "a1", "a3");
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00039EDC), 0x0003A3A8);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014A98), 0x00013210);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00026EC0), 0x000235D4);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00023584), 0x00012BF8);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00023584), 0x00016904);
@@ -2156,7 +2272,7 @@ module_start(SceSize args, void* argp)
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000201DC);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002059C), 0x000204C8);
 	// aes init fini
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000214E4), 0x00020674);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000214E4), 0x00020674);
 
 
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x0000948C);
