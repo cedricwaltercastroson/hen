@@ -2184,21 +2184,203 @@ parse_lfx_msg(char *a0, u32 a1)
 
 	load_text_addr(func, 0x00012CE0, ret);
 	logstr("parseLfx:");
+	logint(a1); // pointer to lfx_msg_t
 	ret = func(a0, a1);
 	logstr("parseLfx ret:");
-	logint(_lw(a1 + 0xC));
-	logint(_lw(a1 + 0xC + 0x4));
-	logint(_lw(a1 + 0xC + 0x8));
 	logint(ret);
 	return ret;
 }
+
+u32
+sub_00041B10(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 myra;
+	u32 ret;
+
+	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	ret = 0;
+	load_text_addr(func, 0x00041B10, ret);
+	logstr("sub_00041B10:");
+	logint(myra);
+	ret = func(a0, a1, a2);
+	logstr("0x00041B10:");
+	logint(ret);
+	return ret;
+}
+
+u32
+sub_0003FCFC(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 myra;
+	u32 ret;
+
+	//__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	ret = 0;
+	load_text_addr(func, 0x0003FCFC, ret);
+	logstr("sub_0003FCFC:");
+	//logint(myra);
+	logint(_lw(0xC+a1));
+	logint(_lw(0x10+a1));
+	logint(_lw(0x10+a1+0x4));
+	ret = func(a0, a1, a2);
+	logstr("0x0003FCFC:");
+	logint(ret);
+	return ret;
+}
+
+u32
+sub_0003F934(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 myra;
+	u32 ret;
+	int i, len, *p;
+
+	//__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	ret = 0;
+	load_text_addr(func, 0x0003F934, ret);
+	//logstr("sub_0003F934:");
+	//logint(myra);
+	logstr("-");
+	len = _lw(0xc+a1);
+	p = (int *) (a1 + 0x10);
+	for (i = 0; i < len/4; i++)
+		logint(p[i]);
+	ret = func(a0, a1);
+	//logstr("0x0003F934:");
+	//logint(ret);
+	return ret;
+}
+
+u32
+sub_000498E4(u32 a0, u32 a1, u32 a2)
+{
+	static u32 (*func) (u32, u32, u32) = NULL;
+	u32 ret;
+	int i, len, *p;
+
+	ret = 0;
+	load_text_addr(func, 0x000498E4, ret);
+	logstr("sub_000498E4:");
+	p = (int *) _lw(0xc+a0);
+	len = _lw(0x10+a0);
+	for (i = 0; i < len / 4; i++)
+		logint(p[i]);
+	ret = func(a0, a1, a2);
+	logstr("0x000498E4:");
+	logint(ret);
+	return ret;
+}
+
+u32
+sub_00012090(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0)
+{
+	static u32 (*func) (u32, u32, u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00012090, ret);
+	logstr("sub_00012090:");
+	//logint(_lw(_lw(0x34+a0))); // 0x59ab8
+	//logint(_lw(0x4+_lw(_lw(0x34+a0)))); //2473C
+	//logint(_lw(0x8+_lw(_lw(0x34+a0)))); //24704
+	ret = func(a0, a1, a2, a3, t0);
+	logstr("0x00012090:");
+	logint(ret);
+	return ret;
+}
+
+char *
+__strncpy(char *dst, char *src, int n)
+{
+	logstr("strncpy");
+	if (n != 0) {
+		char *d = dst;
+		char *s = src;
+
+		do {
+			if ((*d++ = *s++) == 0) {
+				while (--n != 0)
+					*d++ = 0;
+				break;
+			}
+		} while (--n != 0);
+
+		logstr(dst);
+	}
+
+	return dst;
+}
+
+u32
+sub_0001264C(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0, u32 t1)
+{
+	static u32 (*func) (u32, u32, u32, u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x0001264C, ret);
+	logstr("sub_0001264C:");
+	ret = func(a0, a1, a2, a3, t0, t1);
+	logstr("0x0001264C:");
+	logint(_lw(t1));
+	logint(_lb(0x2c+a0));
+	return ret;
+}
+
+/* parse decoded lfx_msg req from lftv */
+u32
+sub_00012448(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0)
+{
+	static u32 (*func) (u32, u32, u32, u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00012448, ret);
+	logstr("sub_00012448:");
+	logint(_lw(0x8+_lw(_lw(0x30+a0))));
+	ret = func(a0, a1, a2, a3, t0);
+	logstr("0x00012448:");
+	logint(ret);
+	return ret;
+}
+
+/* get cseq number */
+u32
+sub_00013424(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00013424, ret);
+	logstr("sub_00013424:");
+	logint(_lw(a0));
+	logint(_lw(a0+4));
+	logint(_lw(a0+8));
+	ret = func(a0);
+	logstr("0x00013424:");
+	logint(ret);
+	return ret;
+}
+
+// 0x0005D020 this is start of magic data
+// sub_000394EC : make client "ALIVE" request
 
 int
 module_start(SceSize args, void* argp)
 {
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(parse_lfx_msg), 0x0001206C);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013424), 0x00012538);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00012448), 0x00012738);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0001264C), 0x0001284C);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000498E4), 0x000498E4);
+	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0003F934, 0x00058E04);
+	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0003FCFC, 0x00058E20);
+	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_00041B10, 0x00058E84);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00012090), 0x0001263C);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00012090), 0x00012748);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(__strncpy), 0x00012330);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(parse_lfx_msg), 0x0001206C);
 	//patch_load_value((u32) NetAVLfxMsgHdlr, 0x00012978, 0x0001297C, "a1", "v0");
 	//patch_load_value((u32) NetAVLfxMsgCb, 0x000130BC, 0x000130C8, "a1", "a3");
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00039EDC), 0x0003A3A8);
