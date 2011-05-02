@@ -2328,7 +2328,7 @@ sub_0001264C(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0, u32 t1)
 	return ret;
 }
 
-/* parse decoded lfx_msg req from lftv */
+/* parse lfxmsg resp from lftv */
 u32
 sub_00012448(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0)
 {
@@ -2364,14 +2364,41 @@ sub_00013424(u32 a0)
 
 // 0x0005D020 this is start of magic data
 // sub_000394EC : make client "ALIVE" request
+//
+
+typedef struct {
+	char g[8];
+	int t;
+	int l;
+	char d[0];
+} lfxmsg_req_t;
+
+u32
+sub_000131B4(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+	lfxmsg_req_t *msg;
+
+	load_text_addr(func, 0x000131B4, ret);
+	logstr("sub_000131B4:");
+	logint(_lw(0x18+_lw(_lw(0x8+a0))));
+	msg = (void *) a1;
+	logstr(msg->g);
+	ret = func(a0, a1);
+	logstr("0x000131B4:");
+	logint(ret);
+	return ret;
+}
 
 int
 module_start(SceSize args, void* argp)
 {
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000131B4), 0x00012080);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013424), 0x00012538);
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00012448), 0x00012738);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00012448), 0x00012738);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0001264C), 0x0001284C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000498E4), 0x000498E4);
 	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0003F934, 0x00058E04);
