@@ -2448,15 +2448,16 @@ sub_0003FD34(u32 a0, u32 a1, u32 a2, u32 a3)
 	u32 ret;
 	lfxmsg_req_t *msg;
 
-	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	//__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
 	ret = 0;
 	load_text_addr(func, 0x0003FD34, ret);
-	logstr("sub_0003FD34:");
-	logint(myra);
+	//logstr("sub_0003FD34:");
+	//logint(myra);
 	ret = func(a0, a1, a2, a3);
-	logstr("0x0003FD34:");
+	//logstr("0x0003FD34:");
 	msg = (void *) a1;
 	logstr(msg->g);
+	logint(ret);
 
 	return ret;
 }
