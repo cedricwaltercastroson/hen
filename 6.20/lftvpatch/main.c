@@ -15,6 +15,13 @@
 
 #define MAKE_BREAK(n) ((((u32)n << 6) & 0x03FFFFC0) | 0x0000000D)
 
+typedef struct {
+	char g[8];
+	int t;
+	int l;
+	char d[0];
+} lfxmsg_req_t;
+
 PSP_MODULE_INFO("lftv_patch_module", 0, 1, 0);
 
 char *reg_table[] = {
@@ -1607,14 +1614,15 @@ u32
 sub_00014C34(u32 a0, u32 a1, u32 a2, u32 a3)
 {
 	static u32 (*func) (u32, u32, u32, u32) = NULL;
-	u32 myra;
+	//u32 myra;
 	u32 ret = 0;
+	lfxmsg_req_t *msg;
 
-	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	//__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
 	load_text_addr(func, 0x00014C34, ret);
 
-	logstr("sub_00014C34:");
-	logint(myra);
+	//logstr("sub_00014C34:");
+	//logint(myra);
 	//print_sema(_lw(0x4+_lw(0x20+a0)));
 	//logint(a0);
 	//logint(a1);
@@ -1628,10 +1636,17 @@ sub_00014C34(u32 a0, u32 a1, u32 a2, u32 a3)
 	//logint(_lw(0x8 + _lw(_lw(0x1C + a0))));
 	//logint(_lw(0x4 + _lw(_lw(0x20 + a0))));
 	ret = func(a0, a1, a2, a3);
-	logstr("0x00014C34:");
-	logint(ret);
-	logint(_lw(a3));
-	logint(_lw(a1));
+	//logstr("0x00014C34:");
+	//logint(ret);
+	//logint(_lw(a3));
+	//logint(_lw(a1));
+	// this is for NetAVLfxMsgCb only
+	msg = (void *) _lw(a1);
+	if (msg != NULL) {
+		logint((u32) msg);
+		//logint(_lw(get_text_addr(0x0005E4BC)));
+		//logstr(msg->g);
+	}
 
 	return ret;
 }
@@ -2156,6 +2171,7 @@ NetAVLfxMsgCb(u32 a0, u32 a1)
 
 	load_text_addr(func, 0x00012F54, ret);
 	logstr("NetAVLfxMsgCb:");
+	//logint(_lw(_lw(a1)));
 	ret = func(a0, a1);
 	logstr("NetAVLfxMsgCb ret:");
 	logint(ret);
@@ -2366,12 +2382,7 @@ sub_00013424(u32 a0)
 // sub_000394EC : make client "ALIVE" request
 //
 
-typedef struct {
-	char g[8];
-	int t;
-	int l;
-	char d[0];
-} lfxmsg_req_t;
+
 
 u32
 sub_000131B4(u32 a0, u32 a1)
@@ -2381,22 +2392,87 @@ sub_000131B4(u32 a0, u32 a1)
 	lfxmsg_req_t *msg;
 
 	load_text_addr(func, 0x000131B4, ret);
-	logstr("sub_000131B4:");
-	logint(_lw(0x18+_lw(_lw(0x8+a0))));
+	//logstr("sub_000131B4:");
+	logint(a1);
+	//logint(_lw(0x18+_lw(_lw(0x8+a0))));
+	/*
 	msg = (void *) a1;
 	logstr(msg->g);
+	logint(msg->t);
+	logint(msg->l);
+	*/
 	ret = func(a0, a1);
-	logstr("0x000131B4:");
+	//logstr("0x000131B4:");
+	//logint(ret);
+	return ret;
+}
+
+u32
+sub_00041B8C(u32 a0)
+{
+	static u32 (*func) (u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x00041B8C, ret);
+	logstr("sub_00041B8C:");
+	logint(a0);
+	ret = func(a0);
+	logstr("0x00041B8C:");
 	logint(ret);
 	return ret;
 }
+
+/* save lfxmsg_t to 0x0005D68C */
+u32
+sub_0003FE14(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+
+	load_text_addr(func, 0x0003FE14, ret);
+	logstr("sub_0003FE14:");
+	logint(a0);
+	logint(a1);
+	ret = func(a0, a1);
+	logstr("0x0003FE14:");
+	logint(ret);
+	return ret;
+}
+
+/* cp lfxmsg_t from 0x0005D68C to a1 */
+u32
+sub_0003FD34(u32 a0, u32 a1, u32 a2, u32 a3)
+{
+	static u32 (*func) (u32, u32, u32, u32) = NULL;
+	u32 myra;
+	u32 ret;
+	lfxmsg_req_t *msg;
+
+	__asm__ volatile ("addiu %0, $ra, 0;" : "=r"(myra));
+	ret = 0;
+	load_text_addr(func, 0x0003FD34, ret);
+	logstr("sub_0003FD34:");
+	logint(myra);
+	ret = func(a0, a1, a2, a3);
+	logstr("0x0003FD34:");
+	msg = (void *) a1;
+	logstr(msg->g);
+
+	return ret;
+}
+
 
 int
 module_start(SceSize args, void* argp)
 {
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
-	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000131B4), 0x00012080);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0003FE14), 0x0003F9B8);
+	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0003FD34, 0x00058E24);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(logint), 0x00012FA0);
+	//sctrlPatchModule("sceVshLftvMw_Module", 0x00402021, 0x00012FA4);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x00012F84);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000131B4), 0x00012080);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00013424), 0x00012538);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00012448), 0x00012738);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0001264C), 0x0001284C);
