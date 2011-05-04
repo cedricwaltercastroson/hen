@@ -16,10 +16,10 @@
 #define MAKE_BREAK(n) ((((u32)n << 6) & 0x03FFFFC0) | 0x0000000D)
 
 typedef struct {
-	char g[8];
-	int t;
-	int l;
-	char d[0];
+	char g[8]; // 0
+	int t; // 8
+	int l; // C
+	char d[0]; // 10
 } lfxmsg_req_t;
 
 PSP_MODULE_INFO("lftv_patch_module", 0, 1, 0);
@@ -2462,14 +2462,76 @@ sub_0003FD34(u32 a0, u32 a1, u32 a2, u32 a3)
 	return ret;
 }
 
+u32
+sub_00046CBC(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+	int *p;
+	lfxmsg_req_t *msg;
+	u32 v0;
+
+	load_text_addr(func, 0x00046CBC, ret);
+	logstr("sub_00046CBC:");
+	v0 = a0;
+	v0 = _lw(v0);
+	v0 += 8;
+	v0 = _lw(v0);
+	logint(v0);
+	logint(_lw(0x18+a0));
+	p = (int *) _lw(0x20 + a0);
+	logint(p[0]);
+	logint(p[1]);
+	logint(p[2]);
+	logint(p[3]);
+	msg = (void *) a1;
+	logstr(msg->g);
+	logint(msg->t);
+	logint(msg->l);
+	ret = func(a0, a1);
+	logstr("0x00046CBC:");
+	//logint(ret);
+	return ret;
+}
+
+u32
+sub_0004762C(u32 a0, u32 a1)
+{
+	static u32 (*func) (u32, u32) = NULL;
+	u32 ret = 0;
+	u32 v0;
+
+	load_text_addr(func, 0x0004762C, ret);
+	logstr("sub_0004762C:");
+
+	v0 = _lw(0xC+a0);
+	v0 = _lw(v0);
+	logint(_lw(0xC+v0));
+	logint(_lw(0x8+v0));
+
+	v0 = _lw(a0);
+
+again:
+	if (v0 != 0) {
+		logstr((char *) v0);
+		v0 = _lw(0xc+v0);
+		goto again;
+	}
+	ret = func(a0, a1);
+	logstr("0x0004762C:");
+	logint(ret);
+	return ret;
+}
 
 int
 module_start(SceSize args, void* argp)
 {
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x24020000, 0x00033DA0); /* bypassing registration check */
 
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0004762C), 0x00046D4C);
+	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00046CBC), 0x0003EC58);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0003FE14), 0x0003F9B8);
-	sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0003FD34, 0x00058E24);
+	//sctrlPatchModule("sceVshLftvMw_Module", (u32) sub_0003FD34, 0x00058E24);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(logint), 0x00012FA0);
 	//sctrlPatchModule("sceVshLftvMw_Module", 0x00402021, 0x00012FA4);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00014C34), 0x00012F84);
