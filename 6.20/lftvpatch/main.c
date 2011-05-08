@@ -2497,6 +2497,7 @@ sub_00046CBC(u32 a0, u32 a1)
 	logstr("0x00046CBC:");
 	logint(ret);
 	logint(_lw(g_text_addr + 0x0005E478));
+	logint(_lw(g_text_addr + 0x0005E488));
 	g_text_addr = 0; /* so that we can restart test */
 	return ret;
 }
