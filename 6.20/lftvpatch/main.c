@@ -2494,9 +2494,10 @@ sub_00046CBC(u32 a0, u32 a1)
 	sub_00046CBC_is_called = 1;
 	ret = func(a0, a1);
 	sub_00046CBC_is_called = 0;
-	g_text_addr = 0; /* so that we can restart test */
 	logstr("0x00046CBC:");
 	logint(ret);
+	logint(_lw(g_text_addr + 0x0005E478));
+	g_text_addr = 0; /* so that we can restart test */
 	return ret;
 }
 
