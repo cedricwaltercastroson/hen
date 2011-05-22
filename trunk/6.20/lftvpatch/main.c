@@ -1845,17 +1845,20 @@ sub_0000F0E8(u32 a0, u32 a1, u32 a2, u32 a3, u32 t0)
 }
 
 u32
-sub_0000EBEC(u32 a0, u32 a1, u32 a2)
+sub_0000EBEC(u32 a0, int *a1, u32 a2)
 {
-	static u32 (*func) (u32, u32, u32) = NULL;
+	static u32 (*func) (u32, int *, u32) = NULL;
 	u32 ret = 0;
 
 	load_text_addr(func, 0x0000EBEC, ret);
 	logstr("sub_0000EBEC:");
-	logint(_lw(a1));
-	logint(_lw(4+a1));
-	logint(_lw(8+a1));
 	logint(a2);
+	logint(a1[0]);
+	logint(a1[1]);
+	logint(a1[32]);
+	logint(a1[33]);
+	logint(a1[34]);
+	logint(a1[35]);
 	ret = func(a0, a1, a2);
 	logstr("0x0000EBEC:");
 	logint(ret);
@@ -2692,8 +2695,8 @@ module_start(SceSize args, void* argp)
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x0000948C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009550), 0x00009498);
 
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002124C), 0x0002021C);
-	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002124C), 0x00020514);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002124C), 0x0002021C);
+	sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_0002124C), 0x00020514);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000072A4), 0x0000942C);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_00009330), 0x00008E70);
 	//sctrlPatchModule("sceVshLftvMw_Module", MAKE_CALL(sub_000094CC), 0x0000948C);
